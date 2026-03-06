@@ -1,5 +1,7 @@
 # Agent Passport System — Python SDK
 
+[![PyPI](https://img.shields.io/pypi/v/agent-passport-system)](https://pypi.org/project/agent-passport-system/)
+
 Cryptographic identity, delegation, governance, and attribution for AI agents. Python implementation of the [Agent Passport Protocol](https://aeoess.com).
 
 **Cross-language compatible** with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system). Signatures created in Python verify in TypeScript and vice versa.
@@ -16,7 +18,8 @@ pip install agent-passport-system
 from agent_passport import (
     generate_key_pair, create_passport, sign_passport, verify_passport,
     create_delegation, verify_delegation, create_action_receipt,
-    build_merkle_root, get_merkle_proof, verify_merkle_proof
+    build_merkle_root, get_merkle_proof, verify_merkle_proof,
+    load_floor, attest_floor, verify_attestation, evaluate_compliance,
 )
 
 # Create agent identity (Ed25519)
@@ -67,6 +70,7 @@ assert verify_merkle_proof(hashes[0], proof, root)
 | `passport` | Agent identity creation, signing, verification, expiry |
 | `delegation` | Scoped delegation chains, sub-delegation, revocation |
 | `attribution` | Merkle proofs, beneficiary tracing, contribution tracking |
+| `values` | Human Values Floor: load YAML/JSON, attestation, compliance, graduated enforcement |
 
 ## Cross-Language Compatibility
 
@@ -86,13 +90,14 @@ assert canonical_json(data) == '{"a":2,"nested":{"a":1,"b":3},"z":1}'
 
 ## Protocol Layers
 
-This Python SDK implements the core layers of the Agent Passport Protocol:
+This Python SDK implements 4 of the 8 Agent Passport Protocol layers:
 
 1. **Identity** — Ed25519 passports with capabilities and vote weight
 2. **Delegation** — Scoped authority with spend limits and depth controls
 3. **Attribution** — Merkle proofs for contribution tracking
+4. **Values Floor** — 7 principles (F-001 through F-007), YAML/JSON loading, attestation, compliance evaluation, graduated enforcement (inline/audit/warn)
 
-The full 8-layer protocol (including Values Floor, Agora, Intent Architecture, Coordination, and Commerce) is available in the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system).
+The remaining layers (Agora, Intent Architecture, Coordination, Commerce) are available in the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) and via the [MCP server](https://mcp.aeoess.com/sse).
 
 ## Links
 
@@ -108,7 +113,7 @@ The full 8-layer protocol (including Values Floor, Agora, Intent Architecture, C
 ```bash
 pip install pynacl pytest
 PYTHONPATH=src pytest tests/ -v
-# 35 tests, including cross-language compatibility tests
+# 50 tests, including cross-language compatibility and Values Floor
 ```
 
 ## License
