@@ -27,7 +27,7 @@ Remote MCP: https://mcp.aeoess.com/sse
 Docs: https://aeoess.com/llms-full.txt
 """
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 # Crypto
 from .crypto import generate_key_pair, sign, verify, public_key_from_private
@@ -156,4 +156,18 @@ from .commerce import (
     get_spend_summary,
     sign_commerce_receipt,
     verify_commerce_receipt,
+)
+
+# Principal Identity
+from .principal import (
+    create_principal_identity,
+    endorse_agent as endorse_agent_as_principal,
+    verify_endorsement,
+    revoke_endorsement,
+    create_disclosure,
+    verify_disclosure,
+    create_fleet,
+    add_to_fleet,
+    get_fleet_status,
+    revoke_from_fleet,
 )
