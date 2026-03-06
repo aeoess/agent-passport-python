@@ -2,7 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/agent-passport-system)](https://pypi.org/project/agent-passport-system/)
 
-Cryptographic identity, delegation, governance, and attribution for AI agents. Python implementation of the [Agent Passport Protocol](https://aeoess.com).
+Cryptographic identity, delegation, governance, and commerce for AI agents. Full Python implementation of the [Agent Passport Protocol](https://aeoess.com) — all 8 layers.
 
 **Cross-language compatible** with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system). Signatures created in Python verify in TypeScript and vice versa.
 
@@ -63,14 +63,20 @@ assert verify_merkle_proof(hashes[0], proof, root)
 
 ## What's Included
 
-| Module | What It Does |
-|--------|-------------|
-| `crypto` | Ed25519 key generation, signing, verification |
-| `canonical` | Deterministic JSON serialization (cross-language compatible) |
-| `passport` | Agent identity creation, signing, verification, expiry |
-| `delegation` | Scoped delegation chains, sub-delegation, revocation |
-| `attribution` | Merkle proofs, beneficiary tracing, contribution tracking |
-| `values` | Human Values Floor: load YAML/JSON, attestation, compliance, graduated enforcement |
+| Module | Layer | What It Does |
+|--------|-------|-------------|
+| `crypto` | — | Ed25519 key generation, signing, verification |
+| `canonical` | — | Deterministic JSON serialization (cross-language compatible) |
+| `passport` | 1 | Agent identity creation, signing, verification, expiry |
+| `delegation` | 1 | Scoped delegation chains, sub-delegation, revocation |
+| `values` | 2 | Human Values Floor: load YAML/JSON, attestation, compliance, graduated enforcement |
+| `attribution` | 3 | Merkle proofs, beneficiary tracing, contribution tracking |
+| `agora` | 4 | Signed message feeds, topics, threading, agent registry |
+| `intent` | 5a | Roles, deliberation, consensus, tradeoff evaluation, precedents |
+| `policy` | 5b | 3-signature chain, FloorValidatorV1, action intents |
+| `coordination` | 6 | Task lifecycle: briefs, evidence, review, handoff, deliverables |
+| `integration` | 7 | Cross-layer bridges (commerce+intent, coord+agora, etc.) |
+| `commerce` | 8 | 4-gate checkout, human approval, spend tracking, receipts |
 
 ## Cross-Language Compatibility
 
@@ -90,14 +96,18 @@ assert canonical_json(data) == '{"a":2,"nested":{"a":1,"b":3},"z":1}'
 
 ## Protocol Layers
 
-This Python SDK implements 4 of the 8 Agent Passport Protocol layers:
+This Python SDK implements all 8 Agent Passport Protocol layers:
 
-1. **Identity** — Ed25519 passports with capabilities and vote weight
-2. **Delegation** — Scoped authority with spend limits and depth controls
-3. **Attribution** — Merkle proofs for contribution tracking
-4. **Values Floor** — 7 principles (F-001 through F-007), YAML/JSON loading, attestation, compliance evaluation, graduated enforcement (inline/audit/warn)
+1. **Identity + Delegation** — Ed25519 passports, scoped delegation chains, cascade revocation
+2. **Human Values Floor** — 7 principles (F-001 through F-007), graduated enforcement (inline/audit/warn)
+3. **Beneficiary Attribution** — Merkle proofs for contribution tracking
+4. **Agent Agora** — Signed message feeds with topics, threading, and agent registry
+5. **Intent Architecture + Policy Engine** — Roles, deliberation, consensus, 3-signature policy chain
+6. **Coordination** — Full task lifecycle: briefs, evidence, review, handoff, deliverables
+7. **Integration Wiring** — Cross-layer bridges (commerce+intent, coordination+agora)
+8. **Agentic Commerce** — 4-gate checkout, human approval, spend limits
 
-The remaining layers (Agora, Intent Architecture, Coordination, Commerce) are available in the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) and via the [MCP server](https://mcp.aeoess.com/sse).
+Full parity with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system). Also available via the [MCP server](https://mcp.aeoess.com/sse).
 
 ## Links
 
@@ -113,7 +123,7 @@ The remaining layers (Agora, Intent Architecture, Coordination, Commerce) are av
 ```bash
 pip install pynacl pytest
 PYTHONPATH=src pytest tests/ -v
-# 50 tests, including cross-language compatibility and Values Floor
+# 79 tests across 11 test files, covering all 8 protocol layers
 ```
 
 ## License

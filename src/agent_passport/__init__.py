@@ -3,6 +3,8 @@
 Cryptographic identity, delegation, governance, and attribution for AI agents.
 Cross-language compatible with the TypeScript SDK (npm: agent-passport-system).
 
+8 protocol layers. Full parity with the TypeScript SDK.
+
 Quick start:
     from agent_passport import create_passport, verify_passport
 
@@ -25,7 +27,7 @@ Remote MCP: https://mcp.aeoess.com/sse
 Docs: https://aeoess.com/llms-full.txt
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 # Crypto
 from .crypto import generate_key_pair, sign, verify, public_key_from_private
@@ -49,13 +51,8 @@ from .delegation import (
     sub_delegate,
     revoke_delegation,
     create_action_receipt,
-)
-
-# Attribution (Layer 3 — Merkle proofs)
-from .attribution import (
-    build_merkle_root,
-    get_merkle_proof,
-    verify_merkle_proof,
+    scope_covers,
+    scope_authorizes,
 )
 
 # Values Floor (Layer 2 — Human Values Floor)
@@ -68,4 +65,95 @@ from .values import (
     verify_attestation,
     evaluate_compliance,
     negotiate_common_ground,
+)
+
+# Attribution (Layer 3 — Merkle proofs)
+from .attribution import (
+    build_merkle_root,
+    get_merkle_proof,
+    verify_merkle_proof,
+)
+
+# Agora (Layer 4 — Communication)
+from .agora import (
+    create_agora_message,
+    verify_agora_message,
+    create_feed,
+    append_to_feed,
+    get_thread,
+    get_by_topic,
+    get_by_author,
+    get_topics,
+    create_registry,
+    register_agent,
+    verify_feed,
+)
+
+# Intent Architecture (Layer 5a — Roles, Deliberation, Consensus)
+from .intent import (
+    assign_role,
+    create_tradeoff_rule,
+    evaluate_tradeoff,
+    create_intent_document,
+    create_deliberation,
+    submit_consensus_round,
+    evaluate_consensus,
+    resolve_deliberation,
+    get_precedents_by_topic,
+    cite_precedent,
+    create_intent_passport_extension,
+)
+
+# Policy Engine (Layer 5b — 3-signature chain)
+from .policy import (
+    create_action_intent,
+    verify_action_intent,
+    evaluate_intent,
+    verify_policy_decision,
+    create_policy_receipt,
+    verify_policy_receipt,
+    FloorValidatorV1,
+    request_action,
+)
+
+# Coordination (Layer 6 — Task lifecycle)
+from .coordination import (
+    create_task_brief,
+    verify_task_brief,
+    assign_task,
+    accept_task,
+    submit_evidence,
+    verify_evidence,
+    review_evidence,
+    verify_review,
+    handoff_evidence,
+    verify_handoff,
+    submit_deliverable,
+    verify_deliverable,
+    complete_task,
+    verify_completion,
+    create_task_unit,
+    get_task_status,
+    validate_task_unit,
+)
+
+# Integration Wiring (Layer 7 — Cross-layer bridges)
+from .integration import (
+    commerce_with_intent,
+    commerce_receipt_to_action_receipt,
+    validate_commerce_delegation,
+    coordination_to_agora,
+    post_task_created,
+    post_review_completed,
+    post_task_completed,
+)
+
+# Agentic Commerce (Layer 8 — ACP)
+from .commerce import (
+    commerce_preflight,
+    request_human_approval,
+    create_commerce_delegation,
+    get_spend_summary,
+    sign_commerce_receipt,
+    verify_commerce_receipt,
 )

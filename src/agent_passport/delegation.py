@@ -185,6 +185,19 @@ def revoke_delegation(
     return revocation
 
 
+def scope_covers(parent_scope: list[str], child_scope: list[str]) -> bool:
+    """Check if parent scope covers all child scopes."""
+    return all(any(s == c or c.startswith(s + ":") for s in parent_scope) for c in child_scope)
+
+
+def scope_authorizes(delegation_scope: list[str], required: str) -> bool:
+    """Check if a delegation scope list authorizes a required scope."""
+    for s in delegation_scope:
+        if s == required or required.startswith(s + ":"):
+            return True
+    return False
+
+
 def create_action_receipt(
     agent_id: str,
     delegation: dict,
