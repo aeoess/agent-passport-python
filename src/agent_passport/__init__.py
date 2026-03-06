@@ -25,7 +25,7 @@ Remote MCP: https://mcp.aeoess.com/sse
 Docs: https://aeoess.com/llms-full.txt
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 # Crypto
 from .crypto import generate_key_pair, sign, verify, public_key_from_private
@@ -56,4 +56,16 @@ from .attribution import (
     build_merkle_root,
     get_merkle_proof,
     verify_merkle_proof,
+)
+
+# Values Floor (Layer 2 — Human Values Floor)
+from .values import (
+    load_floor,
+    load_floor_from_file,
+    resolve_enforcement_mode,
+    effective_enforcement_mode,
+    attest_floor,
+    verify_attestation,
+    evaluate_compliance,
+    negotiate_common_ground,
 )
