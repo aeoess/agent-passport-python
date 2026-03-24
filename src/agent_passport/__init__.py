@@ -27,7 +27,7 @@ Remote MCP: https://mcp.aeoess.com/sse
 Docs: https://aeoess.com/llms-full.txt
 """
 
-__version__ = "0.4.0"
+__version__ = "0.6.0"
 
 # Crypto
 from .crypto import generate_key_pair, sign, verify, public_key_from_private
@@ -170,4 +170,32 @@ from .principal import (
     add_to_fleet,
     get_fleet_status,
     revoke_from_fleet,
+)
+
+
+# Data Source Registration (Module 36A)
+from .data_source import (
+    register_self_attested_source,
+    register_custodian_attested_source,
+    register_gateway_observed_source,
+    verify_source_receipt,
+    revoke_source_receipt,
+    record_data_access,
+    verify_data_access_receipt,
+    check_terms_compliance,
+    compose_terms,
+    build_data_access_merkle_root,
+)
+
+# Training Attribution
+from .training_attribution import (
+    create_training_attribution,
+    verify_training_attribution,
+)
+
+# Data Settlement (Module 39)
+from .data_settlement import (
+    generate_settlement,
+    verify_settlement,
+    generate_compliance_report,
 )
