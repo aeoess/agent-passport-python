@@ -10,7 +10,7 @@ readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.9"
 authors = [
-    { name = "Tymofii Pidlisnyi", email = "tima@aeoess.com" }
+    { name = "Tymofii Pidlisnyi", email = "signal@aeoess.com" }
 ]
 keywords = ["agent", "identity", "ed25519", "delegation", "mcp", "ai-agents", "governance"]
 classifiers = [
