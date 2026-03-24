@@ -1,3 +1,4 @@
+# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Agent Passport — create, sign, verify, and manage agent identity.
 
 Core Layer 1 operations for the Agent Passport System.

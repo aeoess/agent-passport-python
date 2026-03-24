@@ -1,3 +1,4 @@
+# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Agent Agora — Protocol-Native Communication Layer.
 
 Layer 4: Every message is Ed25519 signed. Only passport-holders can post.

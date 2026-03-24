@@ -1,3 +1,4 @@
+# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Policy Engine — Three-signature chain for Values Floor enforcement.
 
 Layer 5b of the Agent Social Contract.

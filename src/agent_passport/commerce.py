@@ -1,3 +1,4 @@
+# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Agentic Commerce — 4-gate checkout pipeline with human approval.
 
 Layer 8 of the Agent Social Contract.

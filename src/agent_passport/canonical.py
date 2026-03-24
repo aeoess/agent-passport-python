@@ -1,3 +1,4 @@
+# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Canonical JSON serialization for cross-language signature interoperability.
 
 Produces identical output to the TypeScript SDK's canonicalize() function.

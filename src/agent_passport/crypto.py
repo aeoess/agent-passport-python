@@ -1,3 +1,4 @@
+# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Ed25519 cryptographic operations for Agent Passport System.
 
 Uses PyNaCl (libsodium) for Ed25519 key generation, signing, and verification.

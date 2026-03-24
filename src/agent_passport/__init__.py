@@ -1,3 +1,4 @@
+# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Agent Passport System — Python SDK.
 
 Cryptographic identity, delegation, governance, and attribution for AI agents.

@@ -1,3 +1,4 @@
+# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Data Settlement Protocol — Module 39.
 
 Takes access receipts + DataTerms → generates settlement records.

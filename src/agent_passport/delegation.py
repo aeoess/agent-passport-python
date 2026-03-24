@@ -1,3 +1,4 @@
+# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Delegation chains — scoped authority with depth limits and revocation.
 
 Layer 1 delegation operations for the Agent Passport System.

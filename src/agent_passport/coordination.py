@@ -1,3 +1,4 @@
+# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Coordination Primitives — Protocol-native task coordination for multi-agent units.
 
 Layer 6 of the Agent Social Contract.

@@ -1,3 +1,4 @@
+# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Beneficiary attribution — Merkle proofs and contribution tracking.
 
 Layer 3 operations for the Agent Passport System.

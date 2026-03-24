@@ -1,3 +1,4 @@
+# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Intent Architecture — Roles, Deliberation, Consensus, Precedents.
 
 Layer 5a of the Agent Social Contract.

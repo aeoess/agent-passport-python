@@ -1,3 +1,4 @@
+# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Training Attribution — tracks when agent outputs are used for training.
 
 Links Module 36A access receipts to downstream training events.

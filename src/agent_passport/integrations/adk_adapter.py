@@ -1,3 +1,4 @@
+# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """APSPolicyEvaluator — Agent Passport System adapter for Google ADK GovernancePlugin.
 
 Maps ADK's PolicyEvaluator protocol to APS's 3-signature policy chain:

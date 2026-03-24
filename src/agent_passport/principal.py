@@ -1,3 +1,4 @@
+# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Principal Identity — cryptographic chain from human to agent.
 
 The principal (human or org) gets their own Ed25519 keypair and endorses agents,
