@@ -28,7 +28,7 @@ Remote MCP: https://mcp.aeoess.com/sse
 Docs: https://aeoess.com/llms-full.txt
 """
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 # Crypto
 from .crypto import generate_key_pair, sign, verify, public_key_from_private
@@ -199,4 +199,16 @@ from .data_settlement import (
     generate_settlement,
     verify_settlement,
     generate_compliance_report,
+)
+
+# Governance Block (HTML-embedded governance)
+from .governance_block import (
+    generate_governance_block,
+    verify_governance_block,
+    render_governance_html,
+    render_governance_meta,
+    parse_governance_block_from_html,
+    embed_governance,
+    is_usage_permitted,
+    DEFAULT_REVOCATION_POLICY,
 )
