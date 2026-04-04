@@ -28,7 +28,7 @@ Remote MCP: https://mcp.aeoess.com/sse
 Docs: https://aeoess.com/llms-full.txt
 """
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 
 # Crypto
 from .crypto import generate_key_pair, sign, verify, public_key_from_private
@@ -211,4 +211,35 @@ from .governance_block import (
     embed_governance,
     is_usage_permitted,
     DEFAULT_REVOCATION_POLICY,
+)
+
+# DID Interop (did:key, did:web, passport-to-DID-document)
+from .did_interop import (
+    to_did_key,
+    from_did_key,
+    did_web_to_url,
+    passport_to_did_document,
+)
+
+# Identity Bridge (SPIFFE, OAuth)
+from .identity_bridge import (
+    parse_spiffe_id,
+    import_spiffe_svid,
+    map_oauth_scopes,
+    import_oauth_token,
+)
+
+# VC Wrapper (W3C Verifiable Credentials)
+from .vc_wrapper import (
+    passport_to_verifiable_credential,
+    verify_verifiable_credential,
+    create_verifiable_presentation,
+    verify_verifiable_presentation,
+)
+
+# Credential Request Protocol (Selective Disclosure)
+from .credential_request import (
+    create_credential_request,
+    fulfill_credential_request,
+    verify_credential_response,
 )
