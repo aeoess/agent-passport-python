@@ -2,9 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/agent-passport-system)](https://pypi.org/project/agent-passport-system/)
 
-Cryptographic identity, delegation, governance, and commerce for AI agents. Full Python implementation of the [Agent Passport Protocol](https://aeoess.com) — all 8 layers.
-
-**Cross-language compatible** with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system). Signatures created in Python verify in TypeScript and vice versa.
+**Enforcement and accountability layer for AI agents. Bring your own identity.** Full Python implementation of the [Agent Passport Protocol](https://aeoess.com), cross-language compatible with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) — signatures created in Python verify in TypeScript and vice versa.
 
 ## Install
 
@@ -14,12 +12,14 @@ pip install agent-passport-system
 
 ## Quick Start
 
+Lead with the minimum you need to get a signed passport and a verifiable delegation — identity, delegation, policy evaluation. Import the rest from `agent_passport` when you need it. Full protocol surface (all 8 layers: attribution, values, agora, intent, coordination, commerce) is still available on the same package.
+
 ```python
 from agent_passport import (
     generate_key_pair, create_passport, sign_passport, verify_passport,
     create_delegation, verify_delegation, create_action_receipt,
-    build_merkle_root, get_merkle_proof, verify_merkle_proof,
-    load_floor, attest_floor, verify_attestation, evaluate_compliance,
+    # full surface available — import more when you need it:
+    # build_merkle_root, load_floor, attest_floor, evaluate_compliance, ...
 )
 
 # Create agent identity (Ed25519)
