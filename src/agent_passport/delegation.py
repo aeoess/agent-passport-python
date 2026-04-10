@@ -41,7 +41,7 @@ def create_delegation(
     expiry = now + timedelta(days=expires_in_days)
 
     delegation = {
-        "delegationId": f"del_{uuid.uuid4()}",
+        "delegationId": f"del_{str(uuid.uuid4())[:12]}",
         "delegatedTo": delegated_to,
         "delegatedBy": delegated_by,
         "scope": scope,
@@ -141,7 +141,7 @@ def sub_delegate(
     expiry = now + timedelta(days=expires_in_days)
 
     delegation = {
-        "delegationId": f"del_{uuid.uuid4()}",
+        "delegationId": f"del_{str(uuid.uuid4())[:12]}",
         "delegatedTo": delegated_to,
         "delegatedBy": parent["delegatedTo"],  # sub-delegator is parent's delegate
         "scope": scope,

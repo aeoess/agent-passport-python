@@ -25,7 +25,15 @@ def canonicalize(obj) -> str:
         return "null"
     if isinstance(obj, bool):
         return "true" if obj else "false"
-    if isinstance(obj, (int, float)):
+    if isinstance(obj, int):
+        return json.dumps(obj)
+    if isinstance(obj, float):
+        import math
+        if math.isnan(obj) or math.isinf(obj):
+            raise ValueError(f"Cannot canonicalize {obj} — NaN/Infinity are not valid JSON per RFC 8259")
+        # Match TypeScript: JSON.stringify(1.0) produces "1", not "1.0"
+        if obj == int(obj):
+            return str(int(obj))
         return json.dumps(obj)
     if isinstance(obj, str):
         return json.dumps(obj)
