@@ -123,7 +123,7 @@ Full parity with the [TypeScript SDK](https://www.npmjs.com/package/agent-passpo
 ```bash
 pip install pynacl pytest
 PYTHONPATH=src pytest tests/ -v
-# 198 tests across 21 test files, covering all 8 protocol layers
+# 328 tests across 25 test files, covering all 8 protocol layers
 ```
 
 ## License
