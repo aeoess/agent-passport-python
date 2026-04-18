@@ -10,6 +10,9 @@
 pip install agent-passport-system
 ```
 
+> **v2.0.0 alignment (2026-04-17)**: Published as `2.0.0b0` pre-release on PyPI, matching the architectural separation shipped in `agent-passport-system` npm v2.0.0. Install with `pip install --pre agent-passport-system` to opt in to the v2 beta. Default `pip install` continues to pull v0.15.0 until v2.0.0 final is released. The Python SDK's public API is already protocol-only — no breaking changes for most users.
+
+
 ## Quick Start
 
 Lead with the minimum you need to get a signed passport and a verifiable delegation — identity, delegation, policy evaluation. Import the rest from `agent_passport` when you need it. Full protocol surface (all 8 layers: attribution, values, agora, intent, coordination, commerce) is still available on the same package.
