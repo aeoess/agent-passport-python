@@ -243,3 +243,43 @@ from .credential_request import (
     fulfill_credential_request,
     verify_credential_response,
 )
+
+
+# Mutual Authentication v1 (SDK v2.2.0)
+# Closes the asymmetry where agents authenticate to systems but systems do
+# not authenticate to agents. Standalone primitive. No federation.
+from .v2.mutual_auth import (
+    # types
+    MutualAuthRole,
+    MutualAuthCertificate,
+    TrustAnchor,
+    TrustAnchorBundle,
+    MutualAuthHello,
+    MutualAuthAttest,
+    MutualAuthSession,
+    MutualAuthResult,
+    MutualAuthPolicy,
+    MutualAuthFailureReason,
+    # certificate
+    build_certificate,
+    sign_certificate,
+    certificate_id,
+    verify_certificate_signature,
+    is_certificate_temporally_valid,
+    check_anchor,
+    # trust bundle
+    build_bundle,
+    sign_bundle,
+    verify_bundle,
+    # handshake
+    new_nonce,
+    build_hello,
+    choose_version,
+    build_attest,
+    verify_attest,
+    derive_session,
+    is_session_active,
+)
+
+# Canonical JCS (RFC 8785 strict) for modules requiring cross-language signature interop
+from .canonical import canonicalize_jcs
