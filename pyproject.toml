@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agent-passport-system"
-version = "2.2.0"
-description = "Python SDK for the Agent Passport System. Identity, delegation, governance, data source registration, training attribution, per-period attribution settlement, mutual authentication. Cross-language parity with agent-passport-system npm v2.4.0-alpha. Product intelligence lives in the private gateway."
+version = "2.3.0"
+description = "Python SDK for the Agent Passport System. Identity, delegation, governance, data source registration, training attribution, per-period attribution settlement, mutual authentication. Cross-language parity with agent-passport-system npm v2.5.0-alpha (Wave 1 accountability primitives in JS SDK; Python port deferred). Product intelligence lives in the private gateway."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.9"
