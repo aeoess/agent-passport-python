@@ -1,0 +1,67 @@
+{
+  "kind": "c_axis",
+  "description": "Five providers with varied workloads — sums to 1.0, larger providers dominate",
+  "input": {
+    "providers": [
+      {
+        "provider_did": "did:compute:anthropic",
+        "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "prompt_tokens": 2000,
+        "completion_tokens": 1500
+      },
+      {
+        "provider_did": "did:compute:openai",
+        "hardware_attestation_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+        "prompt_tokens": 1500,
+        "completion_tokens": 800
+      },
+      {
+        "provider_did": "did:compute:google",
+        "hardware_attestation_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+        "prompt_tokens": 800,
+        "completion_tokens": 400
+      },
+      {
+        "provider_did": "did:compute:xai",
+        "hardware_attestation_hash": "4444444444444444444444444444444444444444444444444444444444444444",
+        "prompt_tokens": 500,
+        "completion_tokens": 200
+      },
+      {
+        "provider_did": "did:compute:meta",
+        "hardware_attestation_hash": "5555555555555555555555555555555555555555555555555555555555555555",
+        "prompt_tokens": 300,
+        "completion_tokens": 100
+      }
+    ]
+  },
+  "expected": {
+    "weights": [
+      {
+        "provider_did": "did:compute:anthropic",
+        "compute_share": "0.460993",
+        "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      {
+        "provider_did": "did:compute:openai",
+        "compute_share": "0.276596",
+        "hardware_attestation_hash": "2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      {
+        "provider_did": "did:compute:google",
+        "compute_share": "0.141844",
+        "hardware_attestation_hash": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      {
+        "provider_did": "did:compute:xai",
+        "compute_share": "0.078014",
+        "hardware_attestation_hash": "4444444444444444444444444444444444444444444444444444444444444444"
+      },
+      {
+        "provider_did": "did:compute:meta",
+        "compute_share": "0.042553",
+        "hardware_attestation_hash": "5555555555555555555555555555555555555555555555555555555555555555"
+      }
+    ]
+  }
+}

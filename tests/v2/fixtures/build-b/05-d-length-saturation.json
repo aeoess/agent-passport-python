@@ -1,0 +1,37 @@
+{
+  "kind": "d_axis",
+  "description": "Sub-linear length weight: 10-token vs 100k-token source; huge does NOT get 99%",
+  "input": {
+    "sources": [
+      {
+        "source_did": "did:data:short",
+        "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "role": "primary_source",
+        "timestamp": "2026-04-16T00:00:00.000Z",
+        "content_length": 10
+      },
+      {
+        "source_did": "did:data:huge",
+        "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "role": "primary_source",
+        "timestamp": "2026-04-16T00:00:00.000Z",
+        "content_length": 100000
+      }
+    ],
+    "action_timestamp": "2026-04-16T12:00:00.000Z"
+  },
+  "expected": {
+    "weights": [
+      {
+        "source_did": "did:data:short",
+        "contribution_weight": "0.172376",
+        "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "source_did": "did:data:huge",
+        "contribution_weight": "0.827624",
+        "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ]
+  }
+}

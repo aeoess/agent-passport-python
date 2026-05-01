@@ -29,7 +29,7 @@ from agent_passport.v2.attribution_settlement import (
 )
 
 
-FIXTURE_DIR = Path("/Users/tima/aeoess_web/specs/fixtures/build-c")
+FIXTURE_DIR = Path(__file__).parent / "fixtures" / "build-c"
 
 
 def _load_fixtures():

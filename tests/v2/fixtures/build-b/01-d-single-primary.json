@@ -1,0 +1,25 @@
+{
+  "kind": "d_axis",
+  "description": "Single primary source, same-day, reference length — expect weight 1.000000",
+  "input": {
+    "sources": [
+      {
+        "source_did": "did:data:single",
+        "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "role": "primary_source",
+        "timestamp": "2026-04-16T12:00:00.000Z",
+        "content_length": 1000
+      }
+    ],
+    "action_timestamp": "2026-04-16T12:00:00.000Z"
+  },
+  "expected": {
+    "weights": [
+      {
+        "source_did": "did:data:single",
+        "contribution_weight": "1.000000",
+        "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ]
+  }
+}

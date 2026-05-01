@@ -1,0 +1,49 @@
+{
+  "kind": "d_axis",
+  "description": "Three sources with distinct roles, otherwise identical — role weights drive the split",
+  "input": {
+    "sources": [
+      {
+        "source_did": "did:data:primary",
+        "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "role": "primary_source",
+        "timestamp": "2026-04-16T00:00:00.000Z",
+        "content_length": 1000
+      },
+      {
+        "source_did": "did:data:supporting",
+        "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "role": "supporting_evidence",
+        "timestamp": "2026-04-16T00:00:00.000Z",
+        "content_length": 1000
+      },
+      {
+        "source_did": "did:data:context",
+        "access_receipt_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "role": "context_only",
+        "timestamp": "2026-04-16T00:00:00.000Z",
+        "content_length": 1000
+      }
+    ],
+    "action_timestamp": "2026-04-16T12:00:00.000Z"
+  },
+  "expected": {
+    "weights": [
+      {
+        "source_did": "did:data:primary",
+        "contribution_weight": "0.526316",
+        "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "source_did": "did:data:supporting",
+        "contribution_weight": "0.315789",
+        "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      {
+        "source_did": "did:data:context",
+        "contribution_weight": "0.157895",
+        "access_receipt_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      }
+    ]
+  }
+}

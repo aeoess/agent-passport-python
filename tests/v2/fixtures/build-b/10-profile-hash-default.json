@@ -1,0 +1,29 @@
+{
+  "kind": "profile_hash",
+  "description": "Hash of DEFAULT_WEIGHT_PROFILE — must be byte-identical across TS and Python",
+  "input": {
+    "profile": {
+      "version": "v0.1",
+      "role_weights": {
+        "primary_source": 1,
+        "supporting_evidence": 0.6,
+        "context_only": 0.3,
+        "background_retrieval": 0.1
+      },
+      "recency": {
+        "min_recency": 0.2,
+        "lambda": 0.6931471805599453,
+        "tau_days": 30
+      },
+      "length": {
+        "reference_length": 1000
+      },
+      "compute": {
+        "completion_multiplier": 3
+      }
+    }
+  },
+  "expected": {
+    "hash": "569a0814ea588a69d9395ffa9079c53ff3bff0fa40f8903aef35eba0ac54f007"
+  }
+}

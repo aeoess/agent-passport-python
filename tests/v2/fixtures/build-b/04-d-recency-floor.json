@@ -1,0 +1,37 @@
+{
+  "kind": "d_axis",
+  "description": "Fresh source vs ancient source floored at min_recency=0.2 — fresh gets ~5× weight",
+  "input": {
+    "sources": [
+      {
+        "source_did": "did:data:fresh",
+        "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "role": "primary_source",
+        "timestamp": "2026-04-16T00:00:00.000Z",
+        "content_length": 1000
+      },
+      {
+        "source_did": "did:data:ancient",
+        "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "role": "primary_source",
+        "timestamp": "2010-01-01T00:00:00.000Z",
+        "content_length": 1000
+      }
+    ],
+    "action_timestamp": "2026-04-16T12:00:00.000Z"
+  },
+  "expected": {
+    "weights": [
+      {
+        "source_did": "did:data:fresh",
+        "contribution_weight": "0.831723",
+        "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "source_did": "did:data:ancient",
+        "contribution_weight": "0.168277",
+        "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ]
+  }
+}

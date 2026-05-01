@@ -1,0 +1,37 @@
+{
+  "kind": "d_axis",
+  "description": "Two structurally identical sources → 0.500000 each",
+  "input": {
+    "sources": [
+      {
+        "source_did": "did:data:a",
+        "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "role": "primary_source",
+        "timestamp": "2026-04-16T00:00:00.000Z",
+        "content_length": 500
+      },
+      {
+        "source_did": "did:data:b",
+        "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "role": "primary_source",
+        "timestamp": "2026-04-16T00:00:00.000Z",
+        "content_length": 500
+      }
+    ],
+    "action_timestamp": "2026-04-16T12:00:00.000Z"
+  },
+  "expected": {
+    "weights": [
+      {
+        "source_did": "did:data:a",
+        "contribution_weight": "0.500000",
+        "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "source_did": "did:data:b",
+        "contribution_weight": "0.500000",
+        "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ]
+  }
+}

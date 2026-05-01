@@ -1,0 +1,34 @@
+{
+  "kind": "c_axis",
+  "description": "Two providers with identical token counts → 0.500000 each",
+  "input": {
+    "providers": [
+      {
+        "provider_did": "did:compute:a",
+        "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "prompt_tokens": 1000,
+        "completion_tokens": 500
+      },
+      {
+        "provider_did": "did:compute:b",
+        "hardware_attestation_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+        "prompt_tokens": 1000,
+        "completion_tokens": 500
+      }
+    ]
+  },
+  "expected": {
+    "weights": [
+      {
+        "provider_did": "did:compute:a",
+        "compute_share": "0.500000",
+        "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      {
+        "provider_did": "did:compute:b",
+        "compute_share": "0.500000",
+        "hardware_attestation_hash": "2222222222222222222222222222222222222222222222222222222222222222"
+      }
+    ]
+  }
+}

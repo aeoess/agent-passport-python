@@ -1,0 +1,1112 @@
+{
+  "description": "20-action period with a per-receipt D-axis residual bucket; settlement bucket aggregates",
+  "gateway_public_key": "e873011092659580c5272ca097e9baacd0f7f0ff9330f2cd978e902b13c2b2d4",
+  "gateway_did": "did:aeoess:gateway:build-c-fixture-e87301109265",
+  "period": {
+    "t0": "2026-04-05T00:00:00.000Z",
+    "t1": "2026-04-06T00:00:00.000Z",
+    "period_id": "fixture-c-03-residual"
+  },
+  "input_receipts": [
+    {
+      "action_ref": "4e3104a37b4daabd956903c5c6e32c7d38d8ead37c9fbd4269e83aae059aeed0",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-0",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "da1c4d6b0002095864514eda609cac2724a87c46bfc022234e358a37401fcde0"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-0",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "54b14db944c5fda16b034d96034a8c98bd69cc9fe466250090f73a324e98eb98",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T00:00:00.000Z",
+      "signature": "a684c7e96b842b46ae05627ccf580f2e77578c76a6fd8e79aae5cbc8f8eadd9562a547c842c466d30dcaa3fa339adf57ac397f35a33415cee0aa4d4450398407"
+    },
+    {
+      "action_ref": "27c9cffe1576110956f22fe2d8bad65fd34ad4f2e5e6e5110380bd7bbfd1bc1f",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-1",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "c7c8368c99aae49e16ca0869e7973d11404f94821495df457cf7f0ce74d6092d"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-1",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "a3a204d7e109dc25f91fa9eed2161ce88eed222ba8ad47276ab6de9c526fc994",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T01:00:00.000Z",
+      "signature": "6efb5105d082e2b46cbcf4eaa17b35ef5067fe2a4be5fea227718f14b197e09b95512a069c623d716cc35b55a14389f7781a3abfe0d808ca58e83d69cc305303"
+    },
+    {
+      "action_ref": "dab44f5e31f4e35439efe5ce6062b0507af200eeab377483a5031ecbe92df692",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-2",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "d7ef2d945e8de31cb07712e700e140fb7a28f001e4ca52f9f10b787eab936457"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-2",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "c88d662f2f81176ca394f91849d3d9e16b222ff0a352399aa682d368d5e00b22",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T02:00:00.000Z",
+      "signature": "d283c5d7b5b24a724979523585b6aae1d13315e23cfb66980b53b4381a5d91bef4f231a8b87135536d13587632476fc3b06f250870d80df0e86639bc5190c402"
+    },
+    {
+      "action_ref": "ee699b8a86c40846d88db96f2f294423c56cb44c358c1b4c743a352e9118a4db",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-0",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "b67705523df02e5b1b5f29cbc99720e720bd52cd11e737116683acae2ab3d5ad"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-3",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "067e3c8483b0d34323b887b23da71cffb265f1b120c742d5b7f1d34f3f4f8520",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T03:00:00.000Z",
+      "signature": "81033a1f8b0bb810d3baf75e5b937e8ed1c965d578666558bd6f3a5d55a220fbbebd0ca013028b88e6e22788007a69b38c04e16abab25dd674a9a93bf744f909"
+    },
+    {
+      "action_ref": "c0e11607d28555b2707958cb0d34e142654af0bb60a0273bc19f810d4c597bbe",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-1",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "2eb6af09ac88179ee431d4dba7fc6a48fda8051eb744bd7e2c520bf34972a53c"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-4",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "6a71bf318c14305db5db8a8c5282e65a1130a936c960cd84068b65329384e1ce",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T04:00:00.000Z",
+      "signature": "c591e01d1b7d6d5ca7e67d412b78448a175f27d6ee6f72725e3600603e7fa5309b179ce512ad75ae8967a07b186ddc67adb132f7d768d3df1756592be893c804"
+    },
+    {
+      "action_ref": "8fbfd6bd2198496165413ace0165a128e6eb17b7f12ca80d33432bdb456eeb7b",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-2",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "76ab4daf78352c927aedd47ce1e518c6bb989ce4090399aee747f3a7e7c9cf8f"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-5",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "aca851ab43f3963ded695c3d393f429ab4330abe3b9d50e54b66e741e67a571e",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T05:00:00.000Z",
+      "signature": "8eb3aeedc2357d9fe393efe6b829f82191b98e9c873ca21947ea16f5e4695d52c1eee87508950b745142e74473655314dc94cea8acb1372297238ea894411005"
+    },
+    {
+      "action_ref": "32902f3d29207b86e46b9de2b9ad03582a2d198f2a380bff3f5665c27706dea5",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-0",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "fb70d08762d85b803d1af1c4bb0d1a3c0be5c3b69139ffb659498bd10ed217a2"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-6",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "0a92956e2935822c9764d559db4fc5e41f339d1be180ef13edabfe4bbbf45b89",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T06:00:00.000Z",
+      "signature": "10d3f218d90b2193825832706c3c073bbac147e9f1bce37c750483fcd6c5567e8e178e5b74143186131ca7b45aab0fbebdd5dc7c61b7ecd5df3adaf131f62803"
+    },
+    {
+      "action_ref": "20e7a9865cca021e460c826e01b078596ca579143af9b31c540afd06076bafa7",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-1",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "a9939bc78e2269d93399da0212768bf025b487b2aaff2de87120515860f731ef"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-7",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "6ecec54ce70091de4f6325ae3d7930c08ff3eafd26cae351f7ac589801a2e576",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T07:00:00.000Z",
+      "signature": "07e3b917b18cf6cc986db56da36a33c4e81955ad54c0dcdd14f93d50e6cb78f23617caf4ab82e5d490dbfb9d90d5bd3bd41333e28e91198912f2b6fbef6b4606"
+    },
+    {
+      "action_ref": "d644fe18378d9789d5f6f026f1722a20856094442ac4f08e11ef3a044a45c525",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-2",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "18d736908c484bda6f7316df48fb528e98751d6a6cc2376f1ed873bf69f43ff4"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-8",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "26a91f16fd617fe2695b47dcd68f19a51cb249f5dee0dc1831a206d329a836df",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T08:00:00.000Z",
+      "signature": "3458d9924eb5cdbac4c54d15438529737bd395714e3a7b28e4251dabc9859f47ad1aadfc934dddb5eb8fbbea5776f3d399180284429d30067a38dc359f5d6400"
+    },
+    {
+      "action_ref": "e6c0d5504c5205a05184c25da2628783eda8e737453a3d475c4dddb41f1aca0a",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-0",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "a456333165ad9c75c58877c7915ddfe69f692275acfb74f4a9593c82a8fe42d9"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-9",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "cf98642f55fbfff5d36e737c01528f1765ab0deb9d34b94f3c4eb9bf238af2b6",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T09:00:00.000Z",
+      "signature": "3aa67570a79de08fad5ea08cf3caefd4e630c9e10882d4fa58108ede8bcc102ca6d6e47722176b15cc3cc63de40a1aa4ca241e629b7682771291708942621208"
+    },
+    {
+      "action_ref": "a229d4c97fe5a870db3a64d47408b54038822fa79f6649f3525a067ea2726c69",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-1",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "c3e387ced146bfee7dbff66be20a39b5758cafb9608454ed050c5a457b085feb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-10",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "ae9bbb1562867097db1e5479e28af4440ee04babf255cba1093cb75c65b74bb3",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T10:00:00.000Z",
+      "signature": "6a8408c735947662b46f42edb0fdb4eae2f720f061d3de2f5410cf9a8920961e41432d46986741032ad607d3ee26857b01fd4ab954cd9dc6a71bcc650fd5230c"
+    },
+    {
+      "action_ref": "e23537f2e4a71c018907f2c14a1957dfd68b013b5ef366a341db68943cf374b5",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-2",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "a4d5013a7480ec54258f7a8e93fc34d9e509412ca9a7674671afd17fb94b8972"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-11",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "9fc7e92ac921204801f19198ee19a5194d3dd79c9ae140020d0c1260ce2e6ff4",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T11:00:00.000Z",
+      "signature": "331f2c52a3e30c027d525a0e72ac6b81caf841f3211df05cfae86298d8502bf050191125432799e1a0daf31c60c539c96f9c0f77a44875c36c58e0294bf7670a"
+    },
+    {
+      "action_ref": "24b0b8fb54ef0cd0b22cc4ef9131390ab4680ee098ae993ea8d68ddfe1573244",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-0",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "fe96ba0221ccd72de3548311a7799a03595feb7842208707979707fca0ba1bc1"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-12",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "afc476c394efa24459d2ab4eebbdffb98d297c01996f50061549a1fdd73e8dc3",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T12:00:00.000Z",
+      "signature": "74343db980083d0e0afb60c5e5efd3caf89e49caa1374df11aa239b4b5314516552ea81060af78ab16ef6885ae9c1b38c941e665f529ab023169093bb3855008"
+    },
+    {
+      "action_ref": "1a1063bcec805a8c8187b0590a7c5f56a3fc1e89b972d9dd59aa98008f72342e",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-1",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "5e9476e8297a9b0a749475917808ce8ec1a20a9f271443347e04905614f74488"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-13",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "ca85c9b4f7729ef7cc8f1074c125a2c5dc8fe992243fc931d797c413984b35c7",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T13:00:00.000Z",
+      "signature": "00701907058a6bb9c95c11fceb97edb88497f39bf6639d2c178c5c9a6e64ae67099c0734894cc56b8954062bfa3f395d1b7d2a2ee2b500bcbbc9a4bb5c6f4200"
+    },
+    {
+      "action_ref": "41e7974788fb28c016bf6ca8c6b70273a7b65f4bbce69777f20344cf5307ba0c",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-2",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "65b0160d4523f191bdc285d0f1e4373c5bb0c52d29dd6965c4f50918ebafc8cc"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-14",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "a085da65297743e03dd1583b5123001ab5da742b51408b4c0759b749e578ca5a",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T14:00:00.000Z",
+      "signature": "fd758ac098070507fd0fdd285c688fa348f92aeed5a48738187ea74699d71086360cd2fd76c4444b943f5eb784b9b7894a2c799cdc7a2a45d949f844043b9a02"
+    },
+    {
+      "action_ref": "160828a10c46f84512ca304024bdc1cb51d0deb3d6508ba5d926b49ee280715f",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-0",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "b220c4645a54c5c26d0dc64afe6fc7b0ad57e180e25a97359ebbe4485d12a81d"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-15",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "003f75ff0408132045ac567c214a9f2e8a921a33ae65b6fd010ac6cb428a6925",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T15:00:00.000Z",
+      "signature": "06fb32683cfcec3503e4fbd613d6bcf274c7d640c6ea875ef183035d1139f168d794886ef691b64d52ad5424867e1afa9bb3e453a698a4965fe7009452b2a900"
+    },
+    {
+      "action_ref": "ec312d439b68d6fb9ee19b388bebdd92117d73557e3660626678a3ac0950c624",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-1",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "422921f64fdd3acccc0921b67a4b76e3f8ad8c733caef1673eb884a311f4d1e3"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-16",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "07fcc93edf5c2a41a8e157b6105147b7368dc8ccd9432b2306d0e73de56f6163",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T16:00:00.000Z",
+      "signature": "d372efcfa2f260c41990bb6b9b2a179d84ca7a879dcaacea71c72eb5d33aa5055ca3876b79d3015c72ea22e99bbbc29956cbd771ba2f8cb7c2617adb4813500c"
+    },
+    {
+      "action_ref": "276fa613608d25b7f8f4e910aae833a8db8ca19b8e787168f64cbb75cfeb4ea8",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-2",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "48e3cb07d67a019483b2ed2f34185b25e3cf34bcab5e614ca39e339ea522c940"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-17",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "8048c177c997c22af0d623060dfc77fb6e2f69f01aa089dfaea2e4764d5a8d14",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T17:00:00.000Z",
+      "signature": "f18558845645f6651ec264ac4178dd7b6243209c6b46ccb966896616b119140c43001e0f7ac1c6d99c2ef06fb0685c61fe623e7cee2c409a8b444b8653aae807"
+    },
+    {
+      "action_ref": "c4dd27571d14cba36a9e4d9273aafc5b0613cbb2f0b1ea641db2107c92282404",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-0",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "b1df707a0098aae075c46dd9d3ec8081820a268e2ce8a113137377e569c7e579"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-18",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "5db660426a16d5eac5bd026139c5811da1093f7e80bca4af7c3ea2f9e3811938",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T18:00:00.000Z",
+      "signature": "35a4817d3dcd7b739aa1ac762b3f9e7594f9d9fb19f4e5f71a99208eeca7283097a3a91d4f882d0cf54fa2316e67e0c0cd8d16421fe23981c169d04ef55aa70f"
+    },
+    {
+      "action_ref": "b4dfe989f1532f7c125b2c2a9905201ea1abb637a2adf5389add531d8952be14",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:top-1",
+            "contribution_weight": "0.850000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "residual_id": "residual:D",
+            "total_pooled_weight": "0.150000",
+            "count_of_pooled_contributors": 12,
+            "pooled_contributors_hash": "2bd5443534f67a02526bf4d2bb577685fb5f6f92565250f14595d88ce8aabfaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-19",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:big",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "1946076c733de884afa7aad2d0b4a2459d46b1a2f16aa07965fece15e4f78811",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-05T19:00:00.000Z",
+      "signature": "76d8e63ce26ca534f2fd8832083943a465e138cffeb5277f6b6c2c5ca6c7b36f33679895db62a100bb79eebe659f2a58350d9f3096bff1c1e0e44bfad6c39c05"
+    }
+  ],
+  "expected_record": {
+    "schema": "aps.settlement.v1",
+    "period": {
+      "t0": "2026-04-05T00:00:00.000Z",
+      "t1": "2026-04-06T00:00:00.000Z",
+      "period_id": "fixture-c-03-residual"
+    },
+    "gateway_did": "did:aeoess:gateway:build-c-fixture-e87301109265",
+    "axes": {
+      "D": {
+        "axis": "D",
+        "period": {
+          "t0": "2026-04-05T00:00:00.000Z",
+          "t1": "2026-04-06T00:00:00.000Z",
+          "period_id": "fixture-c-03-residual"
+        },
+        "total_actions": 20,
+        "contributors": [
+          {
+            "contributor_did": "did:data:top-0",
+            "total_weight": "5.950000",
+            "contribution_count": 7,
+            "merkle_leaf_hash": "2620110aef539a22a9742db40a0093e040158c5b8b8863b5f12a48ba8cabed52"
+          },
+          {
+            "contributor_did": "did:data:top-1",
+            "total_weight": "5.950000",
+            "contribution_count": 7,
+            "merkle_leaf_hash": "bfa9cbe15f143b03834f316d5ab9d1148c38e4be610919051b06086952fbd207"
+          },
+          {
+            "contributor_did": "did:data:top-2",
+            "total_weight": "5.100000",
+            "contribution_count": 6,
+            "merkle_leaf_hash": "b1d0b1578a8d9408af387d0e292c91eda474ae0ef05dede8dc3160fb65f24684"
+          }
+        ],
+        "residual_bucket": {
+          "residual_id": "residual:D",
+          "total_pooled_weight": "3.000000",
+          "count_of_pooled_contributors": 240,
+          "pooled_contributors_hash": "b46c969d76ecb7ad02c8f03125bc3be3dffd471b8bcf959e788c38cf94fab6a2"
+        },
+        "axis_merkle_root": "49d207fb1585499220537be771576e108f44df6eb7de8568a4bca30ba698dd42"
+      },
+      "P": {
+        "axis": "P",
+        "period": {
+          "t0": "2026-04-05T00:00:00.000Z",
+          "t1": "2026-04-06T00:00:00.000Z",
+          "period_id": "fixture-c-03-residual"
+        },
+        "total_actions": 0,
+        "contributors": [],
+        "residual_bucket": null,
+        "axis_merkle_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "G": {
+        "axis": "G",
+        "period": {
+          "t0": "2026-04-05T00:00:00.000Z",
+          "t1": "2026-04-06T00:00:00.000Z",
+          "period_id": "fixture-c-03-residual"
+        },
+        "total_actions": 20,
+        "contributors": [
+          {
+            "contributor_did": "did:gov:root",
+            "total_weight": "20.000000",
+            "contribution_count": 20,
+            "merkle_leaf_hash": "6649f1d65b6b6a41e1df70ea379f60b2a7d7fa6eff0ec28a260817d88e74ed94"
+          }
+        ],
+        "residual_bucket": null,
+        "axis_merkle_root": "6649f1d65b6b6a41e1df70ea379f60b2a7d7fa6eff0ec28a260817d88e74ed94"
+      },
+      "C": {
+        "axis": "C",
+        "period": {
+          "t0": "2026-04-05T00:00:00.000Z",
+          "t1": "2026-04-06T00:00:00.000Z",
+          "period_id": "fixture-c-03-residual"
+        },
+        "total_actions": 20,
+        "contributors": [
+          {
+            "contributor_did": "did:compute:big",
+            "total_weight": "20.000000",
+            "contribution_count": 20,
+            "merkle_leaf_hash": "71410570b7ab8634f517075139055402053ef252cd5af418cc3e0f58dfb5434e"
+          }
+        ],
+        "residual_bucket": null,
+        "axis_merkle_root": "71410570b7ab8634f517075139055402053ef252cd5af418cc3e0f58dfb5434e"
+      }
+    },
+    "input_receipts_hash": "ca1a148bb8585c04274b17be26741f3a9699e64b5fe46386287ea61992736044",
+    "total_input_count": 20,
+    "issued_at": "2026-04-06T00:00:00.001Z",
+    "signature": "d5e169ba762574a0a490bc20616b2f68a378e3a2964d56dbd9559ce7276636e108eefbdbc8a5a432996d8575bbffa4faf063d52a0911e1fa5e08c88758a64707"
+  },
+  "contributor_queries": [
+    {
+      "contributor_did": "did:data:top-0",
+      "response": {
+        "settlement_record": {
+          "schema": "aps.settlement.v1",
+          "period": {
+            "t0": "2026-04-05T00:00:00.000Z",
+            "t1": "2026-04-06T00:00:00.000Z",
+            "period_id": "fixture-c-03-residual"
+          },
+          "gateway_did": "did:aeoess:gateway:build-c-fixture-e87301109265",
+          "axes": {
+            "D": {
+              "axis": "D",
+              "period": {
+                "t0": "2026-04-05T00:00:00.000Z",
+                "t1": "2026-04-06T00:00:00.000Z",
+                "period_id": "fixture-c-03-residual"
+              },
+              "total_actions": 20,
+              "contributors": [
+                {
+                  "contributor_did": "did:data:top-0",
+                  "total_weight": "5.950000",
+                  "contribution_count": 7,
+                  "merkle_leaf_hash": "2620110aef539a22a9742db40a0093e040158c5b8b8863b5f12a48ba8cabed52"
+                },
+                {
+                  "contributor_did": "did:data:top-1",
+                  "total_weight": "5.950000",
+                  "contribution_count": 7,
+                  "merkle_leaf_hash": "bfa9cbe15f143b03834f316d5ab9d1148c38e4be610919051b06086952fbd207"
+                },
+                {
+                  "contributor_did": "did:data:top-2",
+                  "total_weight": "5.100000",
+                  "contribution_count": 6,
+                  "merkle_leaf_hash": "b1d0b1578a8d9408af387d0e292c91eda474ae0ef05dede8dc3160fb65f24684"
+                }
+              ],
+              "residual_bucket": {
+                "residual_id": "residual:D",
+                "total_pooled_weight": "3.000000",
+                "count_of_pooled_contributors": 240,
+                "pooled_contributors_hash": "b46c969d76ecb7ad02c8f03125bc3be3dffd471b8bcf959e788c38cf94fab6a2"
+              },
+              "axis_merkle_root": "49d207fb1585499220537be771576e108f44df6eb7de8568a4bca30ba698dd42"
+            },
+            "P": {
+              "axis": "P",
+              "period": {
+                "t0": "2026-04-05T00:00:00.000Z",
+                "t1": "2026-04-06T00:00:00.000Z",
+                "period_id": "fixture-c-03-residual"
+              },
+              "total_actions": 0,
+              "contributors": [],
+              "residual_bucket": null,
+              "axis_merkle_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            "G": {
+              "axis": "G",
+              "period": {
+                "t0": "2026-04-05T00:00:00.000Z",
+                "t1": "2026-04-06T00:00:00.000Z",
+                "period_id": "fixture-c-03-residual"
+              },
+              "total_actions": 20,
+              "contributors": [
+                {
+                  "contributor_did": "did:gov:root",
+                  "total_weight": "20.000000",
+                  "contribution_count": 20,
+                  "merkle_leaf_hash": "6649f1d65b6b6a41e1df70ea379f60b2a7d7fa6eff0ec28a260817d88e74ed94"
+                }
+              ],
+              "residual_bucket": null,
+              "axis_merkle_root": "6649f1d65b6b6a41e1df70ea379f60b2a7d7fa6eff0ec28a260817d88e74ed94"
+            },
+            "C": {
+              "axis": "C",
+              "period": {
+                "t0": "2026-04-05T00:00:00.000Z",
+                "t1": "2026-04-06T00:00:00.000Z",
+                "period_id": "fixture-c-03-residual"
+              },
+              "total_actions": 20,
+              "contributors": [
+                {
+                  "contributor_did": "did:compute:big",
+                  "total_weight": "20.000000",
+                  "contribution_count": 20,
+                  "merkle_leaf_hash": "71410570b7ab8634f517075139055402053ef252cd5af418cc3e0f58dfb5434e"
+                }
+              ],
+              "residual_bucket": null,
+              "axis_merkle_root": "71410570b7ab8634f517075139055402053ef252cd5af418cc3e0f58dfb5434e"
+            }
+          },
+          "input_receipts_hash": "ca1a148bb8585c04274b17be26741f3a9699e64b5fe46386287ea61992736044",
+          "total_input_count": 20,
+          "issued_at": "2026-04-06T00:00:00.001Z",
+          "signature": "d5e169ba762574a0a490bc20616b2f68a378e3a2964d56dbd9559ce7276636e108eefbdbc8a5a432996d8575bbffa4faf063d52a0911e1fa5e08c88758a64707"
+        },
+        "settlement_record_hash": "bdbe32fd8e55d14d35e06a8b6feca640fdbbb798c223ba3b7a8f8df4f521c523",
+        "contributor_did": "did:data:top-0",
+        "per_axis": {
+          "D": {
+            "total_weight": "5.950000",
+            "contribution_count": 7,
+            "leaf_index": 0,
+            "merkle_path": [
+              "bfa9cbe15f143b03834f316d5ab9d1148c38e4be610919051b06086952fbd207",
+              "ca37c3633def3f374a4bc5e5a6205dac240704478044482cd4c0570d41d309a9"
+            ],
+            "axis_root": "49d207fb1585499220537be771576e108f44df6eb7de8568a4bca30ba698dd42"
+          }
+        }
+      }
+    },
+    {
+      "contributor_did": "did:compute:big",
+      "response": {
+        "settlement_record": {
+          "schema": "aps.settlement.v1",
+          "period": {
+            "t0": "2026-04-05T00:00:00.000Z",
+            "t1": "2026-04-06T00:00:00.000Z",
+            "period_id": "fixture-c-03-residual"
+          },
+          "gateway_did": "did:aeoess:gateway:build-c-fixture-e87301109265",
+          "axes": {
+            "D": {
+              "axis": "D",
+              "period": {
+                "t0": "2026-04-05T00:00:00.000Z",
+                "t1": "2026-04-06T00:00:00.000Z",
+                "period_id": "fixture-c-03-residual"
+              },
+              "total_actions": 20,
+              "contributors": [
+                {
+                  "contributor_did": "did:data:top-0",
+                  "total_weight": "5.950000",
+                  "contribution_count": 7,
+                  "merkle_leaf_hash": "2620110aef539a22a9742db40a0093e040158c5b8b8863b5f12a48ba8cabed52"
+                },
+                {
+                  "contributor_did": "did:data:top-1",
+                  "total_weight": "5.950000",
+                  "contribution_count": 7,
+                  "merkle_leaf_hash": "bfa9cbe15f143b03834f316d5ab9d1148c38e4be610919051b06086952fbd207"
+                },
+                {
+                  "contributor_did": "did:data:top-2",
+                  "total_weight": "5.100000",
+                  "contribution_count": 6,
+                  "merkle_leaf_hash": "b1d0b1578a8d9408af387d0e292c91eda474ae0ef05dede8dc3160fb65f24684"
+                }
+              ],
+              "residual_bucket": {
+                "residual_id": "residual:D",
+                "total_pooled_weight": "3.000000",
+                "count_of_pooled_contributors": 240,
+                "pooled_contributors_hash": "b46c969d76ecb7ad02c8f03125bc3be3dffd471b8bcf959e788c38cf94fab6a2"
+              },
+              "axis_merkle_root": "49d207fb1585499220537be771576e108f44df6eb7de8568a4bca30ba698dd42"
+            },
+            "P": {
+              "axis": "P",
+              "period": {
+                "t0": "2026-04-05T00:00:00.000Z",
+                "t1": "2026-04-06T00:00:00.000Z",
+                "period_id": "fixture-c-03-residual"
+              },
+              "total_actions": 0,
+              "contributors": [],
+              "residual_bucket": null,
+              "axis_merkle_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            "G": {
+              "axis": "G",
+              "period": {
+                "t0": "2026-04-05T00:00:00.000Z",
+                "t1": "2026-04-06T00:00:00.000Z",
+                "period_id": "fixture-c-03-residual"
+              },
+              "total_actions": 20,
+              "contributors": [
+                {
+                  "contributor_did": "did:gov:root",
+                  "total_weight": "20.000000",
+                  "contribution_count": 20,
+                  "merkle_leaf_hash": "6649f1d65b6b6a41e1df70ea379f60b2a7d7fa6eff0ec28a260817d88e74ed94"
+                }
+              ],
+              "residual_bucket": null,
+              "axis_merkle_root": "6649f1d65b6b6a41e1df70ea379f60b2a7d7fa6eff0ec28a260817d88e74ed94"
+            },
+            "C": {
+              "axis": "C",
+              "period": {
+                "t0": "2026-04-05T00:00:00.000Z",
+                "t1": "2026-04-06T00:00:00.000Z",
+                "period_id": "fixture-c-03-residual"
+              },
+              "total_actions": 20,
+              "contributors": [
+                {
+                  "contributor_did": "did:compute:big",
+                  "total_weight": "20.000000",
+                  "contribution_count": 20,
+                  "merkle_leaf_hash": "71410570b7ab8634f517075139055402053ef252cd5af418cc3e0f58dfb5434e"
+                }
+              ],
+              "residual_bucket": null,
+              "axis_merkle_root": "71410570b7ab8634f517075139055402053ef252cd5af418cc3e0f58dfb5434e"
+            }
+          },
+          "input_receipts_hash": "ca1a148bb8585c04274b17be26741f3a9699e64b5fe46386287ea61992736044",
+          "total_input_count": 20,
+          "issued_at": "2026-04-06T00:00:00.001Z",
+          "signature": "d5e169ba762574a0a490bc20616b2f68a378e3a2964d56dbd9559ce7276636e108eefbdbc8a5a432996d8575bbffa4faf063d52a0911e1fa5e08c88758a64707"
+        },
+        "settlement_record_hash": "bdbe32fd8e55d14d35e06a8b6feca640fdbbb798c223ba3b7a8f8df4f521c523",
+        "contributor_did": "did:compute:big",
+        "per_axis": {
+          "C": {
+            "total_weight": "20.000000",
+            "contribution_count": 20,
+            "leaf_index": 0,
+            "merkle_path": [],
+            "axis_root": "71410570b7ab8634f517075139055402053ef252cd5af418cc3e0f58dfb5434e"
+          }
+        }
+      }
+    }
+  ]
+}

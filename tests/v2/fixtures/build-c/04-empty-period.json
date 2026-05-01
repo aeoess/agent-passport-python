@@ -1,0 +1,75 @@
+{
+  "description": "Zero actions over 24h; record has empty axes and empty Merkle roots per I-C5",
+  "gateway_public_key": "e873011092659580c5272ca097e9baacd0f7f0ff9330f2cd978e902b13c2b2d4",
+  "gateway_did": "did:aeoess:gateway:build-c-fixture-e87301109265",
+  "period": {
+    "t0": "2026-04-07T00:00:00.000Z",
+    "t1": "2026-04-08T00:00:00.000Z",
+    "period_id": "fixture-c-04-empty"
+  },
+  "input_receipts": [],
+  "expected_record": {
+    "schema": "aps.settlement.v1",
+    "period": {
+      "t0": "2026-04-07T00:00:00.000Z",
+      "t1": "2026-04-08T00:00:00.000Z",
+      "period_id": "fixture-c-04-empty"
+    },
+    "gateway_did": "did:aeoess:gateway:build-c-fixture-e87301109265",
+    "axes": {
+      "D": {
+        "axis": "D",
+        "period": {
+          "t0": "2026-04-07T00:00:00.000Z",
+          "t1": "2026-04-08T00:00:00.000Z",
+          "period_id": "fixture-c-04-empty"
+        },
+        "total_actions": 0,
+        "contributors": [],
+        "residual_bucket": null,
+        "axis_merkle_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "P": {
+        "axis": "P",
+        "period": {
+          "t0": "2026-04-07T00:00:00.000Z",
+          "t1": "2026-04-08T00:00:00.000Z",
+          "period_id": "fixture-c-04-empty"
+        },
+        "total_actions": 0,
+        "contributors": [],
+        "residual_bucket": null,
+        "axis_merkle_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "G": {
+        "axis": "G",
+        "period": {
+          "t0": "2026-04-07T00:00:00.000Z",
+          "t1": "2026-04-08T00:00:00.000Z",
+          "period_id": "fixture-c-04-empty"
+        },
+        "total_actions": 0,
+        "contributors": [],
+        "residual_bucket": null,
+        "axis_merkle_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "C": {
+        "axis": "C",
+        "period": {
+          "t0": "2026-04-07T00:00:00.000Z",
+          "t1": "2026-04-08T00:00:00.000Z",
+          "period_id": "fixture-c-04-empty"
+        },
+        "total_actions": 0,
+        "contributors": [],
+        "residual_bucket": null,
+        "axis_merkle_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    },
+    "input_receipts_hash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "total_input_count": 0,
+    "issued_at": "2026-04-08T00:00:00.001Z",
+    "signature": "08bc2a566b6022e789a41b76136875ee531dc6812e86bd04ecee284ba3ba79c81e6cd65f00a364ad24bc1666054eb78ede459755d4eb55f70b91660b6fd85e02"
+  },
+  "contributor_queries": []
+}

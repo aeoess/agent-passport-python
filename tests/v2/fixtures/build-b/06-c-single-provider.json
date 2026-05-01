@@ -1,0 +1,23 @@
+{
+  "kind": "c_axis",
+  "description": "Single provider → 1.000000",
+  "input": {
+    "providers": [
+      {
+        "provider_did": "did:compute:only",
+        "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "prompt_tokens": 1500,
+        "completion_tokens": 500
+      }
+    ]
+  },
+  "expected": {
+    "weights": [
+      {
+        "provider_did": "did:compute:only",
+        "compute_share": "1.000000",
+        "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+      }
+    ]
+  }
+}

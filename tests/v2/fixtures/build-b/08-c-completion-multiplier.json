@@ -1,0 +1,34 @@
+{
+  "kind": "c_axis",
+  "description": "Provider A: 300 prompt. Provider B: 100 completion. With COMPLETION_MULTIPLIER=3.0, both contribute 300 — 0.500000 each",
+  "input": {
+    "providers": [
+      {
+        "provider_did": "did:compute:prompt-only",
+        "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+        "prompt_tokens": 300,
+        "completion_tokens": 0
+      },
+      {
+        "provider_did": "did:compute:completion-only",
+        "hardware_attestation_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+        "prompt_tokens": 0,
+        "completion_tokens": 100
+      }
+    ]
+  },
+  "expected": {
+    "weights": [
+      {
+        "provider_did": "did:compute:prompt-only",
+        "compute_share": "0.500000",
+        "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      {
+        "provider_did": "did:compute:completion-only",
+        "compute_share": "0.500000",
+        "hardware_attestation_hash": "2222222222222222222222222222222222222222222222222222222222222222"
+      }
+    ]
+  }
+}

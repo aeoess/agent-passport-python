@@ -1,0 +1,4202 @@
+{
+  "description": "100-action period, 5 recurring D-axis contributors plus one C-axis provider",
+  "gateway_public_key": "e873011092659580c5272ca097e9baacd0f7f0ff9330f2cd978e902b13c2b2d4",
+  "gateway_did": "did:aeoess:gateway:build-c-fixture-e87301109265",
+  "period": {
+    "t0": "2026-04-01T00:00:00.000Z",
+    "t1": "2026-04-02T00:00:00.000Z",
+    "period_id": "fixture-c-01-single-axis"
+  },
+  "input_receipts": [
+    {
+      "action_ref": "35933ac6bebe07f432332c5a3b679e43490f25e7434968e4394201954b77620e",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-0",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "f6e02710184aba9bbd4441a9a2854a0db633d125eb7f74ef8ffe60f863ca4f26",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:00:00.000Z",
+      "signature": "2bbc39d4107054e6a56d314f8d08899f165ec74eefca45e1967f20ab65e23e6cd8818ecdb744abc1e58bcf4a8810b29e9c07ef8ac9c7d4ddd3a0b27c737bc801"
+    },
+    {
+      "action_ref": "606960b9366efe22d3dc0ab7329043242786b37e8e915a1cb41fd88b049d8e3a",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-1",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "329670c4e36cd4d45043c229200be04243dd2d32967bc3e569539a2423cd043f",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:01:00.000Z",
+      "signature": "ca3a738b779379faf841e0490fa2a7ced02d70732b23e0f017b8ed5af382849b3756d6b9b052d566678b817715bf7a454fe6dbf44b40df1b26df8e38b6c1cd04"
+    },
+    {
+      "action_ref": "e4011efc4b395b2407da998ab04e5d911fb5f1b3d120605e256e2ba53a38f2f2",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-2",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "2a7346ceb9d70796f4c6d34115940849447269601c478e6590dea3aeb1509dce",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:02:00.000Z",
+      "signature": "b0fbd2eec091d37c8f1fb2e7a6004c2c197aa44206382463a616f3e820c67487b3eec486a37897f1a16791f01cab1cb9981d1b65982dffe39e80f3811f9ae303"
+    },
+    {
+      "action_ref": "8bf9b995b48c7338cacadaab54d7c58db9953942dd447ddf5f810a34fcdc58c6",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-3",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "f1f28ebafa4648f76f0fe7cfd0ab212a1c3536bbfc18ab5fc93b3b57e3fe8d54",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:03:00.000Z",
+      "signature": "d09b38c7ab1be0888dd4f5f01910efe9a5f675646d90bb070384e45085d2656d850e8edc82accb57364c35b7ad00b84556bbd14c161926cf2f303f62f2b0d001"
+    },
+    {
+      "action_ref": "19f0d9c719c5aa09418a102793841f6e16de8cbc966a801fead2aafad6df3407",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-4",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "684d0165f39fb078331e0b2cad5a5f9009823110e20ee7e559b1c28cdd3ccd4e",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:04:00.000Z",
+      "signature": "a9573bc7beac91f5ad073cb714b1e02e5cf284b2461e012f1d228287868eae40ba81c4e00f2b42fa0d23d45e60889a0997d4f3aea09a1dc2f1864d83d69e2502"
+    },
+    {
+      "action_ref": "d56053e32d7436a09c4fb969b70f9e46b904326be33f2b7e08f0c1ff3427b052",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-5",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "363dcdcaf98d8e657735457944c4e929907a4724ce0d6e239ca744d73bd1a387",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:05:00.000Z",
+      "signature": "19a845694ad5a7f7c247805af172c06633974af33434b1f880a2ae3b69c7b1a4833fb3aee2a9d74e7944bd63ed0a4dab9216f0f7b8ccd1688e3cda1b4a61d305"
+    },
+    {
+      "action_ref": "c2259107d9baa98a4c4e7f167e9f389536328b9d25e84764f98bbeb159537468",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-6",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "50fbb68fe31fe21823bb873ec9861b70a533f8548096db42563f09d95c9dacb6",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:06:00.000Z",
+      "signature": "80bf695dc23a79cecfc48de85f791cd77c8303b376f92cdd63a9893cb45ce639c808b64eee2df6e8321573f1d7374d598d2f0a589d8755971875c5f430b1d805"
+    },
+    {
+      "action_ref": "0aa7e1abb99fac2c7ee9055a226e050a0ac5a5dcce81db45f1def989c8cfe289",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-7",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "01919e8456637cd9247ee6871f0b9d18ec364db2185e864bcac8df5082f5d841",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:07:00.000Z",
+      "signature": "f073534ad86f6250f8bdcf2c672ca4778673e461ca420da84e6d43cf5731935f01cc6b89817ab3aa10125a94f95f7a1de0e338288f371cc8aeedbabab6996100"
+    },
+    {
+      "action_ref": "430909b29d6fe266a1cf104a8cbd2694e2e07e43217961b696a7f23f615dfed9",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-8",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "60e505f38e7ab8ca010aefbf9a80e0b0051c3fc60f9b697b9e89e599d6d5ab67",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:08:00.000Z",
+      "signature": "97da361eaca877a0479ed88871f917cefffa6258a99dc6d5041dea2c65eb5f210ca30443042b3e4489b68b4605df6c47824a628ac3412c9b8ad039f34338b804"
+    },
+    {
+      "action_ref": "47b89a17ee0dd8801efee3b87da45595656d557545523bae51696ba23d7f33e3",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-9",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "2e38ace2e633179b63a20c9471fd9ad0c09489385fbfa052c4c42dc8501d2b34",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:09:00.000Z",
+      "signature": "1fa9160fc51f2fde1f16f78116835e6795ebaa2ce5f1a52ed32676fd467b6f30933d4affadd763258ccb8513bb9012b0613487d686ca3ce96b65b56eb9ead10a"
+    },
+    {
+      "action_ref": "b5494955af175a4203cd11d009d626df2b53a0a7442b3933a9fc30e96bdedafb",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-10",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "2693f5a336d8994ce97d8ef3de0a45b546fedf1b1976c6b199467612f4ada4c5",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:10:00.000Z",
+      "signature": "8c4076f7822ef657aa1c3cecc56bc262fc01294ce1333d25a07a867a2ffa2228782e724fa5d9a2bdf57af3def1d6506f8e2f36af2a92f111f36913095dedbe05"
+    },
+    {
+      "action_ref": "54ef4a131c1a1d4fc7ef725dd7005893792657939198cbbca830da2a5f7551d7",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-11",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "61cba8869c2f309b311f72ef7beb5e6fc0edc6520869f38f1476c183f08ac75c",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:11:00.000Z",
+      "signature": "4bce05b6135807f44ebc30a9cf933444267da4a656a37fa44688afc119e811001d1364d01a60f840716fe15d1f1e900a590886d630d1a57c6c0e8210ab0c7302"
+    },
+    {
+      "action_ref": "25d49460ca2053d46bda44c83589cde91adeec3b272b7ae978e6e70f4f353cd7",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-12",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "fc0a8d80c1c1a3bc448c0ca8d8183aa0d059c7a7e45467c58eec7563c2e7946c",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:12:00.000Z",
+      "signature": "5b6c053e67028a7af903addbaee3f5d9c109f398aa0ac34d2613077c6e2e5fc40c4ea42f17f7b1a052aca2ac63e59ab36732afb7df40d8678a0d434c43ea0a06"
+    },
+    {
+      "action_ref": "6c8f0a730c9643f278a091e54a5ed7ffcffba8c8c43d41b897e76759b1bd833c",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-13",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "70974c737fa82704979d8ca6d1d6f59c0ad6f27a3dd17b0ccdabb2e1480200af",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:13:00.000Z",
+      "signature": "ea1002fdd4baebe58d79ff7d1ff64e8e0a9d6774e123e17073fe01c9d3e0c40d15e75b831dc72355867060dd55618f93b1d63ff8e280cadffdc4832a72a26f0a"
+    },
+    {
+      "action_ref": "a11a7f6dd01b4f7305031bd500c7f21317c4578a323222842e8699abf100470b",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-14",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "55046e8025381217dad67da5e4382c6957ef16e62e4c1e91d0fd9b37b63953ad",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:14:00.000Z",
+      "signature": "2df36fd0e87df59efb5fa326ed28de7857bdca2ee330e0b1bc8e61a81e148314c949f9c93930d34bd93a774736bbf0f3ec7d8f88e722ae838f06ae0c8d0cbc03"
+    },
+    {
+      "action_ref": "79fa5db6122c8da50ad8a6aaac682f01f1346c7ec009a03c5bb38c51e1e1dd5a",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-15",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "fe02e2824c6cf27a262714a169f5bf935e987b3f342449d6fd271bedd2d04529",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:15:00.000Z",
+      "signature": "15593d11de8ce354e725c6714eebb2c383f70cfd46342b8f6e7f6694af1779bd79102e9acdd025f3c6428946bad9113fef6350d804f58192f4bb96b6529df00f"
+    },
+    {
+      "action_ref": "0c22c9445f19ba323095a8e7a1e0c48a58c074dfa335fe0df15977c3a4d4121e",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-16",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "bf6f76109e8d0420dc06f270df2c532af8893715886aa0eb280486a764a3a7ec",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:16:00.000Z",
+      "signature": "d4e419228318c762d162ae730cee8c2bb4e5626882618d32d8253fb254a46e25cb60dcbb72023fd0ba2377c5225b775df04baa52f8f02066274ed67db9dcd706"
+    },
+    {
+      "action_ref": "fea3eb0f996a2f1e78c5bf50983edd9fa117636d87173c31f1887e5a92653875",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-17",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "56866a8d42a2fa1ed3c070e4f367cb5b1a6342a9a55d46718a199e5a33c918dd",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:17:00.000Z",
+      "signature": "1399470725ee92a8c96b642ce8711432e6e5d452411b26332b51dfafd4b426259e4d6126cffa73a86a8d0b894e3c75c4d3184c17c4891874a458782a2c73bc02"
+    },
+    {
+      "action_ref": "66c54a07184cd7716a4a42366c88a3dfeefb60c329ff65c1fc54ec14098201f3",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-18",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "3286b53c4f9265f57c8df601d9cf7e62527c25023d20360be913c0f0c5ac05f3",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:18:00.000Z",
+      "signature": "f5cd0b89b3e586a1e670b68335dc1a6c1c71bb8a4ac60778cd6529a82044b1fac08040a84602759a542665a066171d3ea9dc23479ce1b0ff061fe526d438de0c"
+    },
+    {
+      "action_ref": "4529545cb7dddffda934645035dd0ea0d1465c61f140bc8c0a394cc059188a6d",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-19",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "c178a01522b2846bdc6f51f321f153585388da194e7001f58cccd91552e2c8df",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:19:00.000Z",
+      "signature": "82e1ee1911911c1a0f4cbee2b43ec881a3d3c1271cc595b2a11937602fef48cc3d361fb4365dbadc2d22882228d37af4e8076269f6613699c427d8022f19e201"
+    },
+    {
+      "action_ref": "61f94a756024321e67dd9f3fa5ceba2db119bd65af04b7a411f47b8adc160f8e",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-20",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "8ee4fd3036c166f8aae91036ab30e8a3a2c0d915d3446f4a46f1806d35125eb3",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:20:00.000Z",
+      "signature": "e04717e05fa3ae46fff713899b3852a9e46402f7cfb4eb12f77600a8d860b34ab48a30dca7998bae06b8eca7742049f40e5ee03db01624f382e118c76472cc06"
+    },
+    {
+      "action_ref": "ecda32df8974ca3ced361a467036366b2b093bfa0d353d7ab499bd88e744c197",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-21",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "3b27624d6b087ae14d6a80bf34d9ba3ef02515d1e31805ec70e3bb8ed6b20561",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:21:00.000Z",
+      "signature": "fc0ecf2debcaf0b7e7f955e69abd73341b530e030bb6d8879e6256115653a1bf7b8d07790cd2f6345e81fe8df49d52cb3349518e6228888b028c1a53dbc3790c"
+    },
+    {
+      "action_ref": "df22b88dfc6e5f969884530f19ff75d78018e067557f60643c82af510cb0091b",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-22",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "14dfc7b7e7e68d48296315c32b7301509f410c3f24d04769c9a29b23893113f1",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:22:00.000Z",
+      "signature": "8e9f2c239f57b33a5dc9488c8443a401fe9bf0fb278cbdad832a22cb8d5eee6e07b8fa3ff7a334717e0212cd50890e69cce6bbc7e27e0068e19ed325256aca0b"
+    },
+    {
+      "action_ref": "70b16f2d6ab60fc09d863f2bae2a8efd394b92e1a9fa0ad81885fbb257caf1ff",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-23",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "c44d172a549ac02fb136d702399076574a000034c12a6355327e482c1fd31484",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:23:00.000Z",
+      "signature": "694e8d6aafa7abb1aa18434bc76981be7f1608e222210cea7866d1c630c165240c7cfed93c7cab17a0e9130f9af2aec19d96c63afc0db846905614a0d711ee02"
+    },
+    {
+      "action_ref": "f918c3636013b03df9ede87c6a42c7cc3fbdbe619d2d9d397cd6c144c24d9afe",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-24",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "53fd58e8633b06608e0da131c810f731ba1ded82c3f84ec11178939e084dc41c",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:24:00.000Z",
+      "signature": "222e125077daf2e2bb73e817b8e4707378a7a4b7bc15f59f8eb5d7a6f7fe277a3fb875f2761ae1ed35281a08f44834c65993dd2e9f49ff256b7839cbec6a3e09"
+    },
+    {
+      "action_ref": "3a22dd48ed4490d4155ac90deaedc08fc95d5a9299b4936c5004d6df2a924762",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-25",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "e1de64bfd563715cd5baee549b5a5188c5a0afe017e900cd72101aaba844dedc",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:25:00.000Z",
+      "signature": "8ffe1f72e8f4ec5fb29b1377c046badfd8c9cff515b5fc26ca486f36bfe9bf97150c2e1e66f1541c42dfc4fb6bc7641598d2b9e12144d30640bb868cc1589a07"
+    },
+    {
+      "action_ref": "baf2d4e1767f2e9341f53a16fc6fb940033109045302de632b38c99de98bdbc6",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-26",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "3dfe4391b017f24fde12e5c9ec8de2ce8099e45914788f4f969fd2e92a78fdb3",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:26:00.000Z",
+      "signature": "65d45fb81c27fd2b9e242d5fd3a6e066503f6e6de9de5cc59de910493af68d77c6756d83a2ee68b837c16a19fa712bedbaad0fa53c58b2a0c9991227decf440a"
+    },
+    {
+      "action_ref": "c01d76d195e7073e609dcbfbe8cdc74c4b280db20fa4af9caf571d3fdaa71bfc",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-27",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "f22020729c6245d43bb0d5d27f6f571e6e36140d3f0008d3c64c04aa0e592789",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:27:00.000Z",
+      "signature": "cc2291c0c0129262e2828699cd51bfc5d236c0cc54dbdb2e12c2a0ea80504bbac5c8aafd92fbd6160e2c6ccc53b3676d0557458bfa4725f52bc5a7273b66d603"
+    },
+    {
+      "action_ref": "d2af7af168f8f41edd03019f4d79d7d3f171db490cffeb58ca5fc1b6b658c9a6",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-28",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "2affe1f60e603825c0e86f73c7f2bdff40a07060b2f26fd5a1d4926223fa1f9d",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:28:00.000Z",
+      "signature": "7e24d5a2cd6d22647bc142f234c05982eff43175ee902e53f1b90de00ed8f65f21ea6985af2e2f737567a4e089d6a4eba7bd16ede887599bd7409a74ed15730a"
+    },
+    {
+      "action_ref": "054e62bac187c0956a32053a6b41f46dc09f829281c3a745267582235eb4d02b",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-29",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "1253c890ffc016e651615b386ad6229b38a60c4b40aa654ecd5fa10a9c409bbb",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:29:00.000Z",
+      "signature": "2a883fcea3cf3e4bf387faa02ba266562162816b92cb45407a38035a9f7c1c4917cb4174c3fe4fb9cc9af2cfba95efcfecc68c258930b5bc4a301d0d83985201"
+    },
+    {
+      "action_ref": "c91fcd00778a94836c0b808a4aa2e30319346d0c9f4a1b97c254307e898448d1",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-30",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "6c3679983cb55e67fbe31f7fe61beefe5a14b1231e1005073387d8d9967fc84d",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:30:00.000Z",
+      "signature": "b791c3de72cb6091a2acc292f3d5b168e9c2cd37a62cf1cb4101e0f43ebd80caaeb6283e4f15927795171a3a651fda1fefb10f153b98b7ea1efd89abf120df01"
+    },
+    {
+      "action_ref": "73bd5e76d0cdcef6bc54fc0d3860794d07fb174f2385d1d930abb66e364f9e19",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-31",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "b7c044f45b120d9c1282533e8ef641f8283ff459701adeaa1941eb2d6bd08542",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:31:00.000Z",
+      "signature": "9a124f77f337af0ab64a8d67016ec593efa3541301b8f6a86ad06daccad225868085ceb09fbd29b3447aa027edceaee2ab30e435dd6140c59668ce159c295e01"
+    },
+    {
+      "action_ref": "e83cce648458b22c59f1e63f1c9dae3ca6dc69158e560d2eecc9d4dacb8c749b",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-32",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "38f5232618a5d120248857502ec2ca84588201f4a9362038127a1399473f5689",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:32:00.000Z",
+      "signature": "2e206691ae8b4a65745d1f12951b1c9c2758219bf823bacf18873f5ea43f2904b0ca9aa572a7f75a2ed8a4430e324a98bdf0ba7522d018cef946043ac163cb01"
+    },
+    {
+      "action_ref": "4c20bff9e69b300558b240b4a236a5ee3f8156c0e7b6f3b52935d356950140dc",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-33",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "5a74780af673d522555a9e2e979f24f0aa1ef6f5147d9e16227f79699d2372b0",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:33:00.000Z",
+      "signature": "cf8e3038226a9a4522d4c6139928c1e50291becf3094588e4ad4ca706516a0a3fdf8c10b8f93703158ce43eac7ca0e76c4c5b3678773f5a83bca1094c58daf07"
+    },
+    {
+      "action_ref": "1c480b7b32e7ed5fe20d77413b294724a4a2e7c92c331e5d1cb4570d4fc2e1c5",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-34",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "c778104b667e96fd9be683431442bfb95d04d20f4481721105e1fa99c3372de6",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:34:00.000Z",
+      "signature": "aa9f02ddabd390868eef05c9dd7c0b2001c1bd77beee53026bbb31ba090d94d361d194b417145390f8209232c927a95103ecc9c6783cf88d2c1bedcdf3a76e02"
+    },
+    {
+      "action_ref": "9e4bb73b55b5d8bd8e390d41a4a129152c26e76f2e9a5ba381d5e02b9bca9fc1",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-35",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "867cc5cf28d9ba93c60d035db6fb7cbbc3dec8319ad32381b4609a9552cbfa39",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:35:00.000Z",
+      "signature": "0a65cb640213e07692a376a1a732d20206298ab755dfbf487e93d384b7989bc74f9b91283ec96ab328110c0b8d348ad4680f0fb2e6b3d70bf441d3b6cceb5709"
+    },
+    {
+      "action_ref": "2289097eca7a524c7f42ea061a15e5167df9ba8c1ff7956c13569c465b938491",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-36",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "d700ab067c4186ada85b43b2f6137cca4631504deae31958f22880b29858a659",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:36:00.000Z",
+      "signature": "016a8dda000f9fc30adb2e7e410b1c79f2a641c151f5b7bcf0e2fc362873bf02e9207eb9a497adebd7744c3aa99b934dd3f0ee5a92f0913a4bf8da60df88f402"
+    },
+    {
+      "action_ref": "31fc72a95087bb307c6e5b4a7f366dc7fd1f81fc3c161354971574ab4875916b",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-37",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "40bb7b5c76d38de412906de56734dea63b050b9479d5350b3510d72fab358704",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:37:00.000Z",
+      "signature": "b3a550bd916eeea48f9957f7ecdf29e7fc866eed83e6f27f07f3988edae9f08fd0145e54deea1ad62acc8140ca3dabda5623b6fa73a4604c7a8f091b3e15790d"
+    },
+    {
+      "action_ref": "a65a9f1b5eb273d2237fc0270ac538228b240dcfda4073cbf1ea4d49e942d664",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-38",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "283ce4aab93e2cfbd287580219289be862bc227e85b70f97f5be4fe77a8694a4",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:38:00.000Z",
+      "signature": "b9decbce54ff1c7ee08c2c83fb027682448030643cde7e5e51d0769f9d1d8ed40177cf547d0bd8a64d082192218015742bd2209a57e9d52858340699d40ca201"
+    },
+    {
+      "action_ref": "a3425a89140866c586d0113dc059ea4840fed8947b92a8042bf40c54805eeab4",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-39",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "df3208528c437ade229266ddab2200d691155e600043763e821d4cd3b9c9a0ac",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:39:00.000Z",
+      "signature": "18af998162b6e5dd2dbd06832ffc5c852e32e92d4e0525b22da4ce5228aaf1a1d4690ab824867625e9b6420da8a94e923c2663ee4cc8013d5c886e0ff957f001"
+    },
+    {
+      "action_ref": "cff077514cb837242831849a0599906ff6428c32213b490528e7604ed431480d",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-40",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "d309322f42d559a7ec34d1c681148facd56b74814451a99f06fa72e3e7692d80",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:40:00.000Z",
+      "signature": "fa518fcf9363390adc84b3e2fd4f4874bfc186cfe63cc4c9903a5db201e7ff413adecdd07939c2739e1795b44072f6f3abbc9f4190aa5f3b75ba5a9f4b7a2008"
+    },
+    {
+      "action_ref": "333209a4d94515bb781ba73aea4bd706358d5c3d3bd4dd99e421725a92e7d4b9",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-41",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "8ec9f685fa136304ed10b588694c6cb4cfe67a7b10a02e7183c0010385d510e0",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:41:00.000Z",
+      "signature": "b86afc2ee8e9a8699c95e0a5bfc289a114f31a8f79426b5c0082367c17116ae50f07b9c3439080071894a87f2ecf3f2ba318d298789e651425991473d39a3e08"
+    },
+    {
+      "action_ref": "b21875604d7b01f6d7022cdaa4d7db47c17e09e34dcd12ad0d70000b4bbfcec8",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-42",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "ca7264310196e457669b9da18720bd785858ead440fe9f21792a643e739509a8",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:42:00.000Z",
+      "signature": "1bf73557fe7f8359547b44b22064bfc81ed82f5f16287fd4937203bf41a0c3c021404ec8e9eeff70f2f22eb442355e3e60da9d18dc4aa6b623f39631fdaabc0c"
+    },
+    {
+      "action_ref": "dcd1e3e854800502b515a3b418e64e27d68d73e05501858e4024e24a4ec7050d",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-43",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "98e666d72337735fa4759b03f2a8b8ae330e2537325d4dc09f0b566ab6717bfc",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:43:00.000Z",
+      "signature": "dda903ae22ff1ac51ef6eb0b4ce3f4c170299e49857f7fd64871686f448f286b68ba61335ba13b72153cffb5c3bfb9b76824f8f9badff42e8ca193c6ed81cb05"
+    },
+    {
+      "action_ref": "79db537245d65504b6fbc3eadada402d021979a4987bc8376fbb8c763ba6f861",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-44",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "444f2f8b779fe26976f8fa3a3e5fbd2cc8459d73ad1f579798b1c9108890fc0f",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:44:00.000Z",
+      "signature": "39831e4c21bbef69098331b641e0b0cb52237c01f542f8ff042492fd08cb7ede47fc41e25fe5b4919de56d8d525756ff7faa0043cba8100f6f5cb3dd5dce7d03"
+    },
+    {
+      "action_ref": "0b554fa08751d6742a7834e499c169040d1fb688b3f9c2eb7a0f4b67072db90e",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-45",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "ec747fb1ec28301d19af16695a1ee49159f95a07478e5c9db0bc14701f9bd241",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:45:00.000Z",
+      "signature": "e42a6448ff9037cc81f99e988485f88bec85dd18ec2ab1a0e6e3ea0b1e986d09cb995fc358c749567cf76ca4fd275513692267b56a00abfaa13f8c5534d3920a"
+    },
+    {
+      "action_ref": "5ce6ed413f70ed09c310b09290eb9fee081ac504327c08a282436ddd4d58d270",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-46",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "058a20adfd2a932aabad05a68aa08d10d240763877bb61694b56f63ea386235c",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:46:00.000Z",
+      "signature": "6e2f3ef44ee26550c0304dbf6ab3974014fc4831dbb4ec779de9a29e0f740111093ac1d0693f18d2d473417e9d6892ec8f7bde286d7292bb540153b87e01d50e"
+    },
+    {
+      "action_ref": "1a2186ca0058ec1d34ea1c172d91abd7d8c2311c0cc8b31fcbae7b0ae253c5cd",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-47",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "a8a6d1ae43a4122f1aeffe96fea42599b3d35bf79521a67758887336acc3ece1",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:47:00.000Z",
+      "signature": "1d466eecbf2289bee3192a444432b372751e6e3af235364156b661d1c9147532225d421b58b25d610b465e02ea8eed7ed61ace9d13f5f99e2cb7176d45828c02"
+    },
+    {
+      "action_ref": "57fee5003d42e6db486cd2372cc4e87043d8e80f5e70c4b9fcb5d94c398e2dc5",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-48",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "7c77e004c7a4294b268c3823082b7411b5aec1efadd0a82e1f37048f387050a6",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:48:00.000Z",
+      "signature": "c4c40f0c4b14194625ee0cb64e98c182e1204a01bcd09c2dc57ea6f72cf0b4cd70829ae371e7f7e7595e69ffbd1a36d66de2cac4dabab2712cd2c2dabd69e00e"
+    },
+    {
+      "action_ref": "f80532e8f64f0146b087c6d6c97e9d1cf80515603f478ff7cffd9c836031d362",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-49",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "d2c2876437f44b2a1307cc4caff2e6dd8628d830ddc0b1aa8db4b6146749cf3c",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:49:00.000Z",
+      "signature": "f2c1b2f0a2051c01b57ff7de25adce8269b69c3f2e8f02095a4b1171ad138ca9084134332ccf6d4d0150d77a78d83a04289c1b02b0095c6f71297754d99da70b"
+    },
+    {
+      "action_ref": "eb516ee1cf6a6d0e9d051452236d3b592436ac4689bde589200081b57899b43e",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-50",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "919aded70a082a96b5d7e3009dd9c28050641fc26dd9d0cdedfdb6fabee83eac",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:50:00.000Z",
+      "signature": "2cea172063da30c2ca4074e4976172d74fef290d899144a4e6bfe4b1d53f4f96fa893135e99cc145ddb9834ff6640816ea651e0013b6478c21e358d997b5e709"
+    },
+    {
+      "action_ref": "98b63aa2cd49e5ea5aed0ac52d7ecd88c9b05cefc1b51e8c7d4ce1f3d1cf3b8d",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-51",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "b267a0bfc75581ecdd568e88fc4a2005d73c45f6975af135d5b7246f67800c27",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:51:00.000Z",
+      "signature": "fd60cd0972fedf4d1139eb91d0d8e3837bb0ea61e132117d35e4228ab65121916ce6f74940be5b02f0d1a40e52d839cbd796479ffce7050485d5e105307bf404"
+    },
+    {
+      "action_ref": "ad1ff11f82b4721b87abcb0f09624f83f5ec0de1ea70803dd4b247f8768c18a6",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-52",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "cd8aae822e2cb04fb05265a41a97490109140714947d4576e02e88d37847857e",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:52:00.000Z",
+      "signature": "9ba183cf6d7c93d2f2c32c93f600fbcad165be579287203675519c7548633ea92e13fd4e353a953c21b68f296cb1d40a44b7430772844b6c7af46ff8d74dbf0a"
+    },
+    {
+      "action_ref": "43999c8e48ad5f84bd00f14e030b7a24fff79ec7a7295e01dc6b43108b2f1b52",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-53",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "5fc79a53ad07d4f0d1f844e70d23a9fa0849d15ee910d9f1006850a0efbc338d",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:53:00.000Z",
+      "signature": "2dccb2b1369f5f6ea89f42d09740066722ae3fd7351669393daaeb1aa3ececcf276b6e51d293e570baaecd2b9fabd2128b043bb67865b0e089fd198c54d79705"
+    },
+    {
+      "action_ref": "b92e4b20cfab671a6eff187d231b76d7bf728312d0ffafec07094d3a3f4f9545",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-54",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "68fa6bf47138d6990dd587896a7bfd1fcee2894a2d5fe99450f4e443af3a63c9",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:54:00.000Z",
+      "signature": "f7fcced18d4ef5e510084a18c30cc80a98e140cf838d60c60b649374bb66eed3f7b6f95c957c9a367c46cbcc3a7c7ce659a6e7786ce9a676b679131dd0e5f20b"
+    },
+    {
+      "action_ref": "c483d789cb9b0a76af04947087f81696977cd9e95566498ec941cd89f75bb188",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-55",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "fb0403bf9e25087e6451d0cd2a5d72eac21e0842ab0ab3b82c27c655ae7aca32",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:55:00.000Z",
+      "signature": "520080dae2fc25ee5e1a9424470c54b2aea489c9652c74b33580600d04818f579b3a8a8961ca68f8b3b10c5533d30ea188182ffbebd454caf06a2ca02bf87409"
+    },
+    {
+      "action_ref": "9219c36f31c4bec450374f2d7cdfd08ef0f820e37da57c7cfff062d3e00863fa",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-56",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "28fdc3e9e8cde994883dbb4e3e8d85d1ad41c109ac9dd3181fa5ec07bcdb94d2",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:56:00.000Z",
+      "signature": "fad357946ae1f6d9c478d7c215fe5bfc43feb4c2eb8b5e9c9f1a89295e58b9b99346c4825b434cda09e1154677ba673736d976be7c817b49c578dce6e010d000"
+    },
+    {
+      "action_ref": "184707db2b699874a961c6c508bdbf8f67ad3ca7baa6c93b9c5a417687708a6b",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-57",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "d2233cc4a45590d37993f01d5349f687b856c64d96fda5b4cc7eac1f0df21614",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:57:00.000Z",
+      "signature": "59e62fbaeb1b7f804bc0fe7a7dd3a37422fe34602fc72aad0b3c5f6348f2b6ac8a478264ce9905a885eac1d24a3b750f7f5b72df0a278fc4c21e5252e3790706"
+    },
+    {
+      "action_ref": "05c58bf9a2534f740af4f688ce928f81f3eb5c47bea5467642474fb530b431cb",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-58",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "74df5036bf3f6f648c4d9dd5aff609291a87c80d323549167735d915a168ea4c",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:58:00.000Z",
+      "signature": "98ad96e9e2fc17b8b900de54dab9f3695a1fb00d3eb6879b9acf761e2921ad5226ab0e207e1688356567fcff3471f9ee74bb3515e15890ca47026a81e1ec5c06"
+    },
+    {
+      "action_ref": "1455b78940b072bbdf86b5dfc91c8e3c4014f7243c0ba4b429c47c249eb844d4",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-59",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "36a031d49715ef02ceff8b07351e55e99bfe7a2394ec331404a9247723fa349b",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T00:59:00.000Z",
+      "signature": "41e22d38f556af7e8f1a8503f1137cadfae91d1e0702404cd8ad350a3e1a1cc5e0f5ba92916df56d19dc4c0245086bd3174e9ca6e905a8b1d4f9907dfe8ec90f"
+    },
+    {
+      "action_ref": "7b2ac27c73b7ca152fda80fff359ad4a0be649a5478ad03415a2c0f04d84c5a9",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-60",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "663456bbbd865ca4c2293f1b85b2bb36baca86fea3a88777f2780a9bd4f45fd7",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:00:00.000Z",
+      "signature": "e58b1f90fb6de448076bb0991da99478bb200746ed821435f468752cadea4794580beae3fc4ee71ec287d9c15da5d5c0dc05dccb79308ab2584137acd147fb03"
+    },
+    {
+      "action_ref": "efa97997655cf1e5ebff513df91266236ee85da451aa9aa28101557420045a31",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-61",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "3def49b6505f1a70dcb651d8aef0af7d42254d996b5daaaa4fd83d523cd4ac01",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:01:00.000Z",
+      "signature": "f65c2473240e2ce41d3d19c0f87a1d315c6571948087d8c330f69dd52a0d9d24852e5f8bbc89bd39e86dc50e797e25669e7c3a19d0e4b87c2aa5d38d24385c0a"
+    },
+    {
+      "action_ref": "a6f4dd9b163ea1cff44fcc96570ec00066e9bbec6742da4d768765b82d464412",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-62",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "b2cb3d0181a017ead734891235801a9bf4a11a49bcd2aa39da307222abccdb41",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:02:00.000Z",
+      "signature": "0bb6476849f5ab4f7cef7d9e1cdf41b598482bb8281a530efa812879881d6f045ffb228fe2604bfe010a82f180c497d576ae402a7c23f495e5044ffdf2dfd307"
+    },
+    {
+      "action_ref": "a7864cfb9c51a48fd93ae46d3f20fec9105f73ba64f2a2d9a434943e2e76e462",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-63",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "a470876d854d89ed5c618cd27e127db592f7780d1c4b67cd9472b25722d5d05c",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:03:00.000Z",
+      "signature": "765bafe33ee1f113425ab24090dd30d7a28a6f3e671ca28f30e47edb2a6f2d2f61626e28e852325a11f0091b03ae54e88e5140f9b535e39b492e9862822a0602"
+    },
+    {
+      "action_ref": "5c7c144bebe315737f099bab759abf8ed1be74004fa341562511dce5fb60894d",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-64",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "5a6dbba54c07fad25b912c188707957fea9c4036bb58a80f87346a88501c0d5a",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:04:00.000Z",
+      "signature": "fe95f0dcd4cb76bce8e2d7ed816f21f3e53ef02e5144d4d6504e5f705c457058be17f3073aec5dd63d3e38bf3cab0e98b0d06b99d30dba70736a50007aea1202"
+    },
+    {
+      "action_ref": "4fa5ac27ecd8c9a5e1894b210d3b85b944669e2aa6032242172bacd69049abad",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-65",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "f3006800b8a9332289c1fec4cd7cce552d536ab25f816ef58e0e0e1856c8794a",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:05:00.000Z",
+      "signature": "ec9b0d82db49fa5fe60d4da328291a8c239b38e17f6198c76f3cf2a116b8aa8749557ef3254d9b5b02b2ebb82e1999b9bc6e81dd53ac4496141cbfee4850f70e"
+    },
+    {
+      "action_ref": "49c5ca3cea76dff7315471e6ed636591434b67bdccf41526397ebcaf39e5f4a7",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-66",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "279815ada8e73a5815bbdc00bf995da7d67c0cf9a3669b8bf384548e5f1e901d",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:06:00.000Z",
+      "signature": "856661f7f284288904ccacb77923ac8deb62a55e5593bae2db38947519af592495da4c9eef3e30d0e0e3cba6f35e44469ed009d0670f75122fac5d66d31df30f"
+    },
+    {
+      "action_ref": "0f882cfc20e7091b06e5e6359cc46207ad77d2c284227bd5623513d295c6a6c7",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-67",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "8a0f9a2664ecf83af88e3c89c84b1a371393f6f00387fbba7c38bfb965c01f86",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:07:00.000Z",
+      "signature": "fc1914275cb010ca3e610a3a63303169bc9343dddd3bfd0e7e4c02dd3ca5643c382cb2cf1cb71c8d932d37126504d661b091af665fd525831f5e48b725f94f03"
+    },
+    {
+      "action_ref": "5933efdf63acf359fa507b46a6cd12e5f55f487342aa542ae3253a92c0e7b412",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-68",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "ff3c906b43bbdbf96686a973971bf3996bb94917416e9bef88959a36ac8757a8",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:08:00.000Z",
+      "signature": "4eb279c0b058c4cc42de49c4134a90909d40992c469832a3cfcdf5f5ec3530f936f1a0bed7473d53084cc23f6cf8fcff96aa0853c6734755df6d6add4f2e7604"
+    },
+    {
+      "action_ref": "7b56f5a5ebb77cb0c1af55157d8dd0ac54c91ba3e8e1be20226b9bed7789dae5",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-69",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "9d113eac1a012c236b0d0d9726fb3616488c824bf326b80ee13993866ea91797",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:09:00.000Z",
+      "signature": "fea0d698fb5a78832b63da4ba790c920c938e4eab36175ac56f3e5320e195e2d4a2206f8bc35329a01a6cae3be58b7213bf3a218fea40cfc409c8ea8a0204300"
+    },
+    {
+      "action_ref": "8d6f638cf123fbb4918f3a904a0b825499acd3a9625365c0b866eeec6c5d99d0",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-70",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "7998cfa6e292a5bddbbebd71202aae43df0cf2812f93a260c5f10dfdb8af303f",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:10:00.000Z",
+      "signature": "27bc05e42328beb89e6df1acef1b37b3cb78885cdb86238b742e1183af63a7e5bf7f3f6b42945af2c0e3718616ad452924bfa3963d324beb824e5553c416940f"
+    },
+    {
+      "action_ref": "e169000981d4a74a8db9a30dc4726b19e0cbfc201dfcda4705f159d85d08da9c",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-71",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "973fc0259ca622e52c07acd93ed3a8d96c7158c57284dca30122bb906d8fdfa5",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:11:00.000Z",
+      "signature": "a34f91fa784e01e400e16fdd18a5a5ce5da6286dd6284aaebdda5935daca967693d93b2478237e5af332f26ce0b7184f1690910648f35a20d9b59224bbd6c30c"
+    },
+    {
+      "action_ref": "eed093406b65274fc6f7d5ae1269d4b516fd949afa477591a6cc1db11b72e775",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-72",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "1eadfb4efc38277f6bf585ecb034e833dfe45fcc907d3e6e833416e260095459",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:12:00.000Z",
+      "signature": "c2e5bd358d3f5b5f2a97b6d9d5d79f36c34d27558a7aaa8d5f29cdc4fa0ffce97f031f115e2f60c00222d1bdd38dbd1dc25f409e83aa0d500d8e54817ccfd70c"
+    },
+    {
+      "action_ref": "c6dfd939b164fd7cd514521a456561904524e6b1fa13120e10323927d258450e",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-73",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "a6b3cefd99f4e5ffbdc10d0e528788f8c78729cdc795542605da02157211f779",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:13:00.000Z",
+      "signature": "bf7b60a1896ae59ee8035cde93a66c5b86a4f63019ac6aa4e37317a88b203f8a7d5e1c77055995127fcad70eb71367528f878718d3334cb79aac5413f015980b"
+    },
+    {
+      "action_ref": "cb0601055fc1d1e6c94eb1b1ae06d573dffea1fad9affa34a50fefa28f87454c",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-74",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "91ab6cd421cbafd6a9dcbcc8202f1f1b9c83a1b29e0afa7673fdd520249c30e2",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:14:00.000Z",
+      "signature": "bbb11761b971f3ee89df4060d5c70241650ba7bc83ef6283c422ff1ca4b2b43aceffe7ae9987f3326d73ff73543aef8753c4ab6a28be97d2225dd81870e2370b"
+    },
+    {
+      "action_ref": "ed6ae70c4cc08b4343961645841c5be34ca5be28c77dc052c6eb078a39478566",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-75",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "9c3253a18eec90c771ca5baf70dfb807dd592e7eccf75bf96a7a931640c10a78",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:15:00.000Z",
+      "signature": "258798b7d3bc510241856664d5f47a6bca8ae533713d0ec52b2d9b78a96ab2dcf176c19b342d4e2367ba867b9d074f0fcf5ccfed0aad3303adae7cc1261b6d0d"
+    },
+    {
+      "action_ref": "84019e845cd4581083b94d66423b850a9a974220d10e0d5e573ff91a25a18068",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-76",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "dd724468f65fdaa8e2095e399e678942e83d4c91d173a6817e2f9e6e99df9ca7",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:16:00.000Z",
+      "signature": "4ff93775224165a9f349b5829d3e8758239bfdcf48b4374022686356beb58f973bd56e02ff6f62fe44af55b2a328a8ea18da002fc99e03d8de8ec0b355ed1400"
+    },
+    {
+      "action_ref": "93944ce51b54c5148eabf9e20a8b07ca8efdc0e2967687431c733d1fde124d2f",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-77",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "46437b38290c343d8cd069e2b1bd18b19ca68a1639259eb5de3930b042b5f517",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:17:00.000Z",
+      "signature": "1999535b2f141932fefcfdfd144619f3a32e35ca86be97f22b5f6da978476d0b3649a74391958c5b5a459ef7bd31bce1d052ea4dbc6faaf93c673cca4967e60c"
+    },
+    {
+      "action_ref": "b580f35e9b8e0f15eeffbb2b2ae3ee53bb7e6e151e66adb60fef528bbd5ad96e",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-78",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "d62dc616892953e7dc1854a62cf9a1e50111c53a796609fd77b1fcc1e799087c",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:18:00.000Z",
+      "signature": "8f8179ca5034d307de561029a87159560ddaa5103913e07045528ac579a092a4a7da8be73e6dd492ad68655cf283c0078fd8cfd129af64454f750020cdde420d"
+    },
+    {
+      "action_ref": "17f71b980e671265ccbd5c6789293790babbe0e4d66cf00424b75acff1d934f1",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-79",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "e55d40b1e4492b8497195983f99b2fd008a7dc4556e061233a1c5d2ef55ffb37",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:19:00.000Z",
+      "signature": "980237f7007cb54a2ea30d63648b6b64c78f942e860ae4cf23822d772b74e4e6e52cba8bc55f7d41d919a63e6ca3b8cd69e8efdd6826bfe6a3edf9bfe66b470b"
+    },
+    {
+      "action_ref": "199cda9503faf7d35bd528231844edab9873ccf1f208c8299a5d56362692f1c4",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-80",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "947ead432bd97a78d254caac32767b69075926287e9c248ce1b55f357d5bba15",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:20:00.000Z",
+      "signature": "f09531a8674dfefeb03132ccc4019c1d951b12fa252309cc3cb60a6d18748686cace2d51a1945fa805ce962874148374c01eca59c44cb1663154d025fff8830a"
+    },
+    {
+      "action_ref": "778fa2cedf746c63f10f435b5df5dfc6766c4119913e12ecaaf228a682c8c297",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-81",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "1bd5cf5ff0ac0552b15e138872182d31aa08c963bdd9efceb8273e8f24bd5666",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:21:00.000Z",
+      "signature": "1181ce6924e7766908b5d821169ba49c1b2eb390910865fb18a7e264c473b6f96ececd342ad1bb5bfec16bebf646ffbcf47614c263bde8a9ad15e86ddc09ed0b"
+    },
+    {
+      "action_ref": "35aa6343fd6daae4f5d69872c3c89a65d85d4806010bcf4da17009afd3d0f8e6",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-82",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "b152974e6769b8c9b8ec2fd7296f51b7e295a9adddaf0ebdb5077c7d43dcf522",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:22:00.000Z",
+      "signature": "419fb42bca1192f8092386c55e2b70218ff19eb2c81c81ff594aec6dd99dd3f43814df8214104e2105adf43fa6e870f0d8cf133e4264a619060a14b7ce8d690b"
+    },
+    {
+      "action_ref": "077983a2ca5dda98f73333edeaa0f07044a18c2209a5997802f55a49f36ac5a6",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-83",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "853f67186a5e9199b24bc8c5cd09c7be4ffe93fd1c403a068613f14a48858b5e",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:23:00.000Z",
+      "signature": "99c0eecf69e72f360684983e7d3eb848dcc4afd6a248cd4ca943fe783af456e163cadef5a285c5c20212526c4e5121958c68781debc414f03746674d2653e20f"
+    },
+    {
+      "action_ref": "2e5246c90c9aa026365b99862f30f9e28db1b40d7038e2716052be8bea0c5e54",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-84",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "2a3c77f1786b7a2bcec09a0dfa25cc0401c6437a79af812f853924dc63a72a8d",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:24:00.000Z",
+      "signature": "dc77c97c1c69c9bd7ed0ac33a399b0c0cbbbe02eb5c6e8a9093fa87c6b1d1804259ade338f28a21121f035b939eaba1cd751f3069a0dff5854d6676a409a9b0f"
+    },
+    {
+      "action_ref": "67f85022167a2924211e54a43bd3c067089a2f6f9ed90a040a84a4a0eb062937",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-85",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "ebd7b61dd86e9c1af9146801ff84cc5f5bd1be03f7b78d40caf3210aaef76972",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:25:00.000Z",
+      "signature": "0568aafd5e94a5714291c82d2ee7f587bce864b1ba310ca8cec43d5c956a64d5afa74a69a9cf2acc55b0c76b9b2ebb8127dda7d19678f7fbe66141c14eaa700c"
+    },
+    {
+      "action_ref": "15a2bc68ad61d20293e0f48b20f63925a120929b752daaf1444404a3b8a4b607",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-86",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "c51b22672173d06c5b1e097806e0e7a5e35c9c213a315f94a18ae1c0e39de976",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:26:00.000Z",
+      "signature": "36a3f59b30e0c670764959a29658008dc30e866dfa202f3d26b756b9d6ea8cdb2a560fb07321b9e8b89cde08172743414ed477bb71bac9cc290ee691238d8f01"
+    },
+    {
+      "action_ref": "e9f304636c922b7c38b6e6bb9316c8d3609c12968fa7fe8a0740560763a6e685",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-87",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "c2789f4e8f42880dcd0f74724476f64fe257271e6fe19971e9ea597e054f7d4d",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:27:00.000Z",
+      "signature": "1548af6f36423fef8acb2d832898337d998bdb92516f5f350fa2c8166678c1d78c3ecd89dad14b7a059a180dd704e133e660166fe6ed802255ccce45011d590c"
+    },
+    {
+      "action_ref": "024ed8998dc20b4d900c935439c4b6c1cbe13ae27142b3f5f9674ef252435502",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-88",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "93ffc13f2bbb1fbbb703a57e930389cea25bd4ebe202cc25fff1fd47d92cae30",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:28:00.000Z",
+      "signature": "8fc874dcbaaf5856e1624320595dff44b115e89ade484cd5ec617d61acc8b60dff5ff099c72553f34f0be7092de5bf5633265c975a6877f14376ddad214a920a"
+    },
+    {
+      "action_ref": "06171eff8d46825ea59486a623672e2bf11f0700d04ce962d064989fd403a336",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-89",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "3f6683685fbad0e748a7f031da030eb29464008ea2011d834536ec3d4ee0ddd6",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:29:00.000Z",
+      "signature": "8b1225444801f7392e0bbbe4b2046f7361f1a95f66febbdde9c02289691b805360b9e4294c5ba66e383b97e9a5739ffab56549d1fb2c8ec870f74722a894010b"
+    },
+    {
+      "action_ref": "b0ee20f7cbe7fe9c9cbbd72c19667656a5e33ca6e4c1650c6929b653a02e6571",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-90",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "fd29d7048b65417933f66f1561d9f385f25adaa0426a47433c09a3ae0da708d9",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:30:00.000Z",
+      "signature": "2f65237ecc4eeb70b6575c248a4f1fed095639b976848c737cfc356b36d7e992aaea1351078ce4b6aa42d532a9a63e4106410739b2d141baae628561e889a604"
+    },
+    {
+      "action_ref": "17caf273783bad5c2a0ef93c14941929e51744d7bf9ff4f0511819e5b703d797",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-91",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "487f4c77f02af1029a2e73db78b2d16f4f302726f97785ef014f5abed05dbfd8",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:31:00.000Z",
+      "signature": "f9c193003f7f3dd2589bf9e3d4afbdd6faa74d7453201cc1e00823a74f4db7af6cd23af767b00333842c53aa8163271595717bd03d1c0b36cdf2446d7b80b509"
+    },
+    {
+      "action_ref": "de4d29cd3df87a3611d5cd7c247c9ffd1ce9368f55efa26a9ccd98a16ef35b27",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-92",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "62214359da625ecd96868630e1f50dcd00dda955972a644086b7cd6a332cfe0b",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:32:00.000Z",
+      "signature": "e45181d4014da458e98c4c73fe98ffb0b7666fa95f8b1bc30dce5fa03f340c40b8383ac0999d7870edb5611815bafa3e8465c0942af73a550e604d7e1b996907"
+    },
+    {
+      "action_ref": "423be68e1d0d72c71454a62394056123d343cc19f0cfd229a72edd577ab46c21",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-93",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "a2008581c5402a5606d15ed44833991413fa4d997dfc0b584a4cd12b768dc66d",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:33:00.000Z",
+      "signature": "d31d1d552bfbe3824869a17f256debd538e348e1d5ee0d53db87c7066dc5dcb812cc9d0ae54ce3d94a85b2f6e04666018b4ccea3fe5cc3ee407c4263f163bb03"
+    },
+    {
+      "action_ref": "0b22f28b65127247403216252a0d54dbc5e9890683be16a4d2bd7c6fa0ef5f1f",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-94",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "da1b4be335060f6fb45bd911dbe0afb3b7955438151778afbc8ec09fb1dd9009",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:34:00.000Z",
+      "signature": "444722b08c0e7d4b4196e1a60e7da1c26e7a6c0ba6da26211163c2231051ee2b64ec671249d496349fb332c33dd5e8203ddc03cc9e003a9ea8b9b4d82cbee807"
+    },
+    {
+      "action_ref": "91e0009f342e57cdf225409d62a1301106a5194e2f27d21707b4256a3ba28422",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-95",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "f94db17467fa6b9e300946863a62b4666d68f27d233517039b09f419b924e0d5",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:35:00.000Z",
+      "signature": "4e6075931a8464e340e74b161c5df74d8481cb035f0b69bec77a9e7b9255a6f897d2868f9151aa302d08f06be0d93b513770826016d420887279c57ed66aed05"
+    },
+    {
+      "action_ref": "eb8ee9b2ea46b66d28fdcc8680e2d64772507147ea214912765068a0c694ccff",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-1",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-96",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "9b4c0af994c1c5749f6b10d8a68eaed19c11048a2c689cdfaf32a6de256379b8",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:36:00.000Z",
+      "signature": "897d676d7929e060321d001f99a4eab74235c740d46a1f019bb1db96bfd8bd90d4709efa7ef90b559a8a759cd1361d188ecea68ca49c8d1b961046049bdc9c07"
+    },
+    {
+      "action_ref": "35fa3f0642798ab80ab69537bc29e5f6d9d578d9288763548bfa1b177b6465ef",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-2",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-97",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "c97216a77f12218791edad83a025b3e830f98383890682c267fa1718bdbef15a",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:37:00.000Z",
+      "signature": "6ce634e6c397412b774e67693fe2e3d273c4f6149728be5ad19ab2d6b1313d1180a94260aec0c00cca0d39bf56c39cab6128453c86f138714360589318df720c"
+    },
+    {
+      "action_ref": "6669344edc46baac78abdf8f5d813c55c109e1e1ed73579f281fccc4e318a8a6",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-3",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-98",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "f71e75bb4cb5ff56b154690cf57ef01e4b921899bf6723cb4db8364f7baf13ce",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:38:00.000Z",
+      "signature": "78bac4657709f401c597d24ca17b621cad3d192a82ef52d3a812cb250fdf5eee7e856bb12ed32c8ee37e6439a9e8076b71db7a45c9b89701389a49679dae730b"
+    },
+    {
+      "action_ref": "236508885c8e644b60798282f4548899a9e25e690dd9622be86d354a9d587329",
+      "axes": {
+        "D": [
+          {
+            "source_did": "did:data:src-0",
+            "contribution_weight": "0.300000",
+            "access_receipt_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          {
+            "source_did": "did:data:src-4",
+            "contribution_weight": "0.700000",
+            "access_receipt_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "P": [],
+        "G": [
+          {
+            "delegation_id": "d-99",
+            "signer_did": "did:gov:root",
+            "scope_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "depth": 0
+          }
+        ],
+        "C": [
+          {
+            "provider_did": "did:compute:only",
+            "compute_share": "1.000000",
+            "hardware_attestation_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        ]
+      },
+      "merkle_root": "400675a04e41014c9cd01039ecaacbd644f6d02a26463d66ca38fa0901e7a251",
+      "issuer": "did:aeoess:gateway:build-c-fixture-e87301109265",
+      "timestamp": "2026-04-01T01:39:00.000Z",
+      "signature": "9675137c1d64423049f5308066ed685208b8b7d376549bed21bbb05bc4db272c0ea25faf9d85c20693179a5dc827e592ea1d7fba5449a4756233085c78fbd904"
+    }
+  ],
+  "expected_record": {
+    "schema": "aps.settlement.v1",
+    "period": {
+      "t0": "2026-04-01T00:00:00.000Z",
+      "t1": "2026-04-02T00:00:00.000Z",
+      "period_id": "fixture-c-01-single-axis"
+    },
+    "gateway_did": "did:aeoess:gateway:build-c-fixture-e87301109265",
+    "axes": {
+      "D": {
+        "axis": "D",
+        "period": {
+          "t0": "2026-04-01T00:00:00.000Z",
+          "t1": "2026-04-02T00:00:00.000Z",
+          "period_id": "fixture-c-01-single-axis"
+        },
+        "total_actions": 100,
+        "contributors": [
+          {
+            "contributor_did": "did:data:src-0",
+            "total_weight": "20.000000",
+            "contribution_count": 40,
+            "merkle_leaf_hash": "5e420478771cb7b0c89b5c3de200e3e5b40a93b25b2c3abfeb04351a9f8e123a"
+          },
+          {
+            "contributor_did": "did:data:src-1",
+            "total_weight": "20.000000",
+            "contribution_count": 40,
+            "merkle_leaf_hash": "f8350a50c9134cf80c19746f3977211c5c258eaf2b9de2cd891c242f89309bdd"
+          },
+          {
+            "contributor_did": "did:data:src-2",
+            "total_weight": "20.000000",
+            "contribution_count": 40,
+            "merkle_leaf_hash": "ec6e11019a9e9ac63fd3dce77cc4078480e869b1de9889ed67d337440e5c890b"
+          },
+          {
+            "contributor_did": "did:data:src-3",
+            "total_weight": "20.000000",
+            "contribution_count": 40,
+            "merkle_leaf_hash": "340b87301a21e81fd34516795fb657b4431fcc7456d8d21e6204f853480015cc"
+          },
+          {
+            "contributor_did": "did:data:src-4",
+            "total_weight": "20.000000",
+            "contribution_count": 40,
+            "merkle_leaf_hash": "62534a2f3b11993c9c5736fbb0c84f72a3d49ff1364ba7f3256359aa48637e1c"
+          }
+        ],
+        "residual_bucket": null,
+        "axis_merkle_root": "ee4ace4022f6543d423e99eb2d0e77f676608ae070bd1529bd64bc9c96f5bac5"
+      },
+      "P": {
+        "axis": "P",
+        "period": {
+          "t0": "2026-04-01T00:00:00.000Z",
+          "t1": "2026-04-02T00:00:00.000Z",
+          "period_id": "fixture-c-01-single-axis"
+        },
+        "total_actions": 0,
+        "contributors": [],
+        "residual_bucket": null,
+        "axis_merkle_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "G": {
+        "axis": "G",
+        "period": {
+          "t0": "2026-04-01T00:00:00.000Z",
+          "t1": "2026-04-02T00:00:00.000Z",
+          "period_id": "fixture-c-01-single-axis"
+        },
+        "total_actions": 100,
+        "contributors": [
+          {
+            "contributor_did": "did:gov:root",
+            "total_weight": "100.000000",
+            "contribution_count": 100,
+            "merkle_leaf_hash": "678baf7b18995c9aa5e72b6983139ff7aad6f72a0a5cb185639c91d1b2f61e83"
+          }
+        ],
+        "residual_bucket": null,
+        "axis_merkle_root": "678baf7b18995c9aa5e72b6983139ff7aad6f72a0a5cb185639c91d1b2f61e83"
+      },
+      "C": {
+        "axis": "C",
+        "period": {
+          "t0": "2026-04-01T00:00:00.000Z",
+          "t1": "2026-04-02T00:00:00.000Z",
+          "period_id": "fixture-c-01-single-axis"
+        },
+        "total_actions": 100,
+        "contributors": [
+          {
+            "contributor_did": "did:compute:only",
+            "total_weight": "100.000000",
+            "contribution_count": 100,
+            "merkle_leaf_hash": "0be889cf6c23c4c8e30e8f30f45062855b7553fbf762d913e19380ede61533ed"
+          }
+        ],
+        "residual_bucket": null,
+        "axis_merkle_root": "0be889cf6c23c4c8e30e8f30f45062855b7553fbf762d913e19380ede61533ed"
+      }
+    },
+    "input_receipts_hash": "04eef35a849f60a23513184bfcf5f911855c97d33a625561afdbe6fd6a9f7c98",
+    "total_input_count": 100,
+    "issued_at": "2026-04-02T00:00:00.001Z",
+    "signature": "58c780eab0921110d7fabb25d325a4ee5b1d6ff7e9c802dfeabb64f25bc7fbdd2d03fa620fe95059121ce30d49b8bc764d1abff5e3cf3d983f0e0153b380820e"
+  },
+  "contributor_queries": [
+    {
+      "contributor_did": "did:data:src-0",
+      "response": {
+        "settlement_record": {
+          "schema": "aps.settlement.v1",
+          "period": {
+            "t0": "2026-04-01T00:00:00.000Z",
+            "t1": "2026-04-02T00:00:00.000Z",
+            "period_id": "fixture-c-01-single-axis"
+          },
+          "gateway_did": "did:aeoess:gateway:build-c-fixture-e87301109265",
+          "axes": {
+            "D": {
+              "axis": "D",
+              "period": {
+                "t0": "2026-04-01T00:00:00.000Z",
+                "t1": "2026-04-02T00:00:00.000Z",
+                "period_id": "fixture-c-01-single-axis"
+              },
+              "total_actions": 100,
+              "contributors": [
+                {
+                  "contributor_did": "did:data:src-0",
+                  "total_weight": "20.000000",
+                  "contribution_count": 40,
+                  "merkle_leaf_hash": "5e420478771cb7b0c89b5c3de200e3e5b40a93b25b2c3abfeb04351a9f8e123a"
+                },
+                {
+                  "contributor_did": "did:data:src-1",
+                  "total_weight": "20.000000",
+                  "contribution_count": 40,
+                  "merkle_leaf_hash": "f8350a50c9134cf80c19746f3977211c5c258eaf2b9de2cd891c242f89309bdd"
+                },
+                {
+                  "contributor_did": "did:data:src-2",
+                  "total_weight": "20.000000",
+                  "contribution_count": 40,
+                  "merkle_leaf_hash": "ec6e11019a9e9ac63fd3dce77cc4078480e869b1de9889ed67d337440e5c890b"
+                },
+                {
+                  "contributor_did": "did:data:src-3",
+                  "total_weight": "20.000000",
+                  "contribution_count": 40,
+                  "merkle_leaf_hash": "340b87301a21e81fd34516795fb657b4431fcc7456d8d21e6204f853480015cc"
+                },
+                {
+                  "contributor_did": "did:data:src-4",
+                  "total_weight": "20.000000",
+                  "contribution_count": 40,
+                  "merkle_leaf_hash": "62534a2f3b11993c9c5736fbb0c84f72a3d49ff1364ba7f3256359aa48637e1c"
+                }
+              ],
+              "residual_bucket": null,
+              "axis_merkle_root": "ee4ace4022f6543d423e99eb2d0e77f676608ae070bd1529bd64bc9c96f5bac5"
+            },
+            "P": {
+              "axis": "P",
+              "period": {
+                "t0": "2026-04-01T00:00:00.000Z",
+                "t1": "2026-04-02T00:00:00.000Z",
+                "period_id": "fixture-c-01-single-axis"
+              },
+              "total_actions": 0,
+              "contributors": [],
+              "residual_bucket": null,
+              "axis_merkle_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            "G": {
+              "axis": "G",
+              "period": {
+                "t0": "2026-04-01T00:00:00.000Z",
+                "t1": "2026-04-02T00:00:00.000Z",
+                "period_id": "fixture-c-01-single-axis"
+              },
+              "total_actions": 100,
+              "contributors": [
+                {
+                  "contributor_did": "did:gov:root",
+                  "total_weight": "100.000000",
+                  "contribution_count": 100,
+                  "merkle_leaf_hash": "678baf7b18995c9aa5e72b6983139ff7aad6f72a0a5cb185639c91d1b2f61e83"
+                }
+              ],
+              "residual_bucket": null,
+              "axis_merkle_root": "678baf7b18995c9aa5e72b6983139ff7aad6f72a0a5cb185639c91d1b2f61e83"
+            },
+            "C": {
+              "axis": "C",
+              "period": {
+                "t0": "2026-04-01T00:00:00.000Z",
+                "t1": "2026-04-02T00:00:00.000Z",
+                "period_id": "fixture-c-01-single-axis"
+              },
+              "total_actions": 100,
+              "contributors": [
+                {
+                  "contributor_did": "did:compute:only",
+                  "total_weight": "100.000000",
+                  "contribution_count": 100,
+                  "merkle_leaf_hash": "0be889cf6c23c4c8e30e8f30f45062855b7553fbf762d913e19380ede61533ed"
+                }
+              ],
+              "residual_bucket": null,
+              "axis_merkle_root": "0be889cf6c23c4c8e30e8f30f45062855b7553fbf762d913e19380ede61533ed"
+            }
+          },
+          "input_receipts_hash": "04eef35a849f60a23513184bfcf5f911855c97d33a625561afdbe6fd6a9f7c98",
+          "total_input_count": 100,
+          "issued_at": "2026-04-02T00:00:00.001Z",
+          "signature": "58c780eab0921110d7fabb25d325a4ee5b1d6ff7e9c802dfeabb64f25bc7fbdd2d03fa620fe95059121ce30d49b8bc764d1abff5e3cf3d983f0e0153b380820e"
+        },
+        "settlement_record_hash": "5de6bea7e1e496cd2ea9afdc3546a08e0bf8ffa701d719dbc59a44c77b526723",
+        "contributor_did": "did:data:src-0",
+        "per_axis": {
+          "D": {
+            "total_weight": "20.000000",
+            "contribution_count": 40,
+            "leaf_index": 0,
+            "merkle_path": [
+              "f8350a50c9134cf80c19746f3977211c5c258eaf2b9de2cd891c242f89309bdd",
+              "cf6e882bcae17063cdf7d329cc3687a1dfc1b172cb504308529ba6939b30f6e9",
+              "7640c31df079a349761cfde9f4ac1b2941ea1c52b237fb14bfdea6fb1fc85409"
+            ],
+            "axis_root": "ee4ace4022f6543d423e99eb2d0e77f676608ae070bd1529bd64bc9c96f5bac5"
+          }
+        }
+      }
+    },
+    {
+      "contributor_did": "did:data:src-1",
+      "response": {
+        "settlement_record": {
+          "schema": "aps.settlement.v1",
+          "period": {
+            "t0": "2026-04-01T00:00:00.000Z",
+            "t1": "2026-04-02T00:00:00.000Z",
+            "period_id": "fixture-c-01-single-axis"
+          },
+          "gateway_did": "did:aeoess:gateway:build-c-fixture-e87301109265",
+          "axes": {
+            "D": {
+              "axis": "D",
+              "period": {
+                "t0": "2026-04-01T00:00:00.000Z",
+                "t1": "2026-04-02T00:00:00.000Z",
+                "period_id": "fixture-c-01-single-axis"
+              },
+              "total_actions": 100,
+              "contributors": [
+                {
+                  "contributor_did": "did:data:src-0",
+                  "total_weight": "20.000000",
+                  "contribution_count": 40,
+                  "merkle_leaf_hash": "5e420478771cb7b0c89b5c3de200e3e5b40a93b25b2c3abfeb04351a9f8e123a"
+                },
+                {
+                  "contributor_did": "did:data:src-1",
+                  "total_weight": "20.000000",
+                  "contribution_count": 40,
+                  "merkle_leaf_hash": "f8350a50c9134cf80c19746f3977211c5c258eaf2b9de2cd891c242f89309bdd"
+                },
+                {
+                  "contributor_did": "did:data:src-2",
+                  "total_weight": "20.000000",
+                  "contribution_count": 40,
+                  "merkle_leaf_hash": "ec6e11019a9e9ac63fd3dce77cc4078480e869b1de9889ed67d337440e5c890b"
+                },
+                {
+                  "contributor_did": "did:data:src-3",
+                  "total_weight": "20.000000",
+                  "contribution_count": 40,
+                  "merkle_leaf_hash": "340b87301a21e81fd34516795fb657b4431fcc7456d8d21e6204f853480015cc"
+                },
+                {
+                  "contributor_did": "did:data:src-4",
+                  "total_weight": "20.000000",
+                  "contribution_count": 40,
+                  "merkle_leaf_hash": "62534a2f3b11993c9c5736fbb0c84f72a3d49ff1364ba7f3256359aa48637e1c"
+                }
+              ],
+              "residual_bucket": null,
+              "axis_merkle_root": "ee4ace4022f6543d423e99eb2d0e77f676608ae070bd1529bd64bc9c96f5bac5"
+            },
+            "P": {
+              "axis": "P",
+              "period": {
+                "t0": "2026-04-01T00:00:00.000Z",
+                "t1": "2026-04-02T00:00:00.000Z",
+                "period_id": "fixture-c-01-single-axis"
+              },
+              "total_actions": 0,
+              "contributors": [],
+              "residual_bucket": null,
+              "axis_merkle_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            "G": {
+              "axis": "G",
+              "period": {
+                "t0": "2026-04-01T00:00:00.000Z",
+                "t1": "2026-04-02T00:00:00.000Z",
+                "period_id": "fixture-c-01-single-axis"
+              },
+              "total_actions": 100,
+              "contributors": [
+                {
+                  "contributor_did": "did:gov:root",
+                  "total_weight": "100.000000",
+                  "contribution_count": 100,
+                  "merkle_leaf_hash": "678baf7b18995c9aa5e72b6983139ff7aad6f72a0a5cb185639c91d1b2f61e83"
+                }
+              ],
+              "residual_bucket": null,
+              "axis_merkle_root": "678baf7b18995c9aa5e72b6983139ff7aad6f72a0a5cb185639c91d1b2f61e83"
+            },
+            "C": {
+              "axis": "C",
+              "period": {
+                "t0": "2026-04-01T00:00:00.000Z",
+                "t1": "2026-04-02T00:00:00.000Z",
+                "period_id": "fixture-c-01-single-axis"
+              },
+              "total_actions": 100,
+              "contributors": [
+                {
+                  "contributor_did": "did:compute:only",
+                  "total_weight": "100.000000",
+                  "contribution_count": 100,
+                  "merkle_leaf_hash": "0be889cf6c23c4c8e30e8f30f45062855b7553fbf762d913e19380ede61533ed"
+                }
+              ],
+              "residual_bucket": null,
+              "axis_merkle_root": "0be889cf6c23c4c8e30e8f30f45062855b7553fbf762d913e19380ede61533ed"
+            }
+          },
+          "input_receipts_hash": "04eef35a849f60a23513184bfcf5f911855c97d33a625561afdbe6fd6a9f7c98",
+          "total_input_count": 100,
+          "issued_at": "2026-04-02T00:00:00.001Z",
+          "signature": "58c780eab0921110d7fabb25d325a4ee5b1d6ff7e9c802dfeabb64f25bc7fbdd2d03fa620fe95059121ce30d49b8bc764d1abff5e3cf3d983f0e0153b380820e"
+        },
+        "settlement_record_hash": "5de6bea7e1e496cd2ea9afdc3546a08e0bf8ffa701d719dbc59a44c77b526723",
+        "contributor_did": "did:data:src-1",
+        "per_axis": {
+          "D": {
+            "total_weight": "20.000000",
+            "contribution_count": 40,
+            "leaf_index": 1,
+            "merkle_path": [
+              "5e420478771cb7b0c89b5c3de200e3e5b40a93b25b2c3abfeb04351a9f8e123a",
+              "cf6e882bcae17063cdf7d329cc3687a1dfc1b172cb504308529ba6939b30f6e9",
+              "7640c31df079a349761cfde9f4ac1b2941ea1c52b237fb14bfdea6fb1fc85409"
+            ],
+            "axis_root": "ee4ace4022f6543d423e99eb2d0e77f676608ae070bd1529bd64bc9c96f5bac5"
+          }
+        }
+      }
+    },
+    {
+      "contributor_did": "did:compute:only",
+      "response": {
+        "settlement_record": {
+          "schema": "aps.settlement.v1",
+          "period": {
+            "t0": "2026-04-01T00:00:00.000Z",
+            "t1": "2026-04-02T00:00:00.000Z",
+            "period_id": "fixture-c-01-single-axis"
+          },
+          "gateway_did": "did:aeoess:gateway:build-c-fixture-e87301109265",
+          "axes": {
+            "D": {
+              "axis": "D",
+              "period": {
+                "t0": "2026-04-01T00:00:00.000Z",
+                "t1": "2026-04-02T00:00:00.000Z",
+                "period_id": "fixture-c-01-single-axis"
+              },
+              "total_actions": 100,
+              "contributors": [
+                {
+                  "contributor_did": "did:data:src-0",
+                  "total_weight": "20.000000",
+                  "contribution_count": 40,
+                  "merkle_leaf_hash": "5e420478771cb7b0c89b5c3de200e3e5b40a93b25b2c3abfeb04351a9f8e123a"
+                },
+                {
+                  "contributor_did": "did:data:src-1",
+                  "total_weight": "20.000000",
+                  "contribution_count": 40,
+                  "merkle_leaf_hash": "f8350a50c9134cf80c19746f3977211c5c258eaf2b9de2cd891c242f89309bdd"
+                },
+                {
+                  "contributor_did": "did:data:src-2",
+                  "total_weight": "20.000000",
+                  "contribution_count": 40,
+                  "merkle_leaf_hash": "ec6e11019a9e9ac63fd3dce77cc4078480e869b1de9889ed67d337440e5c890b"
+                },
+                {
+                  "contributor_did": "did:data:src-3",
+                  "total_weight": "20.000000",
+                  "contribution_count": 40,
+                  "merkle_leaf_hash": "340b87301a21e81fd34516795fb657b4431fcc7456d8d21e6204f853480015cc"
+                },
+                {
+                  "contributor_did": "did:data:src-4",
+                  "total_weight": "20.000000",
+                  "contribution_count": 40,
+                  "merkle_leaf_hash": "62534a2f3b11993c9c5736fbb0c84f72a3d49ff1364ba7f3256359aa48637e1c"
+                }
+              ],
+              "residual_bucket": null,
+              "axis_merkle_root": "ee4ace4022f6543d423e99eb2d0e77f676608ae070bd1529bd64bc9c96f5bac5"
+            },
+            "P": {
+              "axis": "P",
+              "period": {
+                "t0": "2026-04-01T00:00:00.000Z",
+                "t1": "2026-04-02T00:00:00.000Z",
+                "period_id": "fixture-c-01-single-axis"
+              },
+              "total_actions": 0,
+              "contributors": [],
+              "residual_bucket": null,
+              "axis_merkle_root": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            "G": {
+              "axis": "G",
+              "period": {
+                "t0": "2026-04-01T00:00:00.000Z",
+                "t1": "2026-04-02T00:00:00.000Z",
+                "period_id": "fixture-c-01-single-axis"
+              },
+              "total_actions": 100,
+              "contributors": [
+                {
+                  "contributor_did": "did:gov:root",
+                  "total_weight": "100.000000",
+                  "contribution_count": 100,
+                  "merkle_leaf_hash": "678baf7b18995c9aa5e72b6983139ff7aad6f72a0a5cb185639c91d1b2f61e83"
+                }
+              ],
+              "residual_bucket": null,
+              "axis_merkle_root": "678baf7b18995c9aa5e72b6983139ff7aad6f72a0a5cb185639c91d1b2f61e83"
+            },
+            "C": {
+              "axis": "C",
+              "period": {
+                "t0": "2026-04-01T00:00:00.000Z",
+                "t1": "2026-04-02T00:00:00.000Z",
+                "period_id": "fixture-c-01-single-axis"
+              },
+              "total_actions": 100,
+              "contributors": [
+                {
+                  "contributor_did": "did:compute:only",
+                  "total_weight": "100.000000",
+                  "contribution_count": 100,
+                  "merkle_leaf_hash": "0be889cf6c23c4c8e30e8f30f45062855b7553fbf762d913e19380ede61533ed"
+                }
+              ],
+              "residual_bucket": null,
+              "axis_merkle_root": "0be889cf6c23c4c8e30e8f30f45062855b7553fbf762d913e19380ede61533ed"
+            }
+          },
+          "input_receipts_hash": "04eef35a849f60a23513184bfcf5f911855c97d33a625561afdbe6fd6a9f7c98",
+          "total_input_count": 100,
+          "issued_at": "2026-04-02T00:00:00.001Z",
+          "signature": "58c780eab0921110d7fabb25d325a4ee5b1d6ff7e9c802dfeabb64f25bc7fbdd2d03fa620fe95059121ce30d49b8bc764d1abff5e3cf3d983f0e0153b380820e"
+        },
+        "settlement_record_hash": "5de6bea7e1e496cd2ea9afdc3546a08e0bf8ffa701d719dbc59a44c77b526723",
+        "contributor_did": "did:compute:only",
+        "per_axis": {
+          "C": {
+            "total_weight": "100.000000",
+            "contribution_count": 100,
+            "leaf_index": 0,
+            "merkle_path": [],
+            "axis_root": "0be889cf6c23c4c8e30e8f30f45062855b7553fbf762d913e19380ede61533ed"
+          }
+        }
+      }
+    }
+  ]
+}
