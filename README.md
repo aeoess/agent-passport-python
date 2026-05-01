@@ -110,6 +110,8 @@ This Python SDK implements all 8 Agent Passport Protocol layers:
 7. **Integration Wiring** — Cross-layer bridges (commerce+intent, coordination+agora)
 8. **Agentic Commerce** — 4-gate checkout, human approval, spend limits
 
+Plus Wave 1 accountability primitives: Ed25519 ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle. RFC 8785 JCS canonicalized, content-addressed, byte-match across implementations.
+
 Full parity with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system). Also available via the [MCP server](https://mcp.aeoess.com/sse).
 
 ## Links
@@ -126,6 +128,7 @@ Full parity with the [TypeScript SDK](https://www.npmjs.com/package/agent-passpo
   - [Physics-Enforced Delegation](https://doi.org/10.5281/zenodo.19478584)
   - [Governance in the Medium](https://doi.org/10.5281/zenodo.19582550)
   - [Cognitive Attestation](https://doi.org/10.5281/zenodo.19646276)
+  - [The Evidence-Safety Gap](https://doi.org/10.5281/zenodo.19914628)
   - IETF Internet-Draft: `draft-pidlisnyi-aps-00`
 - **LLM docs**: https://aeoess.com/llms-full.txt
 
