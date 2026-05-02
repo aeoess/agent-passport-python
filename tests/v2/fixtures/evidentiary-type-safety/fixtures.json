@@ -1,0 +1,501 @@
+{
+  "meta": {
+    "generated_by": "tools/aps-evidentiary-fixtures.mjs",
+    "sdk_version": "2.6.0-alpha.0",
+    "generated_at": "2026-05-02T20:34:10.485Z",
+    "note": "Cross-impl byte-parity fixtures. Python port asserts identical canonical JSON + sha256 for the same inputs."
+  },
+  "registry": {
+    "claim_types": [
+      "IDENTITY_VERIFIED",
+      "AUTHORITY_TO_EXECUTE",
+      "ACTION_EXECUTED",
+      "BINDING_COMMITMENT",
+      "EFFECT_SAFETY_ATTESTED",
+      "DERIVATION_TRACED",
+      "CLAIM_CONTESTED",
+      "CLAIM_RESOLVED",
+      "BATCH_ATTESTED",
+      "EVIDENCE_CUSTODY_HELD"
+    ],
+    "record_types": [
+      "ActionReceipt",
+      "AuthorityBoundaryReceipt",
+      "CustodyReceipt",
+      "ContestabilityReceipt",
+      "APSBundle",
+      "AccessReceipt",
+      "DerivationReceipt",
+      "DecisionReceipt",
+      "ProvisionalStatement",
+      "PromotionEvent",
+      "Withdrawal",
+      "InstructionProvenanceReceipt",
+      "CognitiveAttestation"
+    ]
+  },
+  "verifier_scenarios": [
+    {
+      "name": "binding_commitment_with_action_receipt_only",
+      "description": "Draft-as-commitment failure mode. Canonical paper appendix artifact #1.",
+      "input": {
+        "claim": {
+          "type": "BINDING_COMMITMENT",
+          "subject": "aps:test:subject-001"
+        },
+        "evidence": [
+          {
+            "recordType": "ActionReceipt",
+            "record": {}
+          }
+        ]
+      },
+      "expectedResult": {
+        "status": "forbidden_substitution",
+        "claimType": "BINDING_COMMITMENT",
+        "offendingRecord": "ActionReceipt",
+        "reason": "Action receipts prove execution or communication, not binding commitment."
+      },
+      "canonicalJsonNoBundle": "{\"claimType\":\"BINDING_COMMITMENT\",\"offendingRecord\":\"ActionReceipt\",\"reason\":\"Action receipts prove execution or communication, not binding commitment.\",\"status\":\"forbidden_substitution\"}",
+      "canonicalSha256NoBundle": "cd76a25f718e16dcd76d687fd814bded76f7471f57f4aa9ae757a7331936a4ec"
+    },
+    {
+      "name": "binding_commitment_with_promotion_and_provisional",
+      "description": "Valid binding commitment.",
+      "input": {
+        "claim": {
+          "type": "BINDING_COMMITMENT",
+          "subject": "aps:test:subject-001"
+        },
+        "evidence": [
+          {
+            "recordType": "PromotionEvent",
+            "record": {}
+          },
+          {
+            "recordType": "ProvisionalStatement",
+            "record": {}
+          }
+        ]
+      },
+      "expectedResult": {
+        "status": "valid",
+        "claimType": "BINDING_COMMITMENT",
+        "satisfiedBy": [
+          "PromotionEvent",
+          "ProvisionalStatement"
+        ]
+      },
+      "canonicalJsonNoBundle": "{\"claimType\":\"BINDING_COMMITMENT\",\"satisfiedBy\":[\"PromotionEvent\",\"ProvisionalStatement\"],\"status\":\"valid\"}",
+      "canonicalSha256NoBundle": "4b4fbf1a49a28352eca49193c53a39e45b88e9edc8e54961204088ab8832d804"
+    },
+    {
+      "name": "authority_to_execute_with_authority_boundary",
+      "description": "Valid authority claim.",
+      "input": {
+        "claim": {
+          "type": "AUTHORITY_TO_EXECUTE",
+          "subject": "aps:test:subject-001"
+        },
+        "evidence": [
+          {
+            "recordType": "AuthorityBoundaryReceipt",
+            "record": {}
+          }
+        ]
+      },
+      "expectedResult": {
+        "status": "valid",
+        "claimType": "AUTHORITY_TO_EXECUTE",
+        "satisfiedBy": [
+          "AuthorityBoundaryReceipt"
+        ]
+      },
+      "canonicalJsonNoBundle": "{\"claimType\":\"AUTHORITY_TO_EXECUTE\",\"satisfiedBy\":[\"AuthorityBoundaryReceipt\"],\"status\":\"valid\"}",
+      "canonicalSha256NoBundle": "bfdf3b75bf57b1cbb065a00d19741ecb9e26900506a083d02e7f8126646fb556"
+    },
+    {
+      "name": "authority_to_execute_with_no_evidence",
+      "description": "Missing evidence on authority claim.",
+      "input": {
+        "claim": {
+          "type": "AUTHORITY_TO_EXECUTE",
+          "subject": "aps:test:subject-001"
+        },
+        "evidence": []
+      },
+      "expectedResult": {
+        "status": "missing_evidence",
+        "claimType": "AUTHORITY_TO_EXECUTE",
+        "missing": [
+          "AuthorityBoundaryReceipt"
+        ],
+        "provided": []
+      },
+      "canonicalJsonNoBundle": "{\"claimType\":\"AUTHORITY_TO_EXECUTE\",\"missing\":[\"AuthorityBoundaryReceipt\"],\"provided\":[],\"status\":\"missing_evidence\"}",
+      "canonicalSha256NoBundle": "2b9d97c988cc28cb8582821100e9b55de040a2fc0b14d6793cb1200a52de7328"
+    },
+    {
+      "name": "effect_safety_attested_with_full_chain",
+      "description": "Compliance-complete failure: stub claim, never permits. Paper appendix artifact #3.",
+      "input": {
+        "claim": {
+          "type": "EFFECT_SAFETY_ATTESTED",
+          "subject": "aps:test:subject-001"
+        },
+        "evidence": [
+          {
+            "recordType": "AuthorityBoundaryReceipt",
+            "record": {}
+          },
+          {
+            "recordType": "DecisionReceipt",
+            "record": {}
+          },
+          {
+            "recordType": "ActionReceipt",
+            "record": {}
+          },
+          {
+            "recordType": "DerivationReceipt",
+            "record": {}
+          }
+        ]
+      },
+      "expectedResult": {
+        "status": "profile_not_populated",
+        "claimType": "EFFECT_SAFETY_ATTESTED"
+      },
+      "canonicalJsonNoBundle": "{\"claimType\":\"EFFECT_SAFETY_ATTESTED\",\"status\":\"profile_not_populated\"}",
+      "canonicalSha256NoBundle": "3e2ef3429181f74cdce1a109944b39c9ba6b8046bf08194ff0c0d58736189f5b"
+    },
+    {
+      "name": "binding_commitment_with_aps_bundle",
+      "description": "Bundle requires inclusion proof for non-batch claim.",
+      "input": {
+        "claim": {
+          "type": "BINDING_COMMITMENT",
+          "subject": "aps:test:subject-001"
+        },
+        "evidence": [
+          {
+            "recordType": "APSBundle",
+            "record": {
+              "merkle_root": "deadbeef"
+            }
+          }
+        ]
+      },
+      "expectedResult": {
+        "status": "bundle_requires_inclusion_proof",
+        "claimType": "BINDING_COMMITMENT",
+        "bundleRecord": {
+          "merkle_root": "deadbeef"
+        }
+      },
+      "canonicalJsonNoBundle": "{\"claimType\":\"BINDING_COMMITMENT\",\"status\":\"bundle_requires_inclusion_proof\"}",
+      "canonicalSha256NoBundle": "dd5f9ed3c08a71bf8409771338b7ecdcf143bf2d4d082cb669da445d48eea27e"
+    },
+    {
+      "name": "evidence_custody_held_with_action_receipt",
+      "description": "Forbidden substitution: action receipt for custody claim.",
+      "input": {
+        "claim": {
+          "type": "EVIDENCE_CUSTODY_HELD",
+          "subject": "aps:test:subject-001"
+        },
+        "evidence": [
+          {
+            "recordType": "ActionReceipt",
+            "record": {}
+          }
+        ]
+      },
+      "expectedResult": {
+        "status": "forbidden_substitution",
+        "claimType": "EVIDENCE_CUSTODY_HELD",
+        "offendingRecord": "ActionReceipt",
+        "reason": "Action receipts prove what was done, not who held the evidence afterward."
+      },
+      "canonicalJsonNoBundle": "{\"claimType\":\"EVIDENCE_CUSTODY_HELD\",\"offendingRecord\":\"ActionReceipt\",\"reason\":\"Action receipts prove what was done, not who held the evidence afterward.\",\"status\":\"forbidden_substitution\"}",
+      "canonicalSha256NoBundle": "a902bb33e5f6d529604d7e8e86398e3e9eddecaad1a67a9c764196476fa9bc38"
+    },
+    {
+      "name": "batch_attested_with_aps_bundle",
+      "description": "Valid batch claim with APSBundle.",
+      "input": {
+        "claim": {
+          "type": "BATCH_ATTESTED",
+          "subject": "aps:test:subject-001"
+        },
+        "evidence": [
+          {
+            "recordType": "APSBundle",
+            "record": {}
+          }
+        ]
+      },
+      "expectedResult": {
+        "status": "valid",
+        "claimType": "BATCH_ATTESTED",
+        "satisfiedBy": [
+          "APSBundle"
+        ]
+      },
+      "canonicalJsonNoBundle": "{\"claimType\":\"BATCH_ATTESTED\",\"satisfiedBy\":[\"APSBundle\"],\"status\":\"valid\"}",
+      "canonicalSha256NoBundle": "61296a8a60d4ff65b816ccd566dea3eb683b40b78b60fbc125562a6863d273be"
+    },
+    {
+      "name": "unsupported_claim_type",
+      "description": "Unknown claim type.",
+      "input": {
+        "claim": {
+          "type": "NOT_A_REAL_CLAIM",
+          "subject": "aps:test:subject-001"
+        },
+        "evidence": []
+      },
+      "expectedResult": {
+        "status": "unsupported_claim_type",
+        "claimType": "NOT_A_REAL_CLAIM"
+      },
+      "canonicalJsonNoBundle": "{\"claimType\":\"NOT_A_REAL_CLAIM\",\"status\":\"unsupported_claim_type\"}",
+      "canonicalSha256NoBundle": "7d369452edcf9c0f58940690c1d03c5b410cdc31c09730d0168a36239076e7a0"
+    }
+  ],
+  "cascade_scenarios": [
+    {
+      "name": "cascade_filed_no_taint",
+      "description": "Filed contestation does not taint.",
+      "contestation": {
+        "receipt_id": "contest_action_001",
+        "action_id": "action_001",
+        "controller_response": {
+          "status": "filed"
+        }
+      },
+      "candidates": [
+        {
+          "receiptId": "decision_001",
+          "recordType": "DecisionReceipt",
+          "references": [
+            "action_001"
+          ]
+        }
+      ],
+      "isTainting": false,
+      "expectedResult": null,
+      "canonicalJson": "null",
+      "canonicalSha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+    },
+    {
+      "name": "cascade_upheld_direct_only",
+      "description": "Upheld contestation, depth 1 only.",
+      "contestation": {
+        "receipt_id": "contest_action_001",
+        "action_id": "action_001",
+        "controller_response": {
+          "status": "upheld"
+        }
+      },
+      "candidates": [
+        {
+          "receiptId": "decision_001",
+          "recordType": "DecisionReceipt",
+          "references": [
+            "action_001"
+          ]
+        }
+      ],
+      "isTainting": true,
+      "expectedResult": {
+        "rootActionId": "action_001",
+        "rootContestationId": "contest_action_001",
+        "tainted": [
+          {
+            "receiptId": "decision_001",
+            "recordType": "DecisionReceipt",
+            "taintReason": "Directly references contested action action_001",
+            "taintDepth": 1
+          }
+        ]
+      },
+      "canonicalJson": "{\"rootActionId\":\"action_001\",\"rootContestationId\":\"contest_action_001\",\"tainted\":[{\"receiptId\":\"decision_001\",\"recordType\":\"DecisionReceipt\",\"taintDepth\":1,\"taintReason\":\"Directly references contested action action_001\"}]}",
+      "canonicalSha256": "fec951c49f17847179639d43036ebc03f9efd99d55a864b600b09228615a5e11"
+    },
+    {
+      "name": "cascade_upheld_three_receipt_demo",
+      "description": "Canonical paper appendix cascade: depth 1 + depth 2 + unrelated. Paper appendix artifact #2.",
+      "contestation": {
+        "receipt_id": "contest_action_001",
+        "action_id": "action_001",
+        "controller_response": {
+          "status": "upheld"
+        }
+      },
+      "candidates": [
+        {
+          "receiptId": "decision_001",
+          "recordType": "DecisionReceipt",
+          "references": [
+            "action_001"
+          ]
+        },
+        {
+          "receiptId": "derivation_001",
+          "recordType": "DerivationReceipt",
+          "references": [
+            "decision_001"
+          ]
+        },
+        {
+          "receiptId": "unrelated_001",
+          "recordType": "ActionReceipt",
+          "references": [
+            "action_999"
+          ]
+        }
+      ],
+      "isTainting": true,
+      "expectedResult": {
+        "rootActionId": "action_001",
+        "rootContestationId": "contest_action_001",
+        "tainted": [
+          {
+            "receiptId": "decision_001",
+            "recordType": "DecisionReceipt",
+            "taintReason": "Directly references contested action action_001",
+            "taintDepth": 1
+          },
+          {
+            "receiptId": "derivation_001",
+            "recordType": "DerivationReceipt",
+            "taintReason": "Transitively references tainted receipt decision_001",
+            "taintDepth": 2
+          }
+        ]
+      },
+      "canonicalJson": "{\"rootActionId\":\"action_001\",\"rootContestationId\":\"contest_action_001\",\"tainted\":[{\"receiptId\":\"decision_001\",\"recordType\":\"DecisionReceipt\",\"taintDepth\":1,\"taintReason\":\"Directly references contested action action_001\"},{\"receiptId\":\"derivation_001\",\"recordType\":\"DerivationReceipt\",\"taintDepth\":2,\"taintReason\":\"Transitively references tainted receipt decision_001\"}]}",
+      "canonicalSha256": "11136b583d7a22189c7da746d526bf1683c075ecd2fc80376c2d004ce4a09940"
+    },
+    {
+      "name": "cascade_remedied_blocks_too",
+      "description": "Remedied contestation also taints.",
+      "contestation": {
+        "receipt_id": "contest_action_001",
+        "action_id": "action_001",
+        "controller_response": {
+          "status": "remedied"
+        }
+      },
+      "candidates": [
+        {
+          "receiptId": "decision_001",
+          "recordType": "DecisionReceipt",
+          "references": [
+            "action_001"
+          ]
+        }
+      ],
+      "isTainting": true,
+      "expectedResult": {
+        "rootActionId": "action_001",
+        "rootContestationId": "contest_action_001",
+        "tainted": [
+          {
+            "receiptId": "decision_001",
+            "recordType": "DecisionReceipt",
+            "taintReason": "Directly references contested action action_001",
+            "taintDepth": 1
+          }
+        ]
+      },
+      "canonicalJson": "{\"rootActionId\":\"action_001\",\"rootContestationId\":\"contest_action_001\",\"tainted\":[{\"receiptId\":\"decision_001\",\"recordType\":\"DecisionReceipt\",\"taintDepth\":1,\"taintReason\":\"Directly references contested action action_001\"}]}",
+      "canonicalSha256": "fec951c49f17847179639d43036ebc03f9efd99d55a864b600b09228615a5e11"
+    },
+    {
+      "name": "cascade_cycle_neither_to_action",
+      "description": "A→B, B→A, neither references the contested action. Empty tainted set.",
+      "contestation": {
+        "receipt_id": "contest_action_001",
+        "action_id": "action_001",
+        "controller_response": {
+          "status": "upheld"
+        }
+      },
+      "candidates": [
+        {
+          "receiptId": "A",
+          "recordType": "DecisionReceipt",
+          "references": [
+            "B"
+          ]
+        },
+        {
+          "receiptId": "B",
+          "recordType": "DerivationReceipt",
+          "references": [
+            "A"
+          ]
+        }
+      ],
+      "isTainting": true,
+      "expectedResult": {
+        "rootActionId": "action_001",
+        "rootContestationId": "contest_action_001",
+        "tainted": []
+      },
+      "canonicalJson": "{\"rootActionId\":\"action_001\",\"rootContestationId\":\"contest_action_001\",\"tainted\":[]}",
+      "canonicalSha256": "cb6ca6f5ee788d1b64f7bd9bd0f841b1f7241f932c74a16db666c7a4e3ede724"
+    },
+    {
+      "name": "cascade_cycle_with_action_root",
+      "description": "A references action AND B; B references A. Both tainted, BFS depth correct.",
+      "contestation": {
+        "receipt_id": "contest_action_001",
+        "action_id": "action_001",
+        "controller_response": {
+          "status": "upheld"
+        }
+      },
+      "candidates": [
+        {
+          "receiptId": "A",
+          "recordType": "DecisionReceipt",
+          "references": [
+            "action_001",
+            "B"
+          ]
+        },
+        {
+          "receiptId": "B",
+          "recordType": "DerivationReceipt",
+          "references": [
+            "A"
+          ]
+        }
+      ],
+      "isTainting": true,
+      "expectedResult": {
+        "rootActionId": "action_001",
+        "rootContestationId": "contest_action_001",
+        "tainted": [
+          {
+            "receiptId": "A",
+            "recordType": "DecisionReceipt",
+            "taintReason": "Directly references contested action action_001",
+            "taintDepth": 1
+          },
+          {
+            "receiptId": "B",
+            "recordType": "DerivationReceipt",
+            "taintReason": "Transitively references tainted receipt A",
+            "taintDepth": 2
+          }
+        ]
+      },
+      "canonicalJson": "{\"rootActionId\":\"action_001\",\"rootContestationId\":\"contest_action_001\",\"tainted\":[{\"receiptId\":\"A\",\"recordType\":\"DecisionReceipt\",\"taintDepth\":1,\"taintReason\":\"Directly references contested action action_001\"},{\"receiptId\":\"B\",\"recordType\":\"DerivationReceipt\",\"taintDepth\":2,\"taintReason\":\"Transitively references tainted receipt A\"}]}",
+      "canonicalSha256": "929cc9272e9fcc18ca0b157fe1d8ec175060cf71c9560c69daa3314c4dea191b"
+    }
+  ]
+}

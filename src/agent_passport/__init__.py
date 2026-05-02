@@ -28,7 +28,7 @@ Remote MCP: https://mcp.aeoess.com/sse
 Docs: https://aeoess.com/llms-full.txt
 """
 
-__version__ = "2.3.0"
+__version__ = "2.4.0"
 
 # Crypto
 from .crypto import generate_key_pair, sign, verify, public_key_from_private
@@ -283,3 +283,36 @@ from .v2.mutual_auth import (
 
 # Canonical JCS (RFC 8785 strict) for modules requiring cross-language signature interop
 from .canonical import canonicalize_jcs
+
+
+# Evidentiary Type Safety primitives (SDK v2.4.0)
+# Ports of the four TypeScript SDK 2.6.0-alpha.0 primitives:
+# claim-evidence-types, claim-verifier, downstream-taint, GroundsClass.
+# ContestabilityReceipt fully ports when Wave 1 accountability ports;
+# the cascade-consumed shape ships now as a minimal dataclass.
+from .v2 import (
+    # claim_evidence_types
+    ClaimType,
+    RecordType,
+    EvidenceProfile,
+    EvidenceProfiles,
+    required_evidence_for,
+    # claim_verifier
+    ClaimVerificationInput,
+    ClaimVerificationResult,
+    ClaimVerificationStatus,
+    EvidenceEntry,
+    OpenContestationLookup,
+    OpenContestationResolver,
+    verify_evidence_claim,
+    # downstream_taint
+    ContestStatus,
+    ContestabilityControllerResponse,
+    ContestabilityReceipt,
+    GroundsClass,
+    TaintCandidate,
+    TaintedRecord,
+    TaintedSet,
+    compute_downstream_taint,
+    is_contestation_tainting,
+)
