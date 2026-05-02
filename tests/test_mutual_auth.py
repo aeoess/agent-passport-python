@@ -24,6 +24,13 @@ HOUR = 60 * 60 * 1000
 DAY = 24 * HOUR
 VERSIONS = ["1.2", "1.1", "1.0"]
 
+# Path to the SDK source repo containing cross-language conformance vectors.
+# Override with APS_SDK_PATH env var if the SDK lives elsewhere.
+APS_SDK_PATH = os.environ.get(
+    'APS_SDK_PATH',
+    os.path.expanduser('~/agent-passport-system'),
+)
+
 
 def _mk_cert(role, subject_pk, issuer_pk, issuer_sk,
              versions=None, binding=None, grade=None, caps=None):
@@ -315,7 +322,7 @@ def test_grade_insufficient():
 def test_conformance_vec01_certificate_minimal():
     """Read the TypeScript-generated vec01 and check Python produces the same canonical bytes."""
     # Path to TS SDK conformance vectors
-    ts_sdk_path = "/Users/tima/agent-passport-system/src/conformance/mutual-auth-vectors/vec01-certificate-canonical.json"
+    ts_sdk_path = f"{APS_SDK_PATH}/src/conformance/mutual-auth-vectors/vec01-certificate-canonical.json"
     if not os.path.exists(ts_sdk_path):
         pytest.skip("TS conformance vectors not present locally")
     with open(ts_sdk_path) as f:
@@ -335,7 +342,7 @@ def test_conformance_vec01_certificate_minimal():
 
 
 def test_conformance_vec02_certificate_all_fields():
-    ts_sdk_path = "/Users/tima/agent-passport-system/src/conformance/mutual-auth-vectors/vec02-certificate-all-fields.json"
+    ts_sdk_path = f"{APS_SDK_PATH}/src/conformance/mutual-auth-vectors/vec02-certificate-all-fields.json"
     if not os.path.exists(ts_sdk_path):
         pytest.skip("TS conformance vectors not present locally")
     with open(ts_sdk_path) as f:
@@ -351,7 +358,7 @@ def test_conformance_vec02_certificate_all_fields():
 
 
 def test_conformance_vec05_session_id_derivation():
-    ts_sdk_path = "/Users/tima/agent-passport-system/src/conformance/mutual-auth-vectors/vec05-session-derivation.json"
+    ts_sdk_path = f"{APS_SDK_PATH}/src/conformance/mutual-auth-vectors/vec05-session-derivation.json"
     if not os.path.exists(ts_sdk_path):
         pytest.skip("TS conformance vectors not present locally")
     with open(ts_sdk_path) as f:
