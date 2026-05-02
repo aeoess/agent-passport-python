@@ -2,7 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/agent-passport-system)](https://pypi.org/project/agent-passport-system/)
 
-**Enforcement and accountability layer for AI agents. Bring your own identity.** Full Python implementation of the [Agent Passport Protocol](https://aeoess.com), cross-language compatible with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) — signatures created in Python verify in TypeScript and vice versa.
+**Enforcement and accountability layer for AI agents. Bring your own identity.** Python implementation of the [Agent Passport Protocol](https://aeoess.com), cross-language compatible with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) — signatures created in Python verify in TypeScript and vice versa. The Python port is a strict subset of the TS SDK; see the note under "What's Included" below for the current scope boundary.
 
 ## Install
 
@@ -10,7 +10,7 @@
 pip install agent-passport-system
 ```
 
-> **v2.0.0 alignment (2026-04-17)**: Published as `2.0.0b0` pre-release on PyPI, matching the architectural separation shipped in `agent-passport-system` npm v2.0.0. Install with `pip install --pre agent-passport-system` to opt in to the v2 beta. Default `pip install` continues to pull v0.15.0 until v2.0.0 final is released. The Python SDK's public API is already protocol-only — no breaking changes for most users.
+> **Current PyPI version**: `2.3.0` (default install). Cross-language parity with `agent-passport-system` npm v2.6.0-alpha.0 covers identity, delegation, governance, data source registration, training attribution, per-period attribution settlement, and mutual authentication. Wave 1 accountability and the evidentiary type safety primitives are TypeScript-only this iteration.
 
 
 ## Quick Start
@@ -110,9 +110,7 @@ This Python SDK implements all 8 Agent Passport Protocol layers:
 7. **Integration Wiring** — Cross-layer bridges (commerce+intent, coordination+agora)
 8. **Agentic Commerce** — 4-gate checkout, human approval, spend limits
 
-Plus Wave 1 accountability primitives: Ed25519 ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle. RFC 8785 JCS canonicalized, content-addressed, byte-match across implementations.
-
-Full parity with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system). Also available via the [MCP server](https://mcp.aeoess.com/sse).
+Strict subset of the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) at npm v2.6.0-alpha.0. Wave 1 accountability primitives (ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle) and the evidentiary type safety primitives (claim-evidence registry, claim verifier, downstream-taint cascade) ship in the TypeScript SDK only this iteration; Python port deferred. Cross-language signature verification continues to work for the primitives Python does ship. Also available via the [MCP server](https://mcp.aeoess.com/sse).
 
 ## Links
 
@@ -137,7 +135,8 @@ Full parity with the [TypeScript SDK](https://www.npmjs.com/package/agent-passpo
 ```bash
 pip install pynacl pytest
 PYTHONPATH=src pytest tests/ -v
-# 328 tests across 25 test files, covering all 8 protocol layers
+# 348 passed, 1 skipped, 6 xfailed across 27 test files. Coverage tracks the
+# protocol layers the Python port has actually shipped (see "Strict subset" note above).
 ```
 
 ## License
