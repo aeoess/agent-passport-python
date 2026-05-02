@@ -57,8 +57,8 @@ def test_binding_commitment_with_only_action_receipt_returns_forbidden_substitut
         )
     )
     assert result.status == "forbidden_substitution"
-    assert result.claimType == ClaimType.BINDING_COMMITMENT
-    assert result.offendingRecord == RecordType.ActionReceipt
+    assert result.claim_type == ClaimType.BINDING_COMMITMENT
+    assert result.offending_record == RecordType.ActionReceipt
     assert (
         result.reason
         == "Action receipts prove execution or communication, not binding commitment."
@@ -76,7 +76,7 @@ def test_binding_commitment_with_promotion_and_provisional_returns_valid():
         )
     )
     assert result.status == "valid"
-    assert result.satisfiedBy == [
+    assert result.satisfied_by == [
         RecordType.PromotionEvent,
         RecordType.ProvisionalStatement,
     ]
@@ -94,7 +94,7 @@ def test_authority_to_execute_with_authority_boundary_returns_valid():
         )
     )
     assert result.status == "valid"
-    assert result.satisfiedBy == [RecordType.AuthorityBoundaryReceipt]
+    assert result.satisfied_by == [RecordType.AuthorityBoundaryReceipt]
 
 
 def test_authority_to_execute_with_no_evidence_returns_missing_evidence():
@@ -112,7 +112,7 @@ def test_batch_attested_with_aps_bundle_returns_valid():
         )
     )
     assert result.status == "valid"
-    assert result.satisfiedBy == [RecordType.APSBundle]
+    assert result.satisfied_by == [RecordType.APSBundle]
 
 
 def test_binding_commitment_with_aps_bundle_returns_bundle_requires_inclusion_proof():
@@ -124,7 +124,7 @@ def test_binding_commitment_with_aps_bundle_returns_bundle_requires_inclusion_pr
         )
     )
     assert result.status == "bundle_requires_inclusion_proof"
-    assert result.bundleRecord == bundle_rec
+    assert result.bundle_record == bundle_rec
 
 
 def test_evidence_custody_held_with_action_receipt_forbidden():
@@ -135,7 +135,7 @@ def test_evidence_custody_held_with_action_receipt_forbidden():
         )
     )
     assert result.status == "forbidden_substitution"
-    assert result.offendingRecord == RecordType.ActionReceipt
+    assert result.offending_record == RecordType.ActionReceipt
     assert "held the evidence" in result.reason.lower()
 
 
@@ -147,7 +147,7 @@ def test_evidence_custody_held_with_custody_receipt_valid():
         )
     )
     assert result.status == "valid"
-    assert result.satisfiedBy == [RecordType.CustodyReceipt]
+    assert result.satisfied_by == [RecordType.CustodyReceipt]
 
 
 def test_effect_safety_attested_with_full_chain_returns_profile_not_populated():
@@ -167,7 +167,7 @@ def test_effect_safety_attested_with_full_chain_returns_profile_not_populated():
         )
     )
     assert result.status == "profile_not_populated"
-    assert result.claimType == ClaimType.EFFECT_SAFETY_ATTESTED
+    assert result.claim_type == ClaimType.EFFECT_SAFETY_ATTESTED
 
 
 def test_unsupported_claim_type():
@@ -221,9 +221,9 @@ def test_resolver_filed_returns_contested():
         )
     )
     assert result.status == "contested"
-    assert result.contestedRecordId == "auth_001"
-    assert result.contestationId == "contest_xyz"
-    assert result.contestationStatus == "filed"
+    assert result.contested_record_id == "auth_001"
+    assert result.contestation_id == "contest_xyz"
+    assert result.contestation_status == "filed"
 
 
 def test_resolver_rejected_returns_valid():
@@ -264,7 +264,7 @@ def test_resolver_upheld_returns_contested():
         )
     )
     assert result.status == "contested"
-    assert result.contestationStatus == "upheld"
+    assert result.contestation_status == "upheld"
 
 
 # ── Cross-impl byte-parity (load TS fixtures, assert byte-identical output) ──
@@ -309,7 +309,7 @@ def test_verifier_byte_parity_with_ts(fixture):
         evidence=evidence,
     )
     result = verify_evidence_claim(input)
-    result_dict = result.to_dict()
+    result_dict = result.to_canonical_dict()
     result_dict.pop("bundleRecord", None)
     canonical = canonicalize(result_dict)
     digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()

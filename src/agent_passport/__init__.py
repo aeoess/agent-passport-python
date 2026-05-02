@@ -28,7 +28,7 @@ Remote MCP: https://mcp.aeoess.com/sse
 Docs: https://aeoess.com/llms-full.txt
 """
 
-__version__ = "2.4.0"
+__version__ = "2.4.0a0"
 
 # Crypto
 from .crypto import generate_key_pair, sign, verify, public_key_from_private
@@ -285,7 +285,7 @@ from .v2.mutual_auth import (
 from .canonical import canonicalize_jcs
 
 
-# Evidentiary Type Safety primitives (SDK v2.4.0)
+# Evidentiary Type Safety primitives (SDK v2.4.0a0 alpha pre-release)
 # Ports of the four TypeScript SDK 2.6.0-alpha.0 primitives:
 # claim-evidence-types, claim-verifier, downstream-taint, GroundsClass.
 # ContestabilityReceipt fully ports when Wave 1 accountability ports;

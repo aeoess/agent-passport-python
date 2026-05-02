@@ -47,8 +47,10 @@ union. Python options ranked at port time:
      rest of this Python SDK does not carry.
 
 Pre-decided in the port spec: option 1. Documented here for future
-maintainers. The to_dict() helper drops None-valued fields so the
-canonical JSON form is byte-identical to what TypeScript produces.
+maintainers. Python attribute names are snake_case per PEP 8; the
+to_canonical_dict() method emits camelCase JSON keys for cross-impl
+byte-parity with TypeScript. The canonical-hash path goes through
+to_canonical_dict, not the dataclass attributes directly.
 """
 
 from dataclasses import dataclass, field
@@ -133,61 +135,59 @@ class ClaimVerificationResult:
 
     The `status` field is the discriminator. Per-variant fields are
     Optional and only populated when the discriminator selects them.
-    to_dict() drops None-valued fields so the canonical JSON shape
-    matches what the TypeScript discriminated union produces.
-
-    Field naming follows TS exactly (camelCase, not snake_case) for
-    cross-impl JSON byte-parity. Python callers reading these via
-    attribute access still get camelCase identifiers; this is the
-    deliberate trade-off for wire compatibility.
+    Python attribute names are snake_case per PEP 8; the
+    to_canonical_dict() method emits camelCase JSON keys for cross-impl
+    byte-parity with the TypeScript SDK. None-valued fields drop from
+    the canonical-dict output so each variant's JSON shape matches
+    TS exactly.
     """
 
     status: ClaimVerificationStatus
-    claimType: ClaimType
+    claim_type: ClaimType
     # 'valid' fields
-    satisfiedBy: Optional[List[RecordType]] = None
+    satisfied_by: Optional[List[RecordType]] = None
     # 'missing_evidence' fields
     missing: Optional[List[RecordType]] = None
     provided: Optional[List[RecordType]] = None
     # 'forbidden_substitution' fields
-    offendingRecord: Optional[RecordType] = None
+    offending_record: Optional[RecordType] = None
     reason: Optional[str] = None
     # 'bundle_requires_inclusion_proof' fields
-    bundleRecord: Optional[APSBundle] = None
+    bundle_record: Optional[APSBundle] = None
     # 'contested' fields
-    contestedRecordId: Optional[str] = None
-    contestationId: Optional[str] = None
-    contestationStatus: Optional[ContestStatus] = None
+    contested_record_id: Optional[str] = None
+    contestation_id: Optional[str] = None
+    contestation_status: Optional[ContestStatus] = None
 
-    def to_dict(self) -> dict:
-        """Serialize as a dict matching the TS discriminated-union shape.
+    def to_canonical_dict(self) -> dict:
+        """Emit camelCase JSON dict for cross-impl byte-parity with TS.
 
-        None-valued fields drop. Enums collapse to their string values.
-        Lists of enums collapse element-wise. Use this output as the
-        input to canonicalize() for cross-impl byte comparison.
+        The canonical hash path uses this output, not the dataclass
+        attributes. None-valued fields drop. Enums collapse to their
+        string values. Lists of enums collapse element-wise.
         """
         out: dict = {
             "status": self.status,
-            "claimType": _enum_value(self.claimType),
+            "claimType": _enum_value(self.claim_type),
         }
-        if self.satisfiedBy is not None:
-            out["satisfiedBy"] = [_enum_value(r) for r in self.satisfiedBy]
+        if self.satisfied_by is not None:
+            out["satisfiedBy"] = [_enum_value(r) for r in self.satisfied_by]
         if self.missing is not None:
             out["missing"] = [_enum_value(r) for r in self.missing]
         if self.provided is not None:
             out["provided"] = [_enum_value(r) for r in self.provided]
-        if self.offendingRecord is not None:
-            out["offendingRecord"] = _enum_value(self.offendingRecord)
+        if self.offending_record is not None:
+            out["offendingRecord"] = _enum_value(self.offending_record)
         if self.reason is not None:
             out["reason"] = self.reason
-        if self.bundleRecord is not None:
-            out["bundleRecord"] = self.bundleRecord
-        if self.contestedRecordId is not None:
-            out["contestedRecordId"] = self.contestedRecordId
-        if self.contestationId is not None:
-            out["contestationId"] = self.contestationId
-        if self.contestationStatus is not None:
-            out["contestationStatus"] = self.contestationStatus
+        if self.bundle_record is not None:
+            out["bundleRecord"] = self.bundle_record
+        if self.contested_record_id is not None:
+            out["contestedRecordId"] = self.contested_record_id
+        if self.contestation_id is not None:
+            out["contestationId"] = self.contestation_id
+        if self.contestation_status is not None:
+            out["contestationStatus"] = self.contestation_status
         return out
 
 
@@ -213,7 +213,7 @@ def verify_evidence_claim(input: ClaimVerificationInput) -> ClaimVerificationRes
     if profile is None:
         return ClaimVerificationResult(
             status="unsupported_claim_type",
-            claimType=claim_type,
+            claim_type=claim_type,
         )
 
     # 2. profile_not_populated — registry entry is a stub.
@@ -222,7 +222,7 @@ def verify_evidence_claim(input: ClaimVerificationInput) -> ClaimVerificationRes
     if not has_required and not has_forbidden:
         return ClaimVerificationResult(
             status="profile_not_populated",
-            claimType=claim_type,
+            claim_type=claim_type,
         )
 
     # 3. bundle_requires_inclusion_proof — APSBundle slipped in for a
@@ -232,8 +232,8 @@ def verify_evidence_claim(input: ClaimVerificationInput) -> ClaimVerificationRes
             if entry.record_type == RecordType.APSBundle:
                 return ClaimVerificationResult(
                     status="bundle_requires_inclusion_proof",
-                    claimType=claim_type,
-                    bundleRecord=entry.record,
+                    claim_type=claim_type,
+                    bundle_record=entry.record,
                 )
 
     # 4. forbidden_substitution — first match wins, in evidence order.
@@ -242,8 +242,8 @@ def verify_evidence_claim(input: ClaimVerificationInput) -> ClaimVerificationRes
         if reason is not None:
             return ClaimVerificationResult(
                 status="forbidden_substitution",
-                claimType=claim_type,
-                offendingRecord=entry.record_type,
+                claim_type=claim_type,
+                offending_record=entry.record_type,
                 reason=reason,
             )
 
@@ -254,7 +254,7 @@ def verify_evidence_claim(input: ClaimVerificationInput) -> ClaimVerificationRes
     if missing:
         return ClaimVerificationResult(
             status="missing_evidence",
-            claimType=claim_type,
+            claim_type=claim_type,
             missing=missing,
             provided=provided_types,
         )
@@ -269,15 +269,15 @@ def verify_evidence_claim(input: ClaimVerificationInput) -> ClaimVerificationRes
             if lookup is not None and lookup.status in BLOCKING_CONTEST_STATUSES:
                 return ClaimVerificationResult(
                     status="contested",
-                    claimType=claim_type,
-                    contestedRecordId=entry.receipt_id,
-                    contestationId=lookup.contestation_id,
-                    contestationStatus=lookup.status,
+                    claim_type=claim_type,
+                    contested_record_id=entry.receipt_id,
+                    contestation_id=lookup.contestation_id,
+                    contestation_status=lookup.status,
                 )
 
     # 7. valid.
     return ClaimVerificationResult(
         status="valid",
-        claimType=claim_type,
-        satisfiedBy=list(profile.required),
+        claim_type=claim_type,
+        satisfied_by=list(profile.required),
     )

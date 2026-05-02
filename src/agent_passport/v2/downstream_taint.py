@@ -107,7 +107,11 @@ def is_contestation_tainting(c: ContestabilityReceipt) -> bool:
 
 @dataclass
 class TaintedRecord:
-    """One receipt downstream of a tainting contestation."""
+    """One receipt downstream of a tainting contestation.
+
+    Python attribute names are snake_case per PEP 8; to_canonical_dict
+    emits camelCase JSON keys for cross-impl byte-parity with TS.
+    """
 
     receipt_id: str
     record_type: RecordType
@@ -115,14 +119,37 @@ class TaintedRecord:
     # 1 = direct reference to the contested action_id. 2+ = transitive.
     taint_depth: int
 
+    def to_canonical_dict(self) -> dict:
+        """Emit camelCase JSON dict for cross-impl byte-parity with TS."""
+        return {
+            "receiptId": self.receipt_id,
+            "recordType": self.record_type.value
+            if isinstance(self.record_type, RecordType)
+            else self.record_type,
+            "taintReason": self.taint_reason,
+            "taintDepth": self.taint_depth,
+        }
+
 
 @dataclass
 class TaintedSet:
-    """Result of computing the cascade closure."""
+    """Result of computing the cascade closure.
+
+    Python attribute names are snake_case per PEP 8; to_canonical_dict
+    emits camelCase JSON keys for cross-impl byte-parity with TS.
+    """
 
     root_action_id: str
     root_contestation_id: str
     tainted: List[TaintedRecord] = field(default_factory=list)
+
+    def to_canonical_dict(self) -> dict:
+        """Emit camelCase JSON dict for cross-impl byte-parity with TS."""
+        return {
+            "rootActionId": self.root_action_id,
+            "rootContestationId": self.root_contestation_id,
+            "tainted": [t.to_canonical_dict() for t in self.tainted],
+        }
 
 
 @dataclass

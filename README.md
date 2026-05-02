@@ -10,7 +10,7 @@
 pip install agent-passport-system
 ```
 
-> **Current PyPI version**: `2.4.0` (default install). Cross-language parity with `agent-passport-system` npm v2.6.0-alpha.0 covers identity, delegation, governance, data source registration, training attribution, per-period attribution settlement, mutual authentication, and the evidentiary type safety primitives (claim/evidence registry, claim verifier, contestation cascade). Wave 1 accountability primitives are still TypeScript-only this iteration.
+> **Current stable**: `2.3.0` (default `pip install`). **Pre-release**: `2.4.0a0` (`pip install --pre agent-passport-system==2.4.0a0`). The 2.4.0a0 alpha adds the evidentiary type safety primitives (claim/evidence registry, claim verifier with forbidden-substitution detection, contestation cascade) in symmetry with TypeScript SDK npm 2.6.0-alpha.0. Cross-impl byte-parity verified against TS-generated canonical JSON fixtures. Paper review window may shape-shift these primitives; alpha versioning avoids forcing major-version ceremony for every adjustment. Wave 1 accountability primitives are still TypeScript-only this iteration.
 
 
 ## Quick Start
@@ -110,7 +110,7 @@ This Python SDK implements all 8 Agent Passport Protocol layers:
 7. **Integration Wiring** — Cross-layer bridges (commerce+intent, coordination+agora)
 8. **Agentic Commerce** — 4-gate checkout, human approval, spend limits
 
-Strict subset of the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) at npm v2.6.0-alpha.0. The four evidentiary type safety primitives (claim/evidence registry, claim verifier with forbidden-substitution detection, contestation cascade, GroundsClass extension) ship in `agent_passport.v2` from Python SDK 2.4.0 onward, with cross-impl byte-parity verified against TS-generated fixtures. Wave 1 accountability primitives (ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle) ship in the TypeScript SDK only this iteration; full Python port deferred. The cascade primitive uses a minimal Python ContestabilityReceipt that widens when Wave 1 ports. Cross-language signature verification continues to work for the primitives Python does ship. Also available via the [MCP server](https://mcp.aeoess.com/sse).
+Strict subset of the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) at npm v2.6.0-alpha.0. The four evidentiary type safety primitives (claim/evidence registry, claim verifier with forbidden-substitution detection, contestation cascade, GroundsClass extension) ship in `agent_passport.v2` from Python SDK 2.4.0a0 (alpha pre-release) onward, with cross-impl byte-parity verified against TS-generated fixtures. Wave 1 accountability primitives (ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle) ship in the TypeScript SDK only this iteration; full Python port deferred. The cascade primitive uses a minimal Python ContestabilityReceipt that widens when Wave 1 ports. Cross-language signature verification continues to work for the primitives Python does ship. Also available via the [MCP server](https://mcp.aeoess.com/sse).
 
 ## Links
 

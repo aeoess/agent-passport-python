@@ -242,26 +242,11 @@ def _ts_to_python_contestation(c):
 
 
 def _tainted_set_to_canonical_dict(tset):
-    """Map the Python TaintedSet to the dict shape TS produces.
-
-    TS field names are camelCase; Python's are snake_case. Translate
-    snake_case → camelCase here so canonical JSON matches.
+    """Use the dataclass's own to_canonical_dict so the test exercises
+    the public canonical-hash path callers will use, not a private
+    test helper. None passes through.
     """
-    if tset is None:
-        return None
-    return {
-        "rootActionId": tset.root_action_id,
-        "rootContestationId": tset.root_contestation_id,
-        "tainted": [
-            {
-                "receiptId": t.receipt_id,
-                "recordType": t.record_type.value,
-                "taintReason": t.taint_reason,
-                "taintDepth": t.taint_depth,
-            }
-            for t in tset.tainted
-        ],
-    }
+    return None if tset is None else tset.to_canonical_dict()
 
 
 @pytest.mark.parametrize(
