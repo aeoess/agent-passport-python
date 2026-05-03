@@ -1,0 +1,54 @@
+{
+  "description": "Canonical bytes for sign_attestation input (signatures elided, features sorted)",
+  "input": {
+    "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+    "model_version_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "tokenizer_version_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "inference_provider": "openai",
+    "hardware_family": "nvidia/hopper/h100-sxm5",
+    "precision": "fp16",
+    "inference_engine": "vllm@0.6.3",
+    "deterministic_mode": true,
+    "dictionary_id": "aeoess/sae-llama-3.1-8b/v1",
+    "dictionary_version_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "training_corpus_hash": null,
+    "layer_index": 12,
+    "attachment_point": "residual_stream",
+    "sae_type": "topk",
+    "absolute_sequence_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "prior_state_hash": null,
+    "start_token_index": 0,
+    "end_token_index": 16,
+    "token_count": 16,
+    "feature_activations": [
+      {
+        "feature_id": 7,
+        "feature_label": "syntax-paren",
+        "activation_statistic": "max",
+        "activation_value": 0.91,
+        "tokens_active": 4
+      },
+      {
+        "feature_id": 3,
+        "feature_label": null,
+        "activation_statistic": "mean",
+        "activation_value": 0.42,
+        "tokens_active": 9
+      }
+    ],
+    "aggregation_policy": {
+      "top_k": 5,
+      "threshold": 0.05,
+      "attestation_epsilon": 0.001,
+      "feature_allowlist_hash": null,
+      "completeness_claim": "top_k_only",
+      "tiebreaker_rule": "lowest_feature_id",
+      "required_signer_roles": [
+        "agent",
+        "provider"
+      ]
+    },
+    "timestamp": "2026-05-02T12:00:00.000Z"
+  },
+  "canonical_jcs": "{\"aggregation_policy\":{\"attestation_epsilon\":0.001,\"completeness_claim\":\"top_k_only\",\"feature_allowlist_hash\":null,\"required_signer_roles\":[\"agent\",\"provider\"],\"threshold\":0.05,\"tiebreaker_rule\":\"lowest_feature_id\",\"top_k\":5},\"attestation_timestamp\":\"2026-05-02T12:00:00.000Z\",\"dictionary_ref\":{\"attachment_point\":\"residual_stream\",\"dictionary_id\":\"aeoess/sae-llama-3.1-8b/v1\",\"dictionary_version_hash\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"layer_index\":12,\"sae_type\":\"topk\",\"training_corpus_hash\":null},\"feature_activations\":[{\"activation_statistic\":\"mean\",\"activation_value\":0.42,\"feature_id\":3,\"feature_label\":null,\"tokens_active\":9},{\"activation_statistic\":\"max\",\"activation_value\":0.91,\"feature_id\":7,\"feature_label\":\"syntax-paren\",\"tokens_active\":4}],\"model_ref\":{\"execution_environment\":{\"deterministic_mode\":true,\"hardware_family\":\"nvidia/hopper/h100-sxm5\",\"inference_engine\":\"vllm@0.6.3\",\"precision\":\"fp16\"},\"inference_provider\":\"openai\",\"model_id\":\"meta-llama/Llama-3.1-8B-Instruct\",\"model_version_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"tokenizer_version_hash\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"},\"signatures\":[],\"spec_version\":\"1.0\",\"token_range\":{\"absolute_sequence_hash\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"end_token_index\":16,\"prior_state_hash\":null,\"start_token_index\":0,\"token_count\":16}}"
+}

@@ -1,0 +1,75 @@
+{
+  "description": "cognitive_attestation_digest of the two-signer envelope",
+  "envelope": {
+    "spec_version": "1.0",
+    "model_ref": {
+      "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+      "model_version_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "tokenizer_version_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "inference_provider": "openai",
+      "execution_environment": {
+        "hardware_family": "nvidia/hopper/h100-sxm5",
+        "precision": "fp16",
+        "inference_engine": "vllm@0.6.3",
+        "deterministic_mode": true
+      }
+    },
+    "dictionary_ref": {
+      "dictionary_id": "aeoess/sae-llama-3.1-8b/v1",
+      "dictionary_version_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "training_corpus_hash": null,
+      "layer_index": 12,
+      "attachment_point": "residual_stream",
+      "sae_type": "topk"
+    },
+    "token_range": {
+      "absolute_sequence_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "prior_state_hash": null,
+      "start_token_index": 0,
+      "end_token_index": 16,
+      "token_count": 16
+    },
+    "feature_activations": [
+      {
+        "feature_id": 3,
+        "feature_label": null,
+        "activation_statistic": "mean",
+        "activation_value": 0.42,
+        "tokens_active": 9
+      },
+      {
+        "feature_id": 7,
+        "feature_label": "syntax-paren",
+        "activation_statistic": "max",
+        "activation_value": 0.91,
+        "tokens_active": 4
+      }
+    ],
+    "aggregation_policy": {
+      "top_k": 5,
+      "threshold": 0.05,
+      "attestation_epsilon": 0.001,
+      "feature_allowlist_hash": null,
+      "completeness_claim": "top_k_only",
+      "tiebreaker_rule": "lowest_feature_id",
+      "required_signer_roles": [
+        "agent",
+        "provider"
+      ]
+    },
+    "signatures": [
+      {
+        "signer_did": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737",
+        "signer_role": "agent",
+        "signature": "1MrB6lhCXAwx5l0XGUnhDGFnGTAHugZffgEhS1sFYYc3en6Gv9b5msHnOuE7lNn/lTbyEWR6gKfAkdZZEJRkCA=="
+      },
+      {
+        "signer_did": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737",
+        "signer_role": "provider",
+        "signature": "1MrB6lhCXAwx5l0XGUnhDGFnGTAHugZffgEhS1sFYYc3en6Gv9b5msHnOuE7lNn/lTbyEWR6gKfAkdZZEJRkCA=="
+      }
+    ],
+    "attestation_timestamp": "2026-05-02T12:00:00.000Z"
+  },
+  "digest": "57ab15bf6e9cb86913ca41c58ef36457abf78a48f65f0524925c48b27a4852ee"
+}

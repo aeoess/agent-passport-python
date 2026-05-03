@@ -1,0 +1,8 @@
+{
+  "generator": "tests/v2/fixtures/wave1/_generate.mjs",
+  "sdk_version": "2.6.0-alpha.0",
+  "generated_at": "2026-05-03T03:35:15.852Z",
+  "ed25519_seed_hex": "1111111111111111111111111111111111111111111111111111111111111111",
+  "ed25519_pubkey_hex": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737",
+  "note": "Fixtures pin TS SDK output for cross-impl byte-parity. Regenerate when the TS surface or canonicalization changes."
+}

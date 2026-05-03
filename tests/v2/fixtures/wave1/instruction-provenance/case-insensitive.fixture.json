@@ -1,0 +1,28 @@
+{
+  "receipt_id": "6c56620cebfdcaf8a7e6ef502ffd2507db88a50510007d80b9b3af6cd7ee4531",
+  "delegation_chain_root": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "agent_did": "did:aps:test-agent-001",
+  "discovery_patterns": [
+    "**/*.md"
+  ],
+  "working_root": "/test/root",
+  "filesystem_mode": "case-insensitive",
+  "instruction_files": [
+    {
+      "path": "claude.md",
+      "digest": "3333333333333333333333333333333333333333333333333333333333333333",
+      "bytes": 1024,
+      "role": "agent_md"
+    }
+  ],
+  "context_root": "097a8fe09027433b407b89838aa9dac20072a3d2559203b4ab5eb3ad3b251398",
+  "attestation_tier": "self-asserted",
+  "recompute_at_action": false,
+  "issued_at": "2026-05-02T00:00:00.000Z",
+  "bound_to": {
+    "type": "session",
+    "ref": "sess_2026_05_02_001"
+  },
+  "signing_key_id": "ed25519:d04ab232742bb4ab",
+  "signature": "31392e8268c2d9dda1e5cdddbed6fdfb8dd0e452b480972e9053da65a793f5a02e129c21f94e93f0eb8d728c5e0e1512be884c399d98aa183999d1773190b408"
+}

@@ -18,79 +18,23 @@ parent_receipt_id, derived_from, or any other field name. The
 SDK does not introspect receipt internals here; it walks the
 graph the caller provides.
 
-Note on Wave 1 accountability deferral: the Python port of
-ContestabilityReceipt has not shipped yet (Wave 1 accountability
-is TypeScript-only this iteration). The minimal
-ContestabilityReceipt dataclass below carries only the fields
-this cascade primitive reads. When Wave 1 ports, the full
-receipt type widens to cover signature, scope-of-claim, and
-contestant identity — but the cascade contract stays the same.
+History note: 2.4.0a0 shipped a minimal ContestabilityReceipt stub
+inline in this module while Wave 1 accountability was TypeScript-only.
+2.4.0a1 ships the full Wave 1 surface in v2.accountability; this
+module now imports the full receipt + response shapes from there.
+The cascade contract is unchanged.
 """
 
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import List, Literal, Optional
+from typing import List, Optional
 
+from .accountability import (
+    ContestabilityControllerResponse,
+    ContestabilityReceipt,
+    ContestStatus,
+    GroundsClass,
+)
 from .claim_evidence_types import RecordType
-
-
-class GroundsClass(str, Enum):
-    """Closed taxonomy for protocol-level routing of contestations.
-
-    The structured peer of the free-text `grounds` field on a
-    ContestabilityReceipt. Verifiers and downstream-taint
-    primitives may route on this value; humans read `grounds`
-    for context. Both fields coexist on the receipt.
-    """
-
-    EVIDENCE_INSUFFICIENT = "evidence_insufficient"
-    FACTUAL_DISPUTE = "factual_dispute"
-    SCOPE_VIOLATION = "scope_violation"
-    SUPERSEDED_BY_NEW_EVIDENCE = "superseded_by_new_evidence"
-    IDENTITY_DISPUTE = "identity_dispute"
-    UNCLASSIFIED = "unclassified"
-
-
-# String-typed for cross-impl wire compatibility. Mirrors TS ContestStatus.
-ContestStatus = Literal[
-    "filed",
-    "under_review",
-    "upheld",
-    "rejected",
-    "remedied",
-    "expired",
-    "abandoned",
-]
-
-
-@dataclass
-class ContestabilityControllerResponse:
-    """Minimal controller response shape consumed by the cascade.
-
-    Wave 1 accountability defers the full Python port; this carries
-    only the field the cascade reads (status). When Wave 1 ports,
-    this widens to include responder_did, response_signature,
-    responded_at, response_detail.
-    """
-
-    status: ContestStatus
-
-
-@dataclass
-class ContestabilityReceipt:
-    """Minimal contestation shape consumed by the cascade.
-
-    Wave 1 accountability defers the full Python port; this dataclass
-    carries only the fields the cascade reads. When Wave 1 ports, the
-    full receipt type widens to cover claim_type, scope_of_claim,
-    contestant identity, signature, requested_remedy, grounds, and
-    optional grounds_class. The cascade contract stays the same.
-    """
-
-    receipt_id: str
-    action_id: str
-    controller_response: Optional[ContestabilityControllerResponse] = None
-    grounds_class: Optional[GroundsClass] = None
 
 
 def is_contestation_tainting(c: ContestabilityReceipt) -> bool:

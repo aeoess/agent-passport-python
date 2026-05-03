@@ -1,0 +1,42 @@
+{
+  "receipt_id": "4e922b99fef0295e32c1dc85e16ec4c529ad17fd9e1f67d5ecd5c2ae234d345c",
+  "delegation_chain_root": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "agent_did": "did:aps:test-agent-001",
+  "discovery_patterns": [
+    "**/CLAUDE.md",
+    "**/AGENTS.md",
+    "**/rules/*.md"
+  ],
+  "working_root": "/test/root",
+  "filesystem_mode": "case-sensitive",
+  "instruction_files": [
+    {
+      "path": "AGENTS.md",
+      "digest": "0000000000000000000000000000000000000000000000000000000000000000",
+      "bytes": 256,
+      "role": "agent_md"
+    },
+    {
+      "path": "CLAUDE.md",
+      "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "bytes": 1024,
+      "role": "agent_md"
+    },
+    {
+      "path": "rules/safety.md",
+      "digest": "1111111111111111111111111111111111111111111111111111111111111111",
+      "bytes": 512,
+      "role": "rules"
+    }
+  ],
+  "context_root": "9cdeec81777b16e03793a9f319743a743dfba1f9070f57fcb75a76f0f1110106",
+  "attestation_tier": "self-asserted",
+  "recompute_at_action": false,
+  "issued_at": "2026-05-02T00:00:00.000Z",
+  "bound_to": {
+    "type": "session",
+    "ref": "sess_2026_05_02_001"
+  },
+  "signing_key_id": "ed25519:d04ab232742bb4ab",
+  "signature": "ceb41ef0f8976c05ebdd9d2f65a8901ff2614cd3a877e399205a2f43b1ac95bde23bab7b60b5d1a2e9253fb5fe2959986ad2e8cb2d204534a0c719eb4fbffa0a"
+}

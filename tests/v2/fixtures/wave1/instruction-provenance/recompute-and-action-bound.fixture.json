@@ -1,0 +1,43 @@
+{
+  "receipt_id": "363348bc1a89013030d9bb529f22ad1184aed7650bcb8987743301719d0339b8",
+  "delegation_chain_root": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "agent_did": "did:aps:test-agent-001",
+  "discovery_patterns": [
+    "**/CLAUDE.md",
+    "**/AGENTS.md",
+    "**/rules/*.md"
+  ],
+  "working_root": "/test/root",
+  "filesystem_mode": "case-sensitive",
+  "instruction_files": [
+    {
+      "path": "AGENTS.md",
+      "digest": "0000000000000000000000000000000000000000000000000000000000000000",
+      "bytes": 256,
+      "role": "agent_md"
+    },
+    {
+      "path": "CLAUDE.md",
+      "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "bytes": 1024,
+      "role": "agent_md"
+    },
+    {
+      "path": "rules/safety.md",
+      "digest": "1111111111111111111111111111111111111111111111111111111111111111",
+      "bytes": 512,
+      "role": "rules"
+    }
+  ],
+  "context_root": "9cdeec81777b16e03793a9f319743a743dfba1f9070f57fcb75a76f0f1110106",
+  "attestation_tier": "self-asserted",
+  "recompute_at_action": true,
+  "issued_at": "2026-05-02T00:00:00.000Z",
+  "expires_at": "2026-06-02T00:00:00.000Z",
+  "bound_to": {
+    "type": "action",
+    "ref": "2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "signing_key_id": "ed25519:d04ab232742bb4ab",
+  "signature": "8adc7a1528e6850eca0f18eb0799e4c37e906845f056f5c33b43705437bed56d09e9af885d6758686168d80e7830544aa6d81605d2f4e4e58334966aa0b92507"
+}

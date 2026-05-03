@@ -28,7 +28,7 @@ Remote MCP: https://mcp.aeoess.com/sse
 Docs: https://aeoess.com/llms-full.txt
 """
 
-__version__ = "2.4.0a0"
+__version__ = "2.4.0a1"
 
 # Crypto
 from .crypto import generate_key_pair, sign, verify, public_key_from_private
@@ -285,11 +285,11 @@ from .v2.mutual_auth import (
 from .canonical import canonicalize_jcs
 
 
-# Evidentiary Type Safety primitives (SDK v2.4.0a0 alpha pre-release)
-# Ports of the four TypeScript SDK 2.6.0-alpha.0 primitives:
-# claim-evidence-types, claim-verifier, downstream-taint, GroundsClass.
-# ContestabilityReceipt fully ports when Wave 1 accountability ports;
-# the cascade-consumed shape ships now as a minimal dataclass.
+# Evidentiary Type Safety primitives (SDK v2.4.0a1 alpha pre-release)
+# Ports of TypeScript SDK 2.6.0-alpha.0:
+#   2.4.0a0: claim-evidence-types, claim-verifier, downstream-taint
+#   2.4.0a1: full Wave 1 accountability surface, cognitive-attestation,
+#            instruction-provenance.
 from .v2 import (
     # claim_evidence_types
     ClaimType,
@@ -306,13 +306,125 @@ from .v2 import (
     OpenContestationResolver,
     verify_evidence_claim,
     # downstream_taint
-    ContestStatus,
-    ContestabilityControllerResponse,
-    ContestabilityReceipt,
-    GroundsClass,
     TaintCandidate,
     TaintedRecord,
     TaintedSet,
     compute_downstream_taint,
     is_contestation_tainting,
+)
+
+# Wave 1 accountability — full surface (v2.4.0a1)
+# create_action_receipt / verify_action_receipt collide with legacy
+# delegation-flavored functions of the same names; the Wave 1 versions
+# are re-exported under accountability_* prefixes here. The unaliased
+# forms remain available via `from agent_passport.v2.accountability
+# import ...`.
+from .v2.accountability import (
+    # base
+    CaptureMode,
+    Completeness,
+    ScopeOfClaim,
+    # action
+    ActionPayload,
+    ActionReceipt as AccountabilityActionReceipt,
+    SideEffectClass,
+    TransparencyLogInclusion,
+    # authority-boundary
+    AuthorityBoundaryReceipt,
+    BoundaryResult,
+    # custody
+    CustodyEventType,
+    CustodyPurpose,
+    CustodyReceipt,
+    SubjectReceiptBatch,
+    # contestability
+    ContestabilityContestant,
+    ContestabilityControllerResponse,
+    ContestabilityReceipt,
+    ContestStatus,
+    GroundsClass,
+    GroundsClassValue,
+    RequestedRemedy,
+    StandingBasis,
+    # bundle
+    APSBundle,
+    BundledReceiptRef,
+    # construct (aliased to avoid legacy delegation collision)
+    attach_controller_response,
+    create_action_receipt as create_accountability_action_receipt,
+    create_aps_bundle,
+    create_authority_boundary_receipt,
+    create_contestability_receipt,
+    create_custody_receipt,
+    # bundle helpers
+    compute_merkle_root,
+    # verify (aliased)
+    verify_action_receipt as verify_accountability_action_receipt,
+    verify_aps_bundle,
+    verify_authority_boundary_receipt,
+    verify_contestability_receipt,
+    verify_custody_receipt,
+)
+
+# Cognitive Attestation (Paper 4)
+from .v2.cognitive_attestation import (
+    ActivationStatistic,
+    AggregationPolicy,
+    AttachmentPoint,
+    CognitiveAttestation,
+    CompletenessClaim,
+    DictionaryRef,
+    ExecutionEnvironment,
+    FeatureActivation,
+    ModelRef,
+    Precision,
+    SAEType,
+    Signature as CognitiveSignature,
+    SignerRole as CognitiveSignerRole,
+    TiebreakerRule,
+    TokenRange,
+    BuildAttestationInput,
+    build_attestation,
+    canonicalize_attestation,
+    cognitive_attestation_digest,
+    sign_attestation as sign_cognitive_attestation,
+    sort_feature_activations,
+    validate_attestation_shape,
+    RegistryResolver,
+    RegistryVerificationResult,
+    ReplayBackend,
+    ReplayVerificationResult,
+    RequiredRoleCoverage,
+    verify_against_registry,
+    verify_by_replay,
+    verify_required_signer_roles,
+    verify_signature as verify_cognitive_signature,
+    ComputationalDispute,
+    DecompositionAdequacyDispute,
+    Dispute,
+    ExclusionDispute,
+    FacetedReinterpretationDispute,
+    InterpretiveDispute,
+    ThresholdDispute,
+)
+
+# Instruction Provenance Receipt (Paper 8 candidate, v0.2)
+from .v2.instruction_provenance import (
+    AttestationTier,
+    FilesystemMode,
+    InstructionFile,
+    InstructionProvenanceReceipt,
+    InstructionProvenanceReceiptBoundTo,
+    InstructionRole,
+    IPRConstructionError,
+    IPRPathError,
+    canonicalize_envelope as canonicalize_instruction_envelope,
+    canonicalize_path,
+    compute_context_root,
+    create_instruction_provenance_receipt,
+    matches_any_pattern,
+    sign_ed25519 as sign_ed25519_ipr,
+    sort_instruction_files,
+    verify_action_time_context_root,
+    verify_instruction_provenance_receipt,
 )

@@ -13,10 +13,12 @@ from pathlib import Path
 import pytest
 
 from agent_passport import (
+    ContestabilityContestant,
     ContestabilityControllerResponse,
     ContestabilityReceipt,
     GroundsClass,
     RecordType,
+    ScopeOfClaim,
     TaintCandidate,
     canonicalize,
     compute_downstream_taint,
@@ -29,14 +31,51 @@ FIXTURE_PATH = (
     Path(__file__).parent / "fixtures" / "evidentiary-type-safety" / "fixtures.json"
 )
 
+# Stub values for fields the cascade doesn't read. The cascade primitive
+# only inspects action_id, receipt_id, and controller_response.status, so
+# these fields just satisfy the dataclass constructor.
+_STUB_SCOPE = ScopeOfClaim(
+    asserts="cascade test stub",
+    does_not_assert=["anything else"],
+    capture_mode="self_attested",
+    completeness="best_effort",
+    self_attested=True,
+)
+_STUB_CONTESTANT = ContestabilityContestant(
+    standing_basis="data_subject",
+    did="did:aps:cascade-test",
+)
+
 
 def _make_contestation(status, receipt_id="contest_001", action_id=ACTION_ID):
+    """Construct a full ContestabilityReceipt for cascade tests.
+
+    Wave 1 ships the complete receipt surface from
+    agent_passport.v2.accountability; the cascade reads only
+    action_id, receipt_id, controller_response.status, so other
+    fields carry deterministic stub values.
+    """
     response = (
-        ContestabilityControllerResponse(status=status) if status is not None else None
+        ContestabilityControllerResponse(
+            status=status,
+            responded_at="2026-05-02T00:00:00.000Z",
+            responder_did="did:aps:controller-stub",
+            response_signature="0" * 128,
+        )
+        if status is not None
+        else None
     )
     return ContestabilityReceipt(
+        claim_type="aps:contestability:v1",
         receipt_id=receipt_id,
+        timestamp="2026-05-02T00:00:00.000Z",
+        signer_did="0" * 64,
+        scope_of_claim=_STUB_SCOPE,
+        contestant=_STUB_CONTESTANT,
         action_id=action_id,
+        grounds="cascade test stub",
+        requested_remedy="review",
+        signature="0" * 128,
         controller_response=response,
     )
 
@@ -203,12 +242,8 @@ def test_grounds_class_round_trips_on_minimal_receipt():
     """Wave 1 accountability defers; the minimal Python ContestabilityReceipt
     still carries grounds_class so callers can route on it.
     """
-    c = ContestabilityReceipt(
-        receipt_id="contest_001",
-        action_id=ACTION_ID,
-        controller_response=ContestabilityControllerResponse(status="upheld"),
-        grounds_class=GroundsClass.EVIDENCE_INSUFFICIENT,
-    )
+    c = _make_contestation("upheld")
+    c.grounds_class = GroundsClass.EVIDENCE_INSUFFICIENT
     assert c.grounds_class == GroundsClass.EVIDENCE_INSUFFICIENT
     assert c.grounds_class.value == "evidence_insufficient"
     # Cascade still fires.
@@ -229,15 +264,34 @@ def _ts_to_python_taint_candidate(c):
 
 
 def _ts_to_python_contestation(c):
-    response = c.get("controller_response")
+    """Build a full ContestabilityReceipt from the fixture stub.
+
+    The fixture only carries the cascade-relevant fields; other fields
+    fill from stubs since the cascade primitive doesn't read them.
+    """
+    response_blob = c.get("controller_response")
+    response = (
+        ContestabilityControllerResponse(
+            status=response_blob["status"],
+            responded_at="2026-05-02T00:00:00.000Z",
+            responder_did="did:aps:controller-stub",
+            response_signature="0" * 128,
+        )
+        if response_blob is not None
+        else None
+    )
     return ContestabilityReceipt(
+        claim_type="aps:contestability:v1",
         receipt_id=c["receipt_id"],
+        timestamp="2026-05-02T00:00:00.000Z",
+        signer_did="0" * 64,
+        scope_of_claim=_STUB_SCOPE,
+        contestant=_STUB_CONTESTANT,
         action_id=c["action_id"],
-        controller_response=(
-            ContestabilityControllerResponse(status=response["status"])
-            if response is not None
-            else None
-        ),
+        grounds="fixture stub",
+        requested_remedy="review",
+        signature="0" * 128,
+        controller_response=response,
     )
 
 
