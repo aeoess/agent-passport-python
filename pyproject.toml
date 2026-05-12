@@ -38,5 +38,29 @@ Documentation = "https://aeoess.com/llms-full.txt"
 [tool.hatch.build.targets.wheel]
 packages = ["src/agent_passport"]
 
+# Explicit sdist contents. Hatch's default sdist sweep would otherwise pull
+# in tests/, papers/, drafts/, working-group dossiers, and other repo-local
+# material that has no business shipping to PyPI consumers. This is the
+# hatch-native equivalent of a setuptools MANIFEST.in — explicit beats
+# implicit at audit time.
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/agent_passport/**",
+  "README.md",
+  "LICENSE",
+  "NOTICE",
+  "pyproject.toml",
+  "CHANGELOG.md",
+]
+exclude = [
+  "tests/**",
+  "papers/**",
+  "drafts/**",
+  "docs/drafts/**",
+  ".github/**",
+  "*.log",
+  "*.tgz",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
