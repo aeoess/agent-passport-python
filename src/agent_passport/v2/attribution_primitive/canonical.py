@@ -9,7 +9,7 @@ import re
 from datetime import datetime, timezone
 from typing import Any, List, Union
 
-from ...canonical import canonicalize
+from ...canonical import canonicalize, canonicalize_jcs
 from .types import (
     AttributionAxes,
     ComputeAxisEntry,
@@ -133,7 +133,18 @@ def hash_node(left: bytes, right: bytes) -> bytes:
 
 
 def canonical_hash_hex(obj: Any) -> str:
-    return hashlib.sha256(canonicalize(obj).encode("utf-8")).hexdigest()
+    """SHA-256 hex over strict RFC 8785 JCS canonicalization.
+
+    Used for action_ref computation per draft-pidlisnyi-aps-01 §4.1 and
+    ATTRIBUTION-PRIMITIVE-v1.1 §1.6. Cross-verified against the TypeScript
+    SDK's canonicalHashJCS, erdtman/canonicalize@3.0.0, and rfc8785@0.1.4.
+
+    For Merkle leaf hashing (hash_axis_leaf) and signing envelope serialization
+    (envelope_bytes), the legacy canonicalize() is still in use — those paths
+    are scheduled for coordinated rotation in v3.0 because flipping them
+    changes bytes across the existing partner fixture corpus.
+    """
+    return hashlib.sha256(canonicalize_jcs(obj).encode("utf-8")).hexdigest()
 
 
 def envelope_bytes(env) -> str:
