@@ -1,0 +1,95 @@
+name: cross-impl JCS byte-match
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/agent_passport/canonical.py"
+      - "src/agent_passport/v2/attribution_primitive/canonical.py"
+      - "tests/cross_impl/**"
+      - ".github/workflows/cross-impl-jcs.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/agent_passport/canonical.py"
+      - "src/agent_passport/v2/attribution_primitive/canonical.py"
+      - "tests/cross_impl/**"
+      - ".github/workflows/cross-impl-jcs.yml"
+  workflow_dispatch: {}
+
+jobs:
+  byte-match:
+    name: Python SDK ↔ rfc8785@0.1.4 ↔ canonicalize@3.0.0
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup Node (for canonicalize@3.0.0 cross-check)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Python SDK + deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install pytest "rfc8785==0.1.4"
+
+      - name: Install canonicalize@3.0.0 (Node reference)
+        run: npm install --no-save --no-audit --no-fund canonicalize@3.0.0
+
+      - name: Python test — SDK canonicalize_jcs vs rfc8785@0.1.4
+        run: pytest tests/cross_impl/test_jcs_equivalence.py -v
+
+      - name: Node test — canonicalize@3.0.0 vs pinned manifest
+        # Asserts erdtman's canonicalize@3.0.0 (npm) byte-matches the same
+        # pinned manifest the Python SDK is validated against. Mismatch here
+        # means either canonicalize@3.0.0 has shifted (which would break the
+        # TypeScript SDK's cross-impl-jcs gate downstream) or the manifest
+        # has drifted. Either signal worth surfacing as a hard CI failure.
+        run: |
+          node - <<'JS'
+          import('canonicalize').then(async (mod) => {
+            const canonicalize = mod.default;
+            const { createHash } = await import('node:crypto');
+            const { readFileSync } = await import('node:fs');
+            const m = JSON.parse(readFileSync('tests/cross_impl/jcs-test-vectors.json', 'utf8'));
+            let fail = 0;
+            for (const v of m.vectors) {
+              const bytes = canonicalize(v.input);
+              const hash = createHash('sha256').update(bytes, 'utf8').digest('hex');
+              if (bytes !== v.expected_canonical_bytes) {
+                console.log(`FAIL ${v.id}: bytes mismatch`);
+                console.log(`  pinned:        ${v.expected_canonical_bytes}`);
+                console.log(`  canonicalize:  ${bytes}`);
+                fail++;
+              }
+              if (hash !== v.expected_sha256) {
+                console.log(`FAIL ${v.id}: sha256 mismatch`);
+                console.log(`  pinned:        ${v.expected_sha256}`);
+                console.log(`  canonicalize:  ${hash}`);
+                fail++;
+              }
+            }
+            const total = m.vectors.length;
+            if (fail) {
+              console.log(`\nFAILED: ${fail} divergence(s) across ${total} vectors`);
+              process.exit(1);
+            }
+            console.log(`\nOK: canonicalize@3.0.0 byte-matches all ${total} pinned vectors`);
+          });
+          JS
+
+      - name: Three-way assertion (Python SDK ≡ rfc8785 ≡ canonicalize@3.0.0)
+        run: |
+          echo "Py test:  Python SDK canonicalize_jcs ≡ rfc8785@0.1.4"
+          echo "Node test: canonicalize@3.0.0 (erdtman, RFC 8785 author) ≡ pinned manifest"
+          echo "Pinned:    manifest pinned to rfc8785@0.1.4 + canonicalize@3.0.0 byte-match"
+          echo "Therefore Python SDK ≡ rfc8785@0.1.4 ≡ canonicalize@3.0.0 byte-for-byte."

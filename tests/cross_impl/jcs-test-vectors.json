@@ -1,0 +1,146 @@
+{
+  "generator": "rfc8785@0.1.4 (Python)",
+  "spec": "RFC 8785 JSON Canonicalization Scheme (JCS)",
+  "hash": "SHA-256, lowercase hex",
+  "vectors": [
+    {
+      "id": "v01-simple",
+      "description": "Simple object, no nulls — variants identical (sanity baseline).",
+      "input": {
+        "agentId": "agent-001",
+        "scope": "read"
+      },
+      "expected_canonical_bytes": "{\"agentId\":\"agent-001\",\"scope\":\"read\"}",
+      "expected_sha256": "598fa19ccadbc8df940a9cde9bff497c094ff209818b2bc36e5fac8d5cc2f477"
+    },
+    {
+      "id": "v02-null-preserved",
+      "description": "Null value at top level — JCS preserves, legacy strips. Divergence vector.",
+      "input": {
+        "agentId": "agent-001",
+        "metadata": null,
+        "scope": "read"
+      },
+      "expected_canonical_bytes": "{\"agentId\":\"agent-001\",\"metadata\":null,\"scope\":\"read\"}",
+      "expected_sha256": "52a6250f9b8d4df9654556cb46fcf3a6b3829693643578bacfa344831cc6d99d"
+    },
+    {
+      "id": "v03-key-order",
+      "description": "Keys MUST be sorted by Unicode code point.",
+      "input": {
+        "zebra": 1,
+        "alpha": 2,
+        "middle": 3
+      },
+      "expected_canonical_bytes": "{\"alpha\":2,\"middle\":3,\"zebra\":1}",
+      "expected_sha256": "8279885d9e6f748807a4a8838376aad819aee964979d576d496aa9a67ea2bd6a"
+    },
+    {
+      "id": "v04-nested-null",
+      "description": "Null at depth inside nested object.",
+      "input": {
+        "outer": {
+          "inner": null,
+          "value": 42
+        },
+        "top": "ok"
+      },
+      "expected_canonical_bytes": "{\"outer\":{\"inner\":null,\"value\":42},\"top\":\"ok\"}",
+      "expected_sha256": "02f4d61eb43de15b3680d6c9d2e1852ba3947e78521c2ba7de8e4afb640ef043"
+    },
+    {
+      "id": "v05-array-null",
+      "description": "Null elements inside arrays. Both variants preserve array nulls.",
+      "input": {
+        "items": [
+          1,
+          null,
+          3
+        ]
+      },
+      "expected_canonical_bytes": "{\"items\":[1,null,3]}",
+      "expected_sha256": "df088e3ff71850c361e768d9ca5141426005ad9497b6d4cf6ec3e082fe663e75"
+    },
+    {
+      "id": "v06-numbers",
+      "description": "Mixed integer + signed + fractional + zero numeric serialization.",
+      "input": {
+        "integer": 42,
+        "negative": -7,
+        "float": 3.14,
+        "zero": 0
+      },
+      "expected_canonical_bytes": "{\"float\":3.14,\"integer\":42,\"negative\":-7,\"zero\":0}",
+      "expected_sha256": "35c2f03aed2d77e96b1e301c3ead65d8212d3a27f0776e9c85bb0e74414a904b"
+    },
+    {
+      "id": "v07-empties",
+      "description": "Empty object and empty array.",
+      "input": {
+        "emptyArr": [],
+        "emptyObj": {}
+      },
+      "expected_canonical_bytes": "{\"emptyArr\":[],\"emptyObj\":{}}",
+      "expected_sha256": "2e49ff7a9de29f7f42b6cfb0e7a9826b5743d888aed3029df47b773b4393d0d4"
+    },
+    {
+      "id": "v08-unicode",
+      "description": "Non-ASCII content in keys and values; UTF-8 bytes emitted literally per RFC 8785 §3.2.2.2.",
+      "input": {
+        "name": "Тимофій",
+        "emoji": "🔐"
+      },
+      "expected_canonical_bytes": "{\"emoji\":\"🔐\",\"name\":\"Тимофій\"}",
+      "expected_sha256": "f04c986f5b3862ad3c6ee7b26b54846bad39e101a27e98f72772023c40584fc6"
+    },
+    {
+      "id": "v09-action-ref-tuple",
+      "description": "I-D §4.1 action_ref pre-image shape — production-like input.",
+      "input": {
+        "agentId": "did:aps:z6Mkfoo",
+        "actionType": "code_execution",
+        "scopeRequired": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "timestamp": "2026-05-21T00:00:00Z"
+      },
+      "expected_canonical_bytes": "{\"actionType\":\"code_execution\",\"agentId\":\"did:aps:z6Mkfoo\",\"scopeRequired\":[\"commerce:read\",\"commerce:write\"],\"timestamp\":\"2026-05-21T00:00:00Z\"}",
+      "expected_sha256": "956fb10ca09e093086c856517a8f93c11416f5b84b0a01634bc5ebfff41670d3"
+    },
+    {
+      "id": "v10-attribution-tuple",
+      "description": "ATTRIBUTION-PRIMITIVE-v1.1 §1.6 four-tuple shape with null in params.",
+      "input": {
+        "agentId": "a",
+        "actionType": "t",
+        "params": {
+          "k": null,
+          "v": 1
+        },
+        "nonce": "n0"
+      },
+      "expected_canonical_bytes": "{\"actionType\":\"t\",\"agentId\":\"a\",\"nonce\":\"n0\",\"params\":{\"k\":null,\"v\":1}}",
+      "expected_sha256": "c0686ef2cbb2b1c38b149598c50a60b0c01c2fd0ef9fd35f81eabb1aced6d591"
+    },
+    {
+      "id": "v11-string-escapes",
+      "description": "Tab (U+0009) and newline (U+000A) escapes per RFC 8785 §3.2.2.2.",
+      "input": {
+        "raw": "line1\tcol2\nline3"
+      },
+      "expected_canonical_bytes": "{\"raw\":\"line1\\tcol2\\nline3\"}",
+      "expected_sha256": "87d59a36d71d2c4e2bebe9b0badb8d1e028e8b925cfdec41c824d6f874853922"
+    },
+    {
+      "id": "v12-booleans",
+      "description": "Boolean values are serialized as 'true' / 'false'.",
+      "input": {
+        "active": true,
+        "revoked": false
+      },
+      "expected_canonical_bytes": "{\"active\":true,\"revoked\":false}",
+      "expected_sha256": "9135447f8ef8e76a18f1e9b8457c3764002d36b2bf247a0f2ee9eb836dddcd4f"
+    }
+  ]
+}
