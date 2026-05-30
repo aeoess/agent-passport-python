@@ -36,7 +36,11 @@ def canonicalize(obj) -> str:
             return str(int(obj))
         return json.dumps(obj)
     if isinstance(obj, str):
-        return json.dumps(obj)
+        # ensure_ascii=False to match the TypeScript SDK's JSON.stringify,
+        # which emits raw UTF-8 and does not \u-escape non-ASCII. Without
+        # this, a non-ASCII string canonicalizes differently in Python than
+        # in TypeScript, breaking cross-language signatures and content hashes.
+        return json.dumps(obj, ensure_ascii=False)
     if isinstance(obj, list):
         return "[" + ",".join(canonicalize(item) for item in obj) + "]"
     if isinstance(obj, dict):
@@ -45,10 +49,10 @@ def canonicalize(obj) -> str:
             val = obj[key]
             if val is None:
                 continue
-            pairs.append(json.dumps(key) + ":" + canonicalize(val))
+            pairs.append(json.dumps(key, ensure_ascii=False) + ":" + canonicalize(val))
         return "{" + ",".join(pairs) + "}"
     # Fallback for other types
-    return json.dumps(obj)
+    return json.dumps(obj, ensure_ascii=False)
 
 
 def canonicalize_jcs(obj) -> str:

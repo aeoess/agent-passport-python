@@ -32,3 +32,15 @@ def test_empty_array():
 
 def test_quotes_in_strings():
     assert canonicalize({"a": 'quotes "inside"'}) == '{"a":"quotes \\"inside\\""}'
+
+
+def test_non_ascii_is_raw_utf8_matching_typescript():
+    # The TypeScript SDK's canonicalize() uses JSON.stringify, which emits raw
+    # UTF-8 and does NOT \u-escape non-ASCII. Python json.dumps defaults to
+    # ensure_ascii=True (\u-escaped), which would diverge and break
+    # cross-language signatures. These pin the raw-UTF-8 form.
+    assert canonicalize("café") == '"café"'
+    assert canonicalize("🤖") == '"🤖"'
+    # Non-ASCII in values and in keys (keys sorted by code point: 'a' < 'café').
+    assert canonicalize({"name": "café"}) == '{"name":"café"}'
+    assert canonicalize({"café": "x", "a": "y"}) == '{"a":"y","café":"x"}'
