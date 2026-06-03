@@ -28,7 +28,7 @@ Remote MCP: https://mcp.aeoess.com/sse
 Docs: https://aeoess.com/llms-full.txt
 """
 
-__version__ = "2.4.0a2"
+__version__ = "2.4.0a3"
 
 # Crypto
 from .crypto import generate_key_pair, sign, verify, public_key_from_private
