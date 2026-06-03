@@ -2,7 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/agent-passport-system)](https://pypi.org/project/agent-passport-system/)
 
-**Enforcement and accountability layer for AI agents. Bring your own identity.** Python implementation of the [Agent Passport Protocol](https://aeoess.com), cross-language compatible with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) — signatures created in Python verify in TypeScript and vice versa. The Python port is a strict subset of the TS SDK; see the note under "What's Included" below for the current scope boundary.
+**Enforcement and accountability layer for AI agents. Bring your own identity.** Python implementation of the [Agent Passport Protocol](https://agent-passport.org), cross-language compatible with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) — signatures created in Python verify in TypeScript and vice versa. The Python port is a strict subset of the TS SDK; see the note under "What's Included" below for the current scope boundary.
 
 ## Install
 
@@ -114,8 +114,9 @@ Cross-language parity with the [TypeScript SDK](https://www.npmjs.com/package/ag
 
 ## Links
 
-- **Website**: https://aeoess.com
+- **Website**: https://agent-passport.org
 - **TypeScript SDK**: https://www.npmjs.com/package/agent-passport-system
+- **Go SDK**: https://pkg.go.dev/github.com/aeoess/agent-passport-go
 - **MCP Server**: https://www.npmjs.com/package/agent-passport-system-mcp
 - **Remote MCP**: https://mcp.aeoess.com/sse
 - **Papers**:
@@ -128,7 +129,7 @@ Cross-language parity with the [TypeScript SDK](https://www.npmjs.com/package/ag
   - [Cognitive Attestation](https://doi.org/10.5281/zenodo.19646276)
   - [The Evidence-Safety Gap](https://doi.org/10.5281/zenodo.19914628)
   - IETF Internet-Draft: `draft-pidlisnyi-aps-00`
-- **LLM docs**: https://aeoess.com/llms-full.txt
+- **LLM docs**: https://agent-passport.org/llms-full.txt
 
 ## Tests
 
