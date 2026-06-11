@@ -10,7 +10,7 @@
 pip install agent-passport-system
 ```
 
-> **Current stable**: `2.3.0` (default `pip install`). **Pre-release**: `2.4.0a1` (`pip install --pre agent-passport-system==2.4.0a1`). The 2.4.0a1 alpha adds Wave 1 accountability primitives (ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle), Cognitive Attestation (Paper 4), and Instruction Provenance Receipts (v0.2). 2.4.0a0 already added evidentiary type safety (claim/evidence registry, claim verifier, contestation cascade). All primitives are byte-parity-verified against TypeScript SDK npm 2.6.0-alpha.0 fixtures. Paper review window may shape-shift these primitives; alpha versioning avoids forcing major-version ceremony for every adjustment.
+> **Current stable**: `2.3.0` (default `pip install`). **Pre-release**: `2.4.0a3` (`pip install --pre agent-passport-system==2.4.0a3`). The 2.4.x alpha line adds Wave 1 accountability primitives (ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle), Cognitive Attestation (Paper 4), and Instruction Provenance Receipts (v0.2). 2.4.0a0 already added evidentiary type safety (claim/evidence registry, claim verifier, contestation cascade). All primitives are byte-parity-verified against TypeScript SDK npm 2.6.0-alpha.0 fixtures. Paper review window may shape-shift these primitives; alpha versioning avoids forcing major-version ceremony for every adjustment.
 
 
 ## Quick Start
