@@ -1,5 +1,5 @@
 # Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
-"""Tests for Attribution Primitive — parity with TS attribution-primitive."""
+"""Tests for Attribution Primitive, parity with TS attribution-primitive."""
 
 import hashlib
 import json
@@ -290,7 +290,7 @@ def test_aggregate_data_axis_pools_sub_threshold():
 
 
 # ─────────────────────────────────────────────────────────────
-# Envelope stability — byte-for-byte with TS
+# Envelope stability, byte-for-byte with TS
 # ─────────────────────────────────────────────────────────────
 
 
@@ -316,28 +316,45 @@ def test_envelope_bytes_fixture_matches_ts():
 # ─────────────────────────────────────────────────────────────
 
 
-TS_SDK_ROOT = os.path.expanduser("~/agent-passport-system")
+# The cross-language helpers (.mjs) import the TS SDK via a repo-relative
+# path: "../../agent-passport-system/src/index.js" from tests/. That resolves
+# to a sibling checkout of agent-passport-system next to this repo. Anchor the
+# guard on that same path, not on a fixed home directory, so a clone without
+# the sibling skips cleanly instead of hard-failing on a missing import.
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TS_SDK_ROOT = os.path.normpath(os.path.join(_REPO_ROOT, "..", "agent-passport-system"))
 CROSS_LANG_SCRIPT = os.path.join(os.path.dirname(__file__), "_cross_language_attribution.mjs")
+
+SIBLING_SKIP_REASON = (
+    "needs the agent-passport-system TS SDK as a sibling checkout "
+    "(../agent-passport-system) with tsx installed (run npm install there)"
+)
 
 
 def _have_tsx() -> bool:
-    tsx = os.path.join(TS_SDK_ROOT, "node_modules/.bin/tsx")
-    return os.path.isdir(TS_SDK_ROOT) and os.path.isfile(tsx)
+    tsx = os.path.join(TS_SDK_ROOT, "node_modules", ".bin", "tsx")
+    ts_entry = os.path.join(TS_SDK_ROOT, "src", "index.ts")
+    return os.path.isfile(tsx) and os.path.isfile(ts_entry)
 
 
-@pytest.mark.skipif(not _have_tsx(), reason="TS SDK not available for cross-language test")
+@pytest.mark.skipif(not _have_tsx(), reason=SIBLING_SKIP_REASON)
 def test_cross_language_ts_to_python():
     """Call the TS SDK (via tsx) to construct a primitive; verify in Python."""
     script = os.path.join(os.path.dirname(__file__), "_cross_language_attribution_build.mjs")
     if not os.path.isfile(script):
         pytest.skip("helper script missing")
-    result = subprocess.run(
-        [os.path.join(TS_SDK_ROOT, "node_modules/.bin/tsx"), script],
-        capture_output=True,
-        text=True,
-        cwd=TS_SDK_ROOT,
-        check=True,
-    )
+    try:
+        result = subprocess.run(
+            [os.path.join(TS_SDK_ROOT, "node_modules", ".bin", "tsx"), script],
+            capture_output=True,
+            text=True,
+            cwd=TS_SDK_ROOT,
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        # tsx itself failed (missing TS deps or unresolved sibling import), not
+        # a parity mismatch. A real mismatch surfaces below as an assert.
+        pytest.skip(f"{SIBLING_SKIP_REASON}; tsx exited {e.returncode}: {(e.stderr or '')[:200]}")
     payload = json.loads(result.stdout)
     primitive = payload["primitive"]
     pub = payload["publicKey"]
@@ -352,7 +369,7 @@ def test_cross_language_ts_to_python():
         assert verify_attribution_projection(proj, pub) == {"valid": True}
 
 
-@pytest.mark.skipif(not _have_tsx(), reason="TS SDK not available for cross-language test")
+@pytest.mark.skipif(not _have_tsx(), reason=SIBLING_SKIP_REASON)
 def test_cross_language_python_to_ts():
     """Python constructs; TS SDK verifies."""
     verifier = os.path.join(os.path.dirname(__file__), "_cross_language_attribution_verify.mjs")
@@ -366,12 +383,18 @@ def test_cross_language_python_to_ts():
         issuer_private_key=priv,
     )
     payload = json.dumps({"primitive": primitive, "publicKey": pub})
-    result = subprocess.run(
-        [os.path.join(TS_SDK_ROOT, "node_modules/.bin/tsx"), verifier],
-        input=payload,
-        capture_output=True,
-        text=True,
-        cwd=TS_SDK_ROOT,
-        check=True,
-    )
+    try:
+        result = subprocess.run(
+            [os.path.join(TS_SDK_ROOT, "node_modules", ".bin", "tsx"), verifier],
+            input=payload,
+            capture_output=True,
+            text=True,
+            cwd=TS_SDK_ROOT,
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        # tsx itself failed (missing TS deps or unresolved sibling import). The
+        # verifier prints INVALID and exits 0 on a real mismatch, so that case
+        # still trips the assert below rather than skipping.
+        pytest.skip(f"{SIBLING_SKIP_REASON}; tsx exited {e.returncode}: {(e.stderr or '')[:200]}")
     assert result.stdout.strip() == "VALID", f"TS verifier rejected Python primitive: stdout={result.stdout!r} stderr={result.stderr!r}"

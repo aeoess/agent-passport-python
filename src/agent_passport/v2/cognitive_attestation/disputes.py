@@ -1,18 +1,18 @@
 # Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
-"""Cognitive Attestation — dispute primitives (typed shapes only).
+"""Cognitive Attestation, dispute primitives (typed shapes only).
 
 Mirrors src/v2/cognitive-attestation/disputes.ts.
 
 The SDK ships the dispute VOCABULARY, not the workflow. Dispute
 submission, resolution, scheduling, rate-limiting, and governance
-annotations live in the private gateway.
+annotations are out of scope for the SDK.
 """
 
 from dataclasses import dataclass, field
 from typing import List, Literal, Union
 
 
-# ── Computational disputes — resolved by replay (Stage 3) ─────────────
+# ── Computational disputes, resolved by replay (Stage 3) ─────────────
 
 
 @dataclass
@@ -43,7 +43,7 @@ class ExclusionDispute:
 ComputationalDispute = Union[ThresholdDispute, ExclusionDispute]
 
 
-# ── Interpretive disputes — governance annotations, no replay ──────────
+# ── Interpretive disputes, governance annotations, no replay ──────────
 
 
 @dataclass

@@ -1,8 +1,8 @@
-# Agent Passport System — Python SDK
+# Agent Passport System: Python SDK
 
 [![PyPI](https://img.shields.io/pypi/v/agent-passport-system)](https://pypi.org/project/agent-passport-system/)
 
-**Enforcement and accountability layer for AI agents. Bring your own identity.** Python implementation of the [Agent Passport Protocol](https://agent-passport.org), cross-language compatible with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) — signatures created in Python verify in TypeScript and vice versa. The Python port is a strict subset of the TS SDK; see the note under "What's Included" below for the current scope boundary.
+**Enforcement and accountability layer for AI agents. Bring your own identity.** Python implementation of the [Agent Passport Protocol](https://agent-passport.org), cross-language compatible with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system). Signatures created in Python verify in TypeScript and the reverse. The Python port is a strict subset of the TS SDK. See the note under "What's Included" below for the current scope boundary.
 
 ## Install
 
@@ -10,18 +10,18 @@
 pip install agent-passport-system
 ```
 
-> **Current stable**: `2.3.0` (default `pip install`). **Pre-release**: `2.4.0a3` (`pip install --pre agent-passport-system==2.4.0a3`). The 2.4.x alpha line adds Wave 1 accountability primitives (ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle), Cognitive Attestation (Paper 4), and Instruction Provenance Receipts (v0.2). 2.4.0a0 already added evidentiary type safety (claim/evidence registry, claim verifier, contestation cascade). All primitives are byte-parity-verified against TypeScript SDK npm 2.6.0-alpha.0 fixtures. Paper review window may shape-shift these primitives; alpha versioning avoids forcing major-version ceremony for every adjustment.
+> **Current stable**: `2.4.0`, installed by default with `pip install agent-passport-system`. The 2.4 line adds the Wave 1 accountability primitives (ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle), Cognitive Attestation (Paper 4), and Instruction Provenance Receipts (v0.2). It also adds evidentiary type safety: a claim and evidence registry, a claim verifier, and a contestation cascade. All primitives are tested for byte-identical canonical JSON against the TypeScript SDK npm 2.6.0 fixtures.
 
 
 ## Quick Start
 
-Lead with the minimum you need to get a signed passport and a verifiable delegation — identity, delegation, policy evaluation. Import the rest from `agent_passport` when you need it. Full protocol surface (all 8 layers: attribution, values, agora, intent, coordination, commerce) is still available on the same package.
+Lead with the minimum you need to get a signed passport and a verifiable delegation: identity, delegation, and policy evaluation. Import the rest from `agent_passport` when you need it. Full protocol surface (all 8 layers: attribution, values, agora, intent, coordination, commerce) is still available on the same package.
 
 ```python
 from agent_passport import (
     generate_key_pair, create_passport, sign_passport, verify_passport,
     create_delegation, verify_delegation, create_action_receipt,
-    # full surface available — import more when you need it:
+    # full surface available, import more when you need it:
     # build_merkle_root, load_floor, attest_floor, evaluate_compliance, ...
 )
 
@@ -68,8 +68,8 @@ assert verify_merkle_proof(hashes[0], proof, root)
 
 | Module | Layer | What It Does |
 |--------|-------|-------------|
-| `crypto` | — | Ed25519 key generation, signing, verification |
-| `canonical` | — | Deterministic JSON serialization (cross-language compatible) |
+| `crypto` | base | Ed25519 key generation, signing, verification |
+| `canonical` | base | Deterministic JSON serialization (cross-language compatible) |
 | `passport` | 1 | Agent identity creation, signing, verification, expiry |
 | `delegation` | 1 | Scoped delegation chains, sub-delegation, revocation |
 | `values` | 2 | Human Values Floor: load YAML/JSON, attestation, compliance, graduated enforcement |
@@ -101,16 +101,16 @@ assert canonical_json(data) == '{"a":2,"nested":{"a":1,"b":3},"z":1}'
 
 This Python SDK implements all 8 Agent Passport Protocol layers:
 
-1. **Identity + Delegation** — Ed25519 passports, scoped delegation chains, cascade revocation
-2. **Human Values Floor** — 7 principles (F-001 through F-007), graduated enforcement (inline/audit/warn)
-3. **Beneficiary Attribution** — Merkle proofs for contribution tracking
-4. **Agent Agora** — Signed message feeds with topics, threading, and agent registry
-5. **Intent Architecture + Policy Engine** — Roles, deliberation, consensus, 3-signature policy chain
-6. **Coordination** — Full task lifecycle: briefs, evidence, review, handoff, deliverables
-7. **Integration Wiring** — Cross-layer bridges (commerce+intent, coordination+agora)
-8. **Agentic Commerce** — 4-gate checkout, human approval, spend limits
+1. **Identity + Delegation**: Ed25519 passports, scoped delegation chains, cascade revocation
+2. **Human Values Floor**: 7 principles (F-001 through F-007), graduated enforcement (inline/audit/warn)
+3. **Beneficiary Attribution**: Merkle proofs for contribution tracking
+4. **Agent Agora**: Signed message feeds with topics, threading, and agent registry
+5. **Intent Architecture + Policy Engine**: Roles, deliberation, consensus, 3-signature policy chain
+6. **Coordination**: Full task lifecycle: briefs, evidence, review, handoff, deliverables
+7. **Integration Wiring**: Cross-layer bridges (commerce+intent, coordination+agora)
+8. **Agentic Commerce**: 4-gate checkout, human approval, spend limits
 
-Cross-language parity with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) at npm v2.6.0. Python SDK 2.4.0a2 ships the full Wave 1 surface: ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle (with balanced Merkle commitment), Cognitive Attestation (Paper 4 — three-stage verification, typed dispute primitives), and Instruction Provenance Receipts v0.2 (path canonicalization, context-root binding, action-time recompute). The four evidentiary type safety primitives shipped in 2.4.0a0. All surfaces verified against TS-issued fixtures for byte-identical canonical JSON. Cross-language signature verification covers every signed primitive in the SDK. Also available via the [MCP server](https://mcp.aeoess.com/sse).
+Cross-language parity with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) at npm v2.6.0. Python SDK 2.4.0 ships the full Wave 1 surface: ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle (with balanced Merkle commitment), Cognitive Attestation (Paper 4: three-stage verification, typed dispute primitives), and Instruction Provenance Receipts v0.2 (path canonicalization, context-root binding, action-time recompute). The four evidentiary type safety primitives also ship in 2.4.0. All surfaces are tested against TS-issued fixtures for byte-identical canonical JSON. Cross-language signature verification covers every signed primitive in the SDK. Also available via the [MCP server](https://mcp.aeoess.com/sse).
 
 ## Links
 
@@ -134,12 +134,14 @@ Cross-language parity with the [TypeScript SDK](https://www.npmjs.com/package/ag
 ## Tests
 
 ```bash
-pip install pynacl pytest
-PYTHONPATH=src pytest tests/ -v
-# 2.4.0a1: 518 passed, 1 skipped, 6 xfailed. Coverage covers all 8 protocol layers
+pip install -e ".[test]"
+pytest tests/
+# 568 passed, 1 skipped, 6 xfailed. Coverage spans all 8 protocol layers
 # plus the v2 evidentiary type safety, Wave 1 accountability, Cognitive Attestation,
-# and Instruction Provenance Receipt surfaces. Cross-impl byte-parity tests assert
-# byte-identical canonical JSON against TS-issued fixtures.
+# and Instruction Provenance Receipt surfaces. The cross-impl byte-parity tests assert
+# byte-identical canonical JSON against TS-issued fixtures (rfc8785 ships in the test
+# extra). Two cross-language tests also need the agent-passport-system TS SDK checked
+# out next to this repo; without that sibling they skip (566 passed, 3 skipped).
 ```
 
 ## License

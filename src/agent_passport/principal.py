@@ -1,5 +1,5 @@
 # Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
-"""Principal Identity — cryptographic chain from human to agent.
+"""Principal Identity, cryptographic chain from human to agent.
 
 The principal (human or org) gets their own Ed25519 keypair and endorses agents,
 creating a two-layer trust chain: principal proves identity + agent proves
@@ -8,9 +8,19 @@ who authorized it.
 
 import uuid
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from .crypto import generate_key_pair, sign, verify
 from .canonical import canonicalize
+
+
+def _utcnow():
+    """Naive UTC now. Replaces the deprecated datetime.utcnow().
+
+    Returns a naive datetime in UTC, identical in value to the old
+    datetime.utcnow(). The serialized form stays "...Z" so signed canonical
+    bytes and the naive expiry comparisons below are unchanged.
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def create_principal_identity(
@@ -31,7 +41,7 @@ def create_principal_identity(
         "jurisdiction": jurisdiction,
         "contactChannel": contact_channel,
         "disclosureLevel": disclosure_level,
-        "createdAt": datetime.utcnow().isoformat() + "Z",
+        "createdAt": _utcnow().isoformat() + "Z",
         "metadata": metadata or {},
     }
     return {"principal": principal, "keyPair": key_pair}
@@ -42,7 +52,7 @@ def endorse_agent(
     scope, relationship, expires_in_days=365,
 ):
     """Endorse an agent. Principal signs: 'This agent acts under my authority.'"""
-    now = datetime.utcnow()
+    now = _utcnow()
     expiry = now + timedelta(days=expires_in_days)
     endorsement_id = f"endorsement-{str(uuid.uuid4())[:8]}"
 
@@ -68,7 +78,7 @@ def verify_endorsement(endorsement):
     exp_str = endorsement["expiresAt"].replace("Z", "")
     if "+" in exp_str:
         exp_str = exp_str.split("+")[0]
-    expired = datetime.fromisoformat(exp_str) < datetime.utcnow()
+    expired = datetime.fromisoformat(exp_str) < _utcnow()
     if expired:
         errors.append("Endorsement has expired")
     if endorsement.get("revoked"):
@@ -105,7 +115,7 @@ def revoke_endorsement(endorsement, reason):
     return {
         **endorsement,
         "revoked": True,
-        "revokedAt": datetime.utcnow().isoformat() + "Z",
+        "revokedAt": _utcnow().isoformat() + "Z",
         "revokedReason": reason,
     }
 
@@ -151,7 +161,7 @@ def create_disclosure(principal, principal_private_key, level=None):
         "level": effective_level,
         "revealedFields": revealed,
         "proof": proof,
-        "createdAt": datetime.utcnow().isoformat() + "Z",
+        "createdAt": _utcnow().isoformat() + "Z",
     }
 
 
@@ -178,7 +188,7 @@ def verify_disclosure(disclosure):
 
 def create_fleet(principal):
     """Create a fleet record for a principal."""
-    now = datetime.utcnow().isoformat() + "Z"
+    now = _utcnow().isoformat() + "Z"
     return {
         "principalId": principal["principalId"],
         "principalPublicKey": principal["publicKey"],
@@ -190,7 +200,7 @@ def create_fleet(principal):
 
 def add_to_fleet(fleet, endorsement):
     """Add an endorsed agent to the fleet."""
-    now = datetime.utcnow()
+    now = _utcnow()
     exp_str = endorsement["expiresAt"].replace("Z", "")
     if "+" in exp_str:
         exp_str = exp_str.split("+")[0]
@@ -236,5 +246,5 @@ def revoke_from_fleet(fleet, agent_id):
             {**a, "status": "revoked"} if a["agentId"] == agent_id else a
             for a in fleet["agents"]
         ],
-        "updatedAt": datetime.utcnow().isoformat() + "Z",
+        "updatedAt": _utcnow().isoformat() + "Z",
     }

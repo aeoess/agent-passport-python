@@ -1,5 +1,5 @@
 # Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
-"""Cognitive Attestation — public surface.
+"""Cognitive Attestation, public surface.
 
 Mirrors src/v2/cognitive-attestation/index.ts. Paper 4 (Zenodo DOI
 10.5281/zenodo.19646276). Normative schema:
@@ -10,8 +10,8 @@ Stage 1 (cryptographic) verification, Stage 2 (registry) interface,
 Stage 3 (replay) stub, typed dispute primitives.
 
 Out of scope: dispute resolution, re-verification scheduling, cross-
-tenant correlation, transparency-log publishing, bulk compliance
-reports. These live in the private aeoess-gateway.
+tenant correlation, transparency-log publishing, and bulk compliance
+reporting.
 """
 
 from .types import (
