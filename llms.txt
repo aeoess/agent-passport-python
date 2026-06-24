@@ -11,7 +11,7 @@ Ed25519 ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityR
 ## Install
 
 - PyPI: `pip install agent-passport-system`
-- Python 3.9+ (tested on 3.10, 3.11, 3.12)
+- Python 3.10+ (tested on 3.10, 3.11, 3.12)
 
 ## Canonical references
 
@@ -37,4 +37,4 @@ Ed25519 ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityR
 - Governance in the Medium: https://doi.org/10.5281/zenodo.19582550
 - Cognitive Attestation: https://doi.org/10.5281/zenodo.19646276
 - The Evidence-Safety Gap: https://doi.org/10.5281/zenodo.19914628
-- IETF Internet-Draft: draft-pidlisnyi-aps-00
+- IETF Internet-Draft: draft-pidlisnyi-aps-01
