@@ -90,15 +90,36 @@ def verify_delegation(delegation: dict) -> dict:
     if expired:
         errors.append(f"Expired at {expires_at}")
 
+    # ADVISORY ONLY: this in-band field is unsigned and mutable, so it is NOT a security boundary.
+    # A holder of a revoked delegation can simply strip it, and an attacker cannot be stopped by it.
+    # Authoritative revocation requires a trusted registry or a signed RevocationRecord, which a
+    # stateless verifier cannot consult. This matches the TS SDK, whose verifyDelegation defaults to
+    # fail_open and notes the SDK cannot check revocation statelessly. Full registry/cached-state
+    # parity is a protocol decision flagged for review; do not treat a missing flag as proof of
+    # non-revocation.
     revoked = delegation.get("revoked", False)
     if revoked:
         errors.append(f"Revoked at {delegation.get('revokedAt', 'unknown')}")
+
+    # Depth enforcement: a delegation whose currentDepth exceeds its own maxDepth is invalid.
+    # This was hardcoded False, so the verifier (the enforcement point) never checked depth and a
+    # hand-crafted delegation with currentDepth > maxDepth verified as valid. sub_delegate guards
+    # depth at creation, but the verifier must check it independently.
+    current_depth = delegation.get("currentDepth", 0)
+    max_depth = delegation.get("maxDepth", 0)
+    depth_exceeded = (
+        isinstance(current_depth, (int, float)) and not isinstance(current_depth, bool)
+        and isinstance(max_depth, (int, float)) and not isinstance(max_depth, bool)
+        and current_depth > max_depth
+    )
+    if depth_exceeded:
+        errors.append(f"Depth exceeded: currentDepth {current_depth} > maxDepth {max_depth}")
 
     return {
         "valid": len(errors) == 0,
         "revoked": revoked,
         "expired": expired,
-        "depthExceeded": False,
+        "depthExceeded": depth_exceeded,
         "errors": errors,
     }
 
@@ -118,6 +139,14 @@ def sub_delegate(
     Raises:
         ValueError: If depth limit exceeded or scope escalation attempted.
     """
+    # The parent must itself be valid before it can mint a child. Previously sub_delegate minted a
+    # child from any parent dict, including an expired, revoked, or signature-invalid one.
+    parent_status = verify_delegation(parent)
+    if not parent_status["valid"]:
+        raise ValueError(
+            f"Cannot sub-delegate from an invalid parent: {', '.join(parent_status['errors'])}"
+        )
+
     if parent["currentDepth"] + 1 > parent["maxDepth"]:
         raise ValueError(
             f"Depth limit exceeded: would be depth {parent['currentDepth'] + 1}, "
@@ -132,13 +161,29 @@ def sub_delegate(
                 f"Scope violation: [{s}] not in parent scope {parent['scope']}"
             )
 
-    # Spend limit narrowing
-    effective_limit = spend_limit if spend_limit is not None else parent.get("spendLimit", 0)
-    if effective_limit > parent.get("spendLimit", 0):
-        raise ValueError("Spend limit escalation: sub-delegation cannot exceed parent")
+    # Spend limit narrowing: the child cannot exceed the parent's REMAINING budget
+    # (spendLimit - spentAmount), not just its nominal spendLimit.
+    parent_remaining = parent.get("spendLimit", 0) - parent.get("spentAmount", 0)
+    effective_limit = spend_limit if spend_limit is not None else parent_remaining
+    if effective_limit > parent_remaining:
+        raise ValueError(
+            "Spend limit escalation: sub-delegation cannot exceed parent remaining budget"
+        )
 
     now = datetime.now(timezone.utc)
-    expiry = now + timedelta(days=expires_in_days)
+    requested_expiry = now + timedelta(days=expires_in_days)
+    # Temporal narrowing: a sub-delegation may not outlive its parent. Cap the child expiry to the
+    # parent's expiresAt when the parent carries one.
+    parent_expiry = None
+    parent_expires_at = parent.get("expiresAt")
+    if isinstance(parent_expires_at, str):
+        try:
+            parent_expiry = datetime.fromisoformat(parent_expires_at)
+            if parent_expiry.tzinfo is None:
+                parent_expiry = parent_expiry.replace(tzinfo=timezone.utc)
+        except (ValueError, TypeError):
+            parent_expiry = None
+    expiry = min(requested_expiry, parent_expiry) if parent_expiry is not None else requested_expiry
 
     delegation = {
         "delegationId": f"del_{str(uuid.uuid4())[:12]}",
@@ -227,9 +272,13 @@ def create_action_receipt(
     if scope_used not in delegation["scope"]:
         raise ValueError(f"Scope violation: {scope_used} not in {delegation['scope']}")
 
-    if spend_amount > delegation.get("spendLimit", 0):
+    # Check the spend against the REMAINING budget (spendLimit - spentAmount), not the nominal
+    # spendLimit, so an already-partly-spent delegation cannot authorize a fresh full-limit action.
+    _remaining = delegation.get("spendLimit", 0) - delegation.get("spentAmount", 0)
+    if spend_amount > _remaining:
         raise ValueError(
-            f"Spend limit exceeded: {spend_amount} > {delegation.get('spendLimit', 0)}"
+            f"Spend limit exceeded: {spend_amount} > {_remaining} remaining "
+            f"(limit {delegation.get('spendLimit', 0)}, spent {delegation.get('spentAmount', 0)})"
         )
 
     receipt = {
