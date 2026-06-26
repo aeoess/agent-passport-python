@@ -154,6 +154,7 @@ from .commerce import (
     commerce_preflight,
     request_human_approval,
     create_commerce_delegation,
+    record_spend,
     get_spend_summary,
     sign_commerce_receipt,
     verify_commerce_receipt,

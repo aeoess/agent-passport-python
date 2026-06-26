@@ -163,6 +163,36 @@ def create_commerce_delegation(
     }
 
 
+def record_spend(delegation: dict, amount: float) -> dict:
+    """Record a spend against a commerce delegation, returning a NEW delegation with spentAmount
+    incremented.
+
+    This is the stateless write primitive that pairs with the spend gate: check the spend before a
+    purchase (commerce_preflight / the spend_limit gate), then record_spend after it settles, and
+    PERSIST the returned object yourself. The SDK is by-value and stateless: it does not persist
+    spend between calls, and cumulative enforcement across purchases is the caller's or the
+    gateway's responsibility.
+
+    Refuses a non-finite or negative amount, and refuses a spend that would push spentAmount past
+    spendLimit (so it doubles as a safe check-and-record). Does not mutate the input.
+
+    The CommerceDelegation dict is UNSIGNED, so incrementing spentAmount is safe. The signed core
+    delegation's spentAmount is the immutable spend-at-issue value (always 0), never a running total.
+    """
+    if isinstance(amount, bool) or not isinstance(amount, (int, float)):
+        raise ValueError(f"record_spend: amount must be a non-negative finite number, got {amount!r}")
+    if amount != amount or amount == float("inf") or amount == float("-inf") or amount < 0:
+        raise ValueError(f"record_spend: amount must be a non-negative finite number, got {amount!r}")
+    new_spent = delegation.get("spentAmount", 0) + amount
+    limit = delegation.get("spendLimit")
+    if isinstance(limit, (int, float)) and not isinstance(limit, bool) and new_spent > limit:
+        raise ValueError(
+            f"record_spend: spend {amount} would exceed the spend limit "
+            f"({new_spent} > {limit}, already spent {delegation.get('spentAmount', 0)})"
+        )
+    return {**delegation, "spentAmount": new_spent}
+
+
 # ── Spend Analytics ──
 
 
