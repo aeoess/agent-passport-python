@@ -65,18 +65,31 @@ def commerce_preflight(
         ),
     })
 
-    # Gate 3: Spend limit
+    # Gate 3: Spend limit. Currency must match before comparing amounts: the SDK does NO conversion,
+    # so a EUR purchase must not be charged against a USD budget. Compare case-insensitively; a
+    # declared mismatch denies. No constraint when a currency is absent on either side.
     amount = estimated_total.get("amount", 0)
-    remaining = delegation.get("spendLimit", 0) - delegation.get("spentAmount", 0)
-    within_budget = amount <= remaining
-    checks.append({
-        "check": "spend_limit", "passed": within_budget,
-        "detail": (
-            f"Purchase {amount} within budget ({remaining} remaining of {delegation.get('spendLimit', 0)})"
-            if within_budget
-            else f"Purchase {amount} exceeds remaining budget of {remaining}"
-        ),
-    })
+    purchase_ccy = str(estimated_total.get("currency", "")).lower()
+    budget_ccy = str(delegation.get("currency", "")).lower()
+    if purchase_ccy and budget_ccy and purchase_ccy != budget_ccy:
+        checks.append({
+            "check": "spend_limit", "passed": False,
+            "detail": (
+                f"Currency mismatch: purchase in {estimated_total.get('currency')} "
+                f"cannot be charged against a {delegation.get('currency')} budget"
+            ),
+        })
+    else:
+        remaining = delegation.get("spendLimit", 0) - delegation.get("spentAmount", 0)
+        within_budget = amount <= remaining
+        checks.append({
+            "check": "spend_limit", "passed": within_budget,
+            "detail": (
+                f"Purchase {amount} within budget ({remaining} remaining of {delegation.get('spendLimit', 0)})"
+                if within_budget
+                else f"Purchase {amount} exceeds remaining budget of {remaining}"
+            ),
+        })
 
     # Gate 3b: Human approval threshold
     if delegation.get("requireHumanApproval") and delegation.get("humanApprovalThreshold"):
