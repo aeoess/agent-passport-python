@@ -52,6 +52,7 @@ from .delegation import (
     sub_delegate,
     revoke_delegation,
     create_action_receipt,
+    verify_action_receipt,
     scope_covers,
     scope_authorizes,
 )
@@ -68,11 +69,23 @@ from .values import (
     negotiate_common_ground,
 )
 
-# Attribution (Layer 3 — Merkle proofs)
+# Attribution (Layer 3 - Merkle proofs + beneficiary trace)
 from .attribution import (
     build_merkle_root,
     get_merkle_proof,
     verify_merkle_proof,
+    trace_beneficiary,
+)
+
+# Composition Check Receipt v0 (carrier + stateless anchor verifier; detection stays
+# in the private gateway). Cross-language signature compatible with the TS SDK.
+from .v2.composition_check import (
+    COMPOSITION_CHECK_PROFILE,
+    COMPOSITION_CHECK_TAG,
+    COMPOSITION_CHECK_RESULTS,
+    ATTESTOR_INDEPENDENCE_CLASSES,
+    composition_check_signing_payload,
+    verify_composition_check,
 )
 
 # Agora (Layer 4 — Communication)

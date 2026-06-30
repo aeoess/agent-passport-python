@@ -8,7 +8,89 @@ from __future__ import annotations
 
 import hashlib
 import math
+import uuid
 from typing import Any
+
+
+def trace_beneficiary(receipt: dict, delegations: list, beneficiary_map: dict) -> dict:
+    """Follow the delegation chain from an action receipt back to the human beneficiary.
+
+    Reports two DISTINCT, honestly-named properties (mirrors the TypeScript traceBeneficiary):
+
+      resolved  Lookup success only. Every hop's (from, to) key pair maps to a known
+                delegation record AND the principal resolves to a known beneficiary. NO
+                cryptographic claim: a creator-supplied chain that matches known records can
+                be resolved.
+      verified  Cryptographic. The receipt signature verifies at the chain tail
+                (verify_action_receipt) AND every delegation in the lineage verifies
+                (some matching delegation per hop passes verify_delegation). A forged or
+                tampered chain cannot be verified.
+
+    The reported lineage is deterministic (valid-first, then delegationId) with the TAIL hop
+    tied to receipt.delegationId, so the same inputs always report the same chain. Reuses the
+    canonical verify_delegation / verify_action_receipt; no crypto is reimplemented. ``verified``
+    attests lineage signature authenticity only; it does not check action authorization or
+    inter-hop scope narrowing.
+    """
+    from .delegation import verify_action_receipt, verify_delegation  # local: avoid import cycle
+
+    key_chain = receipt.get("delegationChain") or []
+    n = len(key_chain)
+    chain: list[dict] = []
+    every_hop_authentic = True
+
+    for i in range(n - 1):
+        frm = key_chain[i]
+        to = key_chain[i + 1]
+        is_tail = i == n - 2
+        matches = [
+            {"d": d, "valid": bool(verify_delegation(d).get("valid"))}
+            for d in delegations
+            if d.get("delegatedBy") == frm and d.get("delegatedTo") == to
+        ]
+        if not any(m["valid"] for m in matches):
+            every_hop_authentic = False
+        # Deterministic selection: valid first, then delegationId ascending.
+        ordered = sorted(matches, key=lambda m: (0 if m["valid"] else 1, m["d"].get("delegationId") or ""))
+        chosen = None
+        if is_tail:
+            chosen = next(
+                (m for m in ordered if m["d"].get("delegationId") == receipt.get("delegationId")), None
+            )
+        if chosen is None and ordered:
+            chosen = ordered[0]
+        chain.append(
+            {
+                "from": frm,
+                "to": to,
+                "delegationId": (chosen["d"].get("delegationId") if chosen else None) or "unknown",
+                "scope": (chosen["d"].get("scope") if chosen else None) or [],
+                "depth": i,
+            }
+        )
+
+    principal_key = key_chain[0] if key_chain else None
+    beneficiary_info = beneficiary_map.get(principal_key) if principal_key is not None else None
+
+    # resolved: previous lookup semantics, honestly named. No cryptographic claim.
+    resolved = bool(beneficiary_info) and n > 1 and all(h["delegationId"] != "unknown" for h in chain)
+
+    # verified: real cryptographic verification. Receipt signed by the executor (chain tail),
+    # every hop has a verifying delegation, at least one hop.
+    executor_key = key_chain[-1] if key_chain else None
+    receipt_authentic = n > 0 and verify_action_receipt(receipt, executor_key).get("valid", False)
+    verified = n > 1 and receipt_authentic and every_hop_authentic
+
+    return {
+        "traceId": "trace_" + uuid.uuid4().hex[:12],
+        "receiptId": receipt.get("receiptId"),
+        "executorAgent": receipt.get("agentId"),
+        "beneficiary": (beneficiary_info.get("principalId") if beneficiary_info else principal_key),
+        "chain": chain,
+        "totalDepth": len(chain),
+        "resolved": resolved,
+        "verified": verified,
+    }
 
 
 def _sha256(data: str) -> str:

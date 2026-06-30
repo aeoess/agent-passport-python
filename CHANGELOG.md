@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.6.0 (unreleased)
+
+### Added
+- **`trace_beneficiary(receipt, delegations, beneficiary_map)`** (`attribution.py`) and **`verify_action_receipt(receipt, agent_public_key)`** (`delegation.py`): parity with the TypeScript beneficiary-verified-honesty change. `verified` is a real cryptographic check (the receipt signature verifies at the chain tail via `verify_action_receipt`, and every delegation in the lineage verifies via `verify_delegation`), not a lookup; a new `resolved` field carries the lookup-only semantics (lineage maps to known records and a known beneficiary, no cryptographic claim). The reported lineage is deterministic (valid-first, then `delegationId`) with the tail hop tied to `receipt.delegationId`. A forged or tampered chain reports `resolved` true but `verified` false. Reuses the existing Ed25519 verifiers; no crypto reimplemented.
+- **APS Composition Check Receipt v0** (`v2/composition_check/`): port of the carrier and stateless ANCHOR verifier `verify_composition_check`. Verifies the signature, the `(chain_hash, action_ref, context_hash)` binding, freshness (caller-supplied `now_ms`, fails closed on a non-finite value), well-formedness, and attestor trust for the opaque `policy_profile_ids`; surfaces `independence_is_second_anchor` corroborated from the trust context (`registered_by_operator` is False) and gated on `anchor_verified`. No policy grammar, no detection logic, no aggregate, and no `safe` boolean: detection stays in the private gateway. `result_per_check` is a fixed enum (`pass | fail | indeterminate | not_checked`). **Cross-language signature compatible with the TS SDK**: a receipt signed by either SDK verifies under the other (the canonical signing bytes are `f"APS-COMPCHECK-V0.{canonicalize_jcs(receipt-without-signature)}"`, byte-matching the TS `canonicalizeJCS`). Conformance vectors in `conformance/composition-check/v0/` are the TS-signed vectors, verified here. Additive: new functions and a new module, no existing type changed.
+
 ## 2.5.0
 
 ### Added

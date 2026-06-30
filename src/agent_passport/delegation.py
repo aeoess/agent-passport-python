@@ -303,3 +303,26 @@ def create_action_receipt(
     canonical = canonicalize(receipt)
     receipt["signature"] = sign(canonical, private_key)
     return receipt
+
+
+def verify_action_receipt(receipt: dict, agent_public_key: str) -> dict:
+    """Verify an action receipt's signature against the executing agent's public key.
+
+    Mirrors create_action_receipt's signing convention exactly: the signature covers
+    canonicalize(receipt-without-signature). This is the receipt-level counterpart of
+    verify_delegation and the Python equivalent of the TypeScript verifyReceipt. It checks
+    only the signature; freshness/scope are enforced elsewhere.
+
+    Returns:
+        dict with ``valid`` (bool) and ``errors`` (list[str]).
+    """
+    errors = []
+    sig = receipt.get("signature", "")
+    if not sig or not agent_public_key:
+        errors.append("Missing signature or agent key")
+    else:
+        without_sig = {k: v for k, v in receipt.items() if k != "signature"}
+        canonical = canonicalize(without_sig)
+        if not verify(canonical, sig, agent_public_key):
+            errors.append("Invalid receipt signature")
+    return {"valid": len(errors) == 0, "errors": errors}
