@@ -21,8 +21,12 @@ from agent_passport import (
 )
 
 
+# The canonical YAML floor lives in the sibling agent-passport-system checkout
+# (../../agent-passport-system from this tests/ dir). The prior path used four
+# "../" segments, which resolved to filesystem root and never found the file even
+# when the sibling repo was present, so test_loads_from_yaml_file always skipped.
 FLOOR_YAML_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "..", "..", "..", "agent-passport-system", "values", "floor.yaml"
+    os.path.dirname(__file__), "..", "..", "agent-passport-system", "values", "floor.yaml"
 )
 
 FLOOR_JSON = """{
@@ -53,10 +57,20 @@ class TestFloorLoading:
 
     def test_loads_from_yaml_file(self):
         if not os.path.exists(FLOOR_YAML_PATH):
-            pytest.skip("floor.yaml not found")
+            pytest.skip(
+                "sibling agent-passport-system checkout not present; "
+                "the canonical YAML floor is loaded from there"
+            )
         floor = load_floor_from_file(FLOOR_YAML_PATH)
         assert floor["version"] == "0.1"
-        assert len(floor["floor"]) == 7
+        # The canonical floor grows as the social contract evolves (F-008 landed
+        # after this test was written), so assert the structural invariant that
+        # every principle parsed as a well-formed entry with a valid enforcement
+        # mode, not a brittle exact count that tracks an unrelated moving number.
+        assert len(floor["floor"]) >= 7
+        for principle in floor["floor"]:
+            assert principle["id"] and principle["name"]
+            assert principle["enforcement"]["mode"] in ("inline", "audit", "warn")
 
     def test_enforcement_modes_resolved(self):
         floor = load_floor(FLOOR_JSON)
