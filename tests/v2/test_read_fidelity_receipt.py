@@ -108,21 +108,68 @@ def resign(record: dict, private_key: str) -> dict:
 
 
 class TestSeedDerivation:
-    def test_matches_independent_recompute_with_presentation_digest(self):
+    def test_matches_independent_jcs_recompute_with_presentation_digest(self):
         content = f"sha256:{sha256_hex('rf-seed-check:content')}"
         presentation = f"sha256:{sha256_hex('rf-seed-check:presentation')}"
         nonce = "rf-seed-check-nonce"
-        expected = sha256_hex(content + presentation + nonce + "1")
+        # Hand-built RFC 8785 preimage, keys sorted, presentation a member.
+        preimage = (
+            '{"content_digest":' + json.dumps(content)
+            + ',"nonce":' + json.dumps(nonce)
+            + ',"presentation_digest":' + json.dumps(presentation)
+            + ',"version":"1"}'
+        )
+        expected = sha256_hex(preimage)
         assert derive_seed(content, presentation, nonce, "1") == expected
 
-    def test_substitutes_empty_string_for_null_presentation_digest(self):
+    def test_null_presentation_digest_renders_as_json_null_member(self):
         content = f"sha256:{sha256_hex('rf-seed-check:content-null')}"
         nonce = "rf-seed-check-nonce-null"
-        expected = sha256_hex(content + "" + nonce + "1")
+        preimage = (
+            '{"content_digest":' + json.dumps(content)
+            + ',"nonce":' + json.dumps(nonce)
+            + ',"presentation_digest":null'
+            + ',"version":"1"}'
+        )
+        expected = sha256_hex(preimage)
         assert derive_seed(content, None, nonce, "1") == expected
         assert derive_seed(content, None, nonce, "1") != derive_seed(
             content, f"sha256:{'0' * 64}", nonce, "1"
         )
+
+    def test_closes_demonstrated_null_vs_present_splice_collision(self):
+        # Adversarial repro (scratchpad/adv/splice.ts): under the old
+        # concatenation preimage, a null-presentation record with
+        # nonce = P || N derived the SAME seed as a P-presentation record
+        # with nonce N. The JCS preimage separates the fields, so the two
+        # now derive different seeds.
+        content = f"sha256:{'11' * 32}"
+        p = f"sha256:{'22' * 32}"
+        n = "verifier-nonce-xyz"
+        seed_spliced = derive_seed(content, None, p + n, "1")
+        seed_honest = derive_seed(content, p, n, "1")
+        assert seed_spliced != seed_honest
+
+        # v6/v7-style: plant the other case's seed and re-sign. Verification
+        # recomputes the seed and rejects the mismatch despite a valid sig.
+        built = build_record()
+        record, private_key = built["record"], built["private_key"]
+        assert verify_read_fidelity_receipt(record) == {"valid": True}
+        wrong_seed = (
+            seed_honest
+            if record["challenge"]["seed"] == seed_spliced
+            else seed_spliced
+        )
+        planted = resign(
+            {
+                **record,
+                "challenge": {**record["challenge"], "seed": wrong_seed},
+            },
+            private_key,
+        )
+        res = verify_read_fidelity_receipt(planted)
+        assert res["valid"] is False
+        assert res["reason"] == "SEED_MISMATCH"
 
     def test_reproduces_both_seed_kats_from_shared_vectors(self):
         kats = VECTORS["seed_kats"]

@@ -4,9 +4,9 @@
 Mirrors src/v2/read_fidelity_receipt/sampler.ts in the TypeScript SDK.
 Deterministic, pure functions: no I/O, no clock, no randomness.
 Bit-exact across languages:
-  seed = sha256hex(utf8(content_digest
-           + ("" if presentation_digest is None else presentation_digest)
-           + nonce + version))            (no separators)
+  seed = sha256hex(utf8( canonicalize_jcs({
+           content_digest, presentation_digest (null when absent),
+           nonce, version }) ))           (RFC 8785 JCS preimage)
   position i, attempt j:
     h = sha256(utf8(seed + ":" + i + ":" + j))
     pos = BE-uint64(first 8 bytes of h) mod range
@@ -17,6 +17,7 @@ Bit-exact across languages:
 import hashlib
 from typing import List, Optional, Sequence
 
+from ...canonical import canonicalize_jcs
 from .types import SampledSpan, ScoreResponsesResult
 
 
@@ -34,14 +35,24 @@ def derive_seed(
     nonce: str,
     version: str,
 ) -> str:
-    """Derive the challenge seed. Concatenation with no separators,
-    exactly: content_digest, then presentation_digest or the empty
-    string when None, then nonce, then version. The first two
-    components are fixed-format ("sha256:" plus 64 hex chars, 71
-    chars, or empty), which bounds splice ambiguity between components.
+    """Derive the challenge seed. The preimage is the RFC 8785 JCS
+    canonicalization of an object carrying the four bound fields, so the
+    component boundaries are unambiguous: presentation_digest is a
+    distinct JSON member (null when absent), never foldable into the
+    nonce. An earlier concatenation preimage let a null-presentation
+    record with nonce = P || N derive the same seed as a P-presentation
+    record with nonce N; the structured preimage closes that.
     """
-    presentation = "" if presentation_digest_or_null is None else presentation_digest_or_null
-    return _sha256_hex(content_digest + presentation + nonce + version)
+    return _sha256_hex(
+        canonicalize_jcs(
+            {
+                "content_digest": content_digest,
+                "presentation_digest": presentation_digest_or_null,
+                "nonce": nonce,
+                "version": version,
+            }
+        )
+    )
 
 
 def sample_spans(

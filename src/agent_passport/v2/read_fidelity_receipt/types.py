@@ -69,12 +69,12 @@ ReadFidelityVerifyReason = Literal[
 class ReadFidelityChallenge(TypedDict):
     """The challenge block. The nonce is verifier-supplied and never
     derivable from the document alone. The seed MUST equal
-      sha256hex(utf8(content_digest
-        + ("" if presentation_digest is None else presentation_digest)
-        + nonce + version))
-    concatenated with no separators; verifiers recompute and reject on
-    mismatch, which is the replay binding: reusing commitments under a
-    different nonce, content, or presentation breaks the derivation.
+      sha256hex(utf8( canonicalize_jcs({
+        content_digest, presentation_digest, nonce, version }) ))
+    the RFC 8785 JCS preimage of those four fields (presentation_digest
+    null when absent); verifiers recompute and reject on mismatch, which
+    is the replay binding: reusing commitments under a different nonce,
+    content, or presentation breaks the derivation.
 
     span_len is the span length in code points; required to recompute
     spans. span_commitments carries the sha256 of the UTF-8 bytes of
