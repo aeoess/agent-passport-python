@@ -442,3 +442,37 @@ from .v2.instruction_provenance import (
     verify_action_time_context_root,
     verify_instruction_provenance_receipt,
 )
+
+# Word digest handles (word_handles, v2)
+from .v2.word_handles import (
+    LEXICON_ID as WORD_HANDLE_LEXICON_ID,
+    LEXICON_NAME as WORD_HANDLE_LEXICON_NAME,
+    LEXICON_PROFILE as WORD_HANDLE_LEXICON_PROFILE,
+    PROFILES as WORD_HANDLE_PROFILES,
+    WORDS as WORD_HANDLE_WORDS,
+    canonical_wordlist_text,
+    decode as decode_word_handle,
+    decode_profile as decode_word_handle_profile,
+    encode as encode_word_handle,
+    encode_profile as encode_word_handle_profile,
+    min_unique_prefix_bits,
+)
+
+# Read fidelity receipt (read_fidelity_receipt, v2)
+from .v2.read_fidelity_receipt import (
+    ReadFidelityChallenge,
+    ReadFidelityReceipt,
+    ReadFidelityVerifyResult,
+    SampledSpan,
+    VerifyAgainstSourceResult,
+    VerifyResponsesResult,
+    canonical_no_sig,
+    commit_spans,
+    create_read_fidelity_receipt,
+    derive_seed,
+    sample_spans,
+    score_responses,
+    verify_against_source,
+    verify_read_fidelity_receipt,
+    verify_responses,
+)
