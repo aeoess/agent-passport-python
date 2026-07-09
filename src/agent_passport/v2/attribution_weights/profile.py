@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Default profile + validation + hash — Python port.
 
 Numeric defaults must byte-match the TS DEFAULT_WEIGHT_PROFILE so that

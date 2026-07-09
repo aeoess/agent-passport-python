@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Regression (round-3): the commerce spend gate must check currency.
 
 commerce_preflight's spend_limit gate compared amounts without checking currency, so a EUR purchase

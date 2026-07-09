@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Regression: spend accumulation (record_spend).
 
 Guards the read-but-never-written spentAmount bug: the spend gate reads spentAmount, which was

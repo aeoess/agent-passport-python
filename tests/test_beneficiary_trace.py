@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """trace_beneficiary parity tests: verified is real ed25519 (not a lookup), resolved is the
 lookup, lineage reporting is deterministic and tied to receipt.delegationId. Mirrors the
 TypeScript beneficiary-verified-honesty + determinism cases."""

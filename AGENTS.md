@@ -4,7 +4,7 @@ Context and instructions for AI coding agents working on `agent-passport-system`
 
 ## About this project
 
-`agent-passport-system` (PyPI) is the Python reference implementation of the Agent Passport System (APS) protocol. It maintains cross-language parity with the TypeScript SDK at `aeoess/agent-passport-system`. Apache-2.0, Copyright 2024-2026 Tymofii Pidlisnyi.
+`agent-passport-system` (PyPI) is the Python reference implementation of the Agent Passport System (APS) protocol. It maintains cross-language parity with the TypeScript SDK at `aeoess/agent-passport-system`. Apache-2.0, Copyright 2026 Tymofii Pidlisnyi.
 
 This repo is the public protocol layer. The private gateway product is in a separate repo. Product intelligence (analytics, compliance automation, drift detection, cross-tenant) does not belong here.
 

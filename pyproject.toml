@@ -40,7 +40,7 @@ test = [
 [project.urls]
 Homepage = "https://aeoess.com"
 Repository = "https://github.com/aeoess/agent-passport-python"
-Documentation = "https://aeoess.com/llms-full.txt"
+Documentation = "https://agent-passport.org/llms-full.txt"
 "npm SDK" = "https://www.npmjs.com/package/agent-passport-system"
 
 [tool.hatch.build.targets.wheel]

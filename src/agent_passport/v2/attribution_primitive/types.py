@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Attribution Primitive types — Python mirror of src/v2/attribution-primitive/types.ts.
 
 Wire format is plain dict so canonicalize() output is byte-identical across

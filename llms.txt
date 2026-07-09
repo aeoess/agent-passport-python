@@ -25,7 +25,7 @@ Ed25519 ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityR
 - MCP server: https://github.com/aeoess/agent-passport-mcp
 - Vocabulary: https://github.com/aeoess/agent-governance-vocabulary
 - Website: https://aeoess.com
-- Full project reference: https://aeoess.com/llms-full.txt
+- Full project reference: https://agent-passport.org/llms-full.txt
 
 ## Papers
 

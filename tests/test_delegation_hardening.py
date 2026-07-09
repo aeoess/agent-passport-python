@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Regression tests for the Day 128 delegation hardening (same-class sweep findings).
 
 Each test fails on the pre-fix source: depthExceeded was hardcoded False; sub_delegate had no

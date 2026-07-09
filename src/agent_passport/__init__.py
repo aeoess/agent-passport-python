@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Agent Passport System — Python SDK.
 
 Cryptographic identity, delegation, governance, and attribution for AI agents.
@@ -25,7 +25,7 @@ Quick start:
     assert check["valid"]
 
 Remote MCP: https://mcp.aeoess.com/sse
-Docs: https://aeoess.com/llms-full.txt
+Docs: https://agent-passport.org/llms-full.txt
 """
 
 __version__ = "2.6.0"

@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """APS Composition Check Receipt v0 - public surface (Python port).
 
 Carrier + stateless anchor verifier. Detection of composition hazards stays in the private

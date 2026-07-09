@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Recency decay — Python port.
 
 recency_decay(t) = max(MIN_RECENCY, exp(-lambda * (t_action - t_source) / tau))

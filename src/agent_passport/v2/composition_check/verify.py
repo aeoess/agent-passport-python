@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """APS Composition Check Receipt v0 - Python port of the carrier + anchor verifier.
 
 Mirrors src/v2/composition-check/ in the TypeScript SDK: the same COMPOSITION_CHECK_TAG,

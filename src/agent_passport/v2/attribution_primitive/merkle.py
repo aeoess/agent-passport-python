@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Balanced four-leaf Merkle tree — spec §2.1. Python port."""
 
 from typing import Dict, List, Tuple

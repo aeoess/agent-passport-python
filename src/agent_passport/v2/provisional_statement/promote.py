@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """promote_statement, process_dead_man, promotion_signing_payload.
 
 Mirrors src/v2/provisional-statement/promote.ts.

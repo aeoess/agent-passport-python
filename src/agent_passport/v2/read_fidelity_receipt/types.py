@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """A read fidelity receipt proves sampled readback fidelity at the stated n under the declared sampling
 assumptions. It does not prove every byte was read correctly, does not prove perception or comprehension,
 does not prove which channel was used, and carries no normative pass threshold: the consumer judges k of n.

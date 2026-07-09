@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Wave 1 accountability — public surface.
 
 Mirrors src/v2/accountability/index.ts in agent-passport-system 2.6.0-alpha.0.

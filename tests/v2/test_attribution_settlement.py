@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Build C — Settlement Pipeline property tests (Python parity).
 
 Mirrors tests/v2/build-c-settlement.test.ts. Spec:

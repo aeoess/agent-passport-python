@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """IPR — envelope construction (create_instruction_provenance_receipt).
 
 Mirrors src/v2/instruction-provenance/envelope.ts. Tier-locked to

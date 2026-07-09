@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Build B cross-language fixtures — Python implementation matches TS.
 
 Loads the JSON fixtures at tests/v2/fixtures/build-b/ (vendored from the

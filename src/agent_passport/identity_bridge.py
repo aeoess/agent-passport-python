@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Identity Bridge: import external identity credentials into APS.
 
 Import SPIFFE SVIDs and OAuth tokens into APS attestations and

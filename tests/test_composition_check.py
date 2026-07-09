@@ -1,4 +1,4 @@
-# Copyright 2024-2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
+# Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """Conformance + cross-SDK interop for the Python CompositionCheckReceipt v0 verifier.
 
 The vectors in conformance/composition-check/v0/vectors.json were generated and SIGNED by
