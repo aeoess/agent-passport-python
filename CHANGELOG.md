@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.8.0 (2026-07-10)
+
+### Added
+- **`compute_action_ref(agent_id, action_type, scope_required, timestamp)`** (`action_ref.py`): the native APS action_ref of draft-pidlisnyi-aps-03 section 4.1, SHA-256 over the strict RFC 8785 canonicalization of `{agentId, actionType, scopeRequired, timestamp}` with NFC per scope string and a Unicode code-point sort of the scope list on a copy. **Cross-language byte parity with the TS SDK (npm v3.3.0) and the Go implementation**, pinned by the shared vectors in `tests/cross_impl/actionref-canonical-vectors.json` (4 of 4 byte-identical hex). Distinct from `compute_attribution_action_ref` (attribution preimage with nonce and params); that function is untouched.
+
 ## 2.6.0 (unreleased)
 
 ### Added

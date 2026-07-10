@@ -35,6 +35,7 @@ from .crypto import generate_key_pair, sign, verify, public_key_from_private
 
 # Canonical serialization
 from .canonical import canonicalize
+from .action_ref import compute_action_ref
 
 # Passport (Layer 1 — Identity)
 from .passport import (
