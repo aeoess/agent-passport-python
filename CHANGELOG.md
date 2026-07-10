@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 2.8.1 (2026-07-10)
 
-### Fixed / Security (audit 2026-07-10; pending review before release)
+### Fixed / Security (audit 2026-07-10)
 - **Expiry fail-open on Python < 3.11 (authority).** `verify_delegation`, `is_expired`, and `sub_delegate` parsed `expiresAt` with `datetime.fromisoformat`, which did not accept a trailing `Z` until 3.11, and swallowed the resulting error so the expiry check silently no-opped on the declared minimum interpreter. Added `_time.parse_iso_utc` (correct on 3.9+) and made an unparseable expiry fail closed (treated as expired), not open.
 - **Canonical-byte divergence from RFC 8785 / the TS SDK (cross-language signatures).** `canonicalize` and `canonicalize_jcs` serialized floats with Python `repr`/`json.dumps` (e.g. `1e21`, `1e-07`, `1e-06`) and sorted object keys by code point. Both now use `_es_number` (ECMAScript `Number::toString`, validated byte-identical to Node over 20k values) and a UTF-16 code-unit key sort, matching the TS reference on floats and astral-plane keys. The JCS non-container fallback also now sets `ensure_ascii=False`.
 - **action_ref naive-timestamp divergence.** `compute_action_ref` assumed UTC for offsetless timestamps while the TS reference parses them as local time; it now rejects naive timestamps (spec 4.1 requires an explicit `Z`/offset) and formats the year with explicit zero-padding.
