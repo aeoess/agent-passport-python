@@ -40,9 +40,22 @@ def _normalize_timestamp(ts: str) -> str:
     except (ValueError, TypeError) as exc:
         raise ValueError(f"compute_action_ref: invalid timestamp {ts!r}") from exc
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        # Reject naive timestamps. Spec 4.1 requires an explicit UTC designator
+        # ('Z'), and the TS reference parses an offsetless string as LOCAL time,
+        # so assuming UTC here would silently produce a different action_ref for
+        # the same input across implementations. Fail closed on non-conforming
+        # input instead of guessing a zone.
+        raise ValueError(
+            f"compute_action_ref: timestamp {ts!r} must carry an explicit UTC "
+            "offset or 'Z' (spec 4.1); naive timestamps are non-conforming"
+        )
     dt = dt.astimezone(timezone.utc).replace(microsecond=0)
-    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    # Explicit zero-padded formatting; strftime('%Y') zero-pads platform-
+    # dependently for years < 1000. APS timestamps are always four-digit years.
+    return (
+        f"{dt.year:04d}-{dt.month:02d}-{dt.day:02d}"
+        f"T{dt.hour:02d}:{dt.minute:02d}:{dt.second:02d}Z"
+    )
 
 
 def _canonicalize_scope_required(scope_required):

@@ -28,7 +28,7 @@ Remote MCP: https://mcp.aeoess.com/sse
 Docs: https://agent-passport.org/llms-full.txt
 """
 
-__version__ = "2.6.0"
+__version__ = "2.8.0"
 
 # Crypto
 from .crypto import generate_key_pair, sign, verify, public_key_from_private

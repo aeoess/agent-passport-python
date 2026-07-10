@@ -10,7 +10,7 @@ This repo is the public protocol layer. The private gateway product is in a sepa
 
 ## Dev environment
 
-- Python >= 3.9 (tested on 3.10, 3.11, 3.12)
+- Python >= 3.10 (tested on 3.10, 3.11, 3.12; the pyproject floor)
 - `pip install -e ".[dev]"` for editable + dev deps
 - Core deps: `pynacl`, `base58`. Keep the dep footprint small.
 

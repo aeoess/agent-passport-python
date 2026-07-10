@@ -12,6 +12,7 @@ from typing import Any, Optional
 
 from .crypto import generate_key_pair, sign, verify
 from .canonical import canonicalize
+from ._time import parse_iso_utc
 
 DEFAULT_EXPIRY_DAYS = 365
 
@@ -151,14 +152,16 @@ def update_passport(passport: dict, updates: dict, private_key: str) -> dict:
 
 
 def is_expired(passport: dict) -> bool:
-    """Check if a passport has expired."""
+    """Check if a passport has expired.
+
+    Fail-closed: a passport whose expiresAt is present but unparseable is
+    treated as expired. parse_iso_utc accepts the 'Z' form the SDK/TS reference
+    emits on Python 3.9+ (bare datetime.fromisoformat only learned 'Z' in 3.11).
+    """
     expires_at = passport.get("expiresAt", "")
     if not expires_at:
         return False
     try:
-        expiry = datetime.fromisoformat(expires_at)
-        if expiry.tzinfo is None:
-            expiry = expiry.replace(tzinfo=timezone.utc)
-        return expiry < datetime.now(timezone.utc)
+        return parse_iso_utc(expires_at) < datetime.now(timezone.utc)
     except (ValueError, TypeError):
-        return False
+        return True
