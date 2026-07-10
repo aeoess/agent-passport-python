@@ -6,10 +6,61 @@ Rules:
   - Object keys sorted alphabetically
   - null/None values omitted from objects (NOT from arrays)
   - No whitespace
-  - Dates serialized as ISO strings
 """
 
 import json
+import re
+
+
+def _es_number(value: float) -> str:
+    """Serialize a finite float exactly like ECMAScript Number::toString.
+
+    RFC 8785 section 3.2.2.3 mandates the ECMAScript number-to-string algorithm.
+    Python's repr() yields the same shortest round-trip DIGITS as ECMAScript (the
+    shortest decimal that round-trips a double is unique), but Python and
+    json.dumps format the decimal point / exponent differently (e.g. 1e21 ->
+    '1000000000000000000000', 1e-7 -> '1e-07', 1e-6 -> '1e-06'), so we reformat
+    the digits into ECMAScript notation ('1e+21', '1e-7', '0.000001'). Validated
+    by differential test against Node's JSON.stringify (tests/test_es_number.py).
+    """
+    if value == 0:
+        return "0"  # ECMAScript renders -0 as "0"
+    sign = ""
+    if value < 0:
+        sign, value = "-", -value
+    r = repr(value)
+    if "e" in r or "E" in r:
+        mant, exp_s = re.split("[eE]", r)
+        exp = int(exp_s)
+    else:
+        mant, exp = r, 0
+    if "." in mant:
+        int_part, frac_part = mant.split(".")
+    else:
+        int_part, frac_part = mant, ""
+    digits = (int_part + frac_part).lstrip("0")
+    lsd_pow = exp - len(frac_part)  # power of ten of the least-significant digit
+    trail = len(digits) - len(digits.rstrip("0"))
+    s = digits.rstrip("0")
+    k = len(s)
+    n = lsd_pow + trail + k  # value = s * 10^(n-k); 10^(n-1) <= value < 10^n
+    if k <= n <= 21:
+        return sign + s + "0" * (n - k)
+    if 0 < n <= 21:
+        return sign + s[:n] + "." + s[n:]
+    if -6 < n <= 0:
+        return sign + "0." + "0" * (-n) + s
+    e_out = n - 1
+    e_str = ("e+" if e_out >= 0 else "e-") + str(abs(e_out))
+    return sign + (s if k == 1 else s[0] + "." + s[1:]) + e_str
+
+
+def _canonical_keys(keys):
+    """Sort object keys by UTF-16 code units, matching RFC 8785 section 3.2.3
+    and the TS SDK (Array.prototype.sort compares UTF-16 code units). Python's
+    default str sort is by code point, which orders astral-plane (>= U+10000)
+    keys differently from surrogate-pair UTF-16 order."""
+    return sorted(keys, key=lambda k: k.encode("utf-16-be"))
 
 
 def canonicalize(obj) -> str:
@@ -31,10 +82,7 @@ def canonicalize(obj) -> str:
         import math
         if math.isnan(obj) or math.isinf(obj):
             raise ValueError(f"Cannot canonicalize {obj} — NaN/Infinity are not valid JSON per RFC 8259")
-        # Match TypeScript: JSON.stringify(1.0) produces "1", not "1.0"
-        if obj == int(obj):
-            return str(int(obj))
-        return json.dumps(obj)
+        return _es_number(obj)
     if isinstance(obj, str):
         # ensure_ascii=False to match the TypeScript SDK's JSON.stringify,
         # which emits raw UTF-8 and does not \u-escape non-ASCII. Without
@@ -45,7 +93,7 @@ def canonicalize(obj) -> str:
         return "[" + ",".join(canonicalize(item) for item in obj) + "]"
     if isinstance(obj, dict):
         pairs = []
-        for key in sorted(obj.keys()):
+        for key in _canonical_keys(obj.keys()):
             val = obj[key]
             if val is None:
                 continue
@@ -78,9 +126,7 @@ def canonicalize_jcs(obj) -> str:
         import math
         if math.isnan(obj) or math.isinf(obj):
             raise ValueError(f"Cannot canonicalize {obj}")
-        if obj == int(obj):
-            return str(int(obj))
-        return json.dumps(obj)
+        return _es_number(obj)
     if isinstance(obj, str):
         return json.dumps(obj, ensure_ascii=False)
     if isinstance(obj, list):
@@ -88,9 +134,9 @@ def canonicalize_jcs(obj) -> str:
     if isinstance(obj, dict):
         # Preserve null values in objects (unlike legacy canonicalize)
         pairs = []
-        for key in sorted(obj.keys()):
+        for key in _canonical_keys(obj.keys()):
             pairs.append(
                 json.dumps(key, ensure_ascii=False) + ":" + canonicalize_jcs(obj[key])
             )
         return "{" + ",".join(pairs) + "}"
-    return json.dumps(obj)
+    return json.dumps(obj, ensure_ascii=False)

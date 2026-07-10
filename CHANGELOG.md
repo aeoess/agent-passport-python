@@ -1,11 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Fixed / Security (audit 2026-07-10; pending review before release)
+- **Expiry fail-open on Python < 3.11 (authority).** `verify_delegation`, `is_expired`, and `sub_delegate` parsed `expiresAt` with `datetime.fromisoformat`, which did not accept a trailing `Z` until 3.11, and swallowed the resulting error so the expiry check silently no-opped on the declared minimum interpreter. Added `_time.parse_iso_utc` (correct on 3.9+) and made an unparseable expiry fail closed (treated as expired), not open.
+- **Canonical-byte divergence from RFC 8785 / the TS SDK (cross-language signatures).** `canonicalize` and `canonicalize_jcs` serialized floats with Python `repr`/`json.dumps` (e.g. `1e21`, `1e-07`, `1e-06`) and sorted object keys by code point. Both now use `_es_number` (ECMAScript `Number::toString`, validated byte-identical to Node over 20k values) and a UTF-16 code-unit key sort, matching the TS reference on floats and astral-plane keys. The JCS non-container fallback also now sets `ensure_ascii=False`.
+- **action_ref naive-timestamp divergence.** `compute_action_ref` assumed UTC for offsetless timestamps while the TS reference parses them as local time; it now rejects naive timestamps (spec 4.1 requires an explicit `Z`/offset) and formats the year with explicit zero-padding.
+
 ## 2.8.0 (2026-07-10)
 
 ### Added
 - **`compute_action_ref(agent_id, action_type, scope_required, timestamp)`** (`action_ref.py`): the native APS action_ref of draft-pidlisnyi-aps-03 section 4.1, SHA-256 over the strict RFC 8785 canonicalization of `{agentId, actionType, scopeRequired, timestamp}` with NFC per scope string and a Unicode code-point sort of the scope list on a copy. **Cross-language byte parity with the TS SDK (npm v3.3.0) and the Go implementation**, pinned by the shared vectors in `tests/cross_impl/actionref-canonical-vectors.json` (4 of 4 byte-identical hex). Distinct from `compute_attribution_action_ref` (attribution preimage with nonce and params); that function is untouched.
 
-## 2.6.0 (unreleased)
+## 2.7.0 (2026-07-04)
+
+- Release/version bump only: synced the package version and the description's cross-language parity line to the current TS SDK. No functional or byte-level changes to the protocol primitives (README.md, pyproject.toml).
+
+## 2.6.0 (2026-07-04)
 
 ### Added
 - **`trace_beneficiary(receipt, delegations, beneficiary_map)`** (`attribution.py`) and **`verify_action_receipt(receipt, agent_public_key)`** (`delegation.py`): parity with the TypeScript beneficiary-verified-honesty change. `verified` is a real cryptographic check (the receipt signature verifies at the chain tail via `verify_action_receipt`, and every delegation in the lineage verifies via `verify_delegation`), not a lookup; a new `resolved` field carries the lookup-only semantics (lineage maps to known records and a known beneficiary, no cryptographic claim). The reported lineage is deterministic (valid-first, then `delegationId`) with the tail hop tied to `receipt.delegationId`. A forged or tampered chain reports `resolved` true but `verified` false. Reuses the existing Ed25519 verifiers; no crypto reimplemented.

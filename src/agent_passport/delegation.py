@@ -12,6 +12,7 @@ from typing import Any, Optional
 
 from .crypto import sign, verify
 from .canonical import canonicalize
+from ._time import parse_iso_utc
 
 
 def create_delegation(
@@ -81,12 +82,13 @@ def verify_delegation(delegation: dict) -> dict:
     expires_at = delegation.get("expiresAt", "")
     if expires_at:
         try:
-            exp = datetime.fromisoformat(expires_at)
-            if exp.tzinfo is None:
-                exp = exp.replace(tzinfo=timezone.utc)
-            expired = exp < datetime.now(timezone.utc)
+            expired = parse_iso_utc(expires_at) < datetime.now(timezone.utc)
         except (ValueError, TypeError):
-            pass
+            # Fail closed: an expiresAt that is present but unparseable is
+            # treated as expired, not ignored. (parse_iso_utc handles the 'Z'
+            # form the SDK/TS reference emits on Python 3.9+.)
+            expired = True
+            errors.append(f"Unparseable expiresAt: {expires_at!r}")
     if expired:
         errors.append(f"Expired at {expires_at}")
 
@@ -176,13 +178,13 @@ def sub_delegate(
     # parent's expiresAt when the parent carries one.
     parent_expiry = None
     parent_expires_at = parent.get("expiresAt")
-    if isinstance(parent_expires_at, str):
+    if isinstance(parent_expires_at, str) and parent_expires_at:
         try:
-            parent_expiry = datetime.fromisoformat(parent_expires_at)
-            if parent_expiry.tzinfo is None:
-                parent_expiry = parent_expiry.replace(tzinfo=timezone.utc)
+            parent_expiry = parse_iso_utc(parent_expires_at)
         except (ValueError, TypeError):
-            parent_expiry = None
+            # Fail closed: a parent whose expiry cannot be parsed is treated as
+            # already expired, so the child cannot outlive an unknowable bound.
+            parent_expiry = now
     expiry = min(requested_expiry, parent_expiry) if parent_expiry is not None else requested_expiry
 
     delegation = {
