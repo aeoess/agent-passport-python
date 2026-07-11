@@ -202,9 +202,18 @@ def test_hash_action_details_deterministic():
 FIXTURE_PATH = os.path.join(os.path.dirname(__file__), "fixtures", "owner_confirmation_from_ts.json")
 
 
+_REGEN_HINT = (
+    "regenerate with the TS reference SDK: "
+    "../agent-passport-system/node_modules/.bin/tsx scripts/generate_ts_fixtures.mjs"
+)
+
+
 def _load_ts_fixture():
     if not os.path.exists(FIXTURE_PATH):
-        pytest.xfail("fixture generation pending, TS→Python verify loop")
+        pytest.fail(
+            "committed TS fixture missing: tests/fixtures/owner_confirmation_from_ts.json — "
+            + _REGEN_HINT
+        )
     with open(FIXTURE_PATH) as f:
         return json.load(f)
 
@@ -214,7 +223,7 @@ def test_ts_fixture_owner_confirmation_verifies():
     delegation = fx.get("__delegation__")
     action = fx.get("__action__")
     if delegation is None or action is None:
-        pytest.xfail("fixture missing __delegation__ / __action__ blocks")
+        pytest.fail("fixture missing __delegation__ / __action__ blocks — " + _REGEN_HINT)
     confirmation = {k: v for k, v in fx.items() if not k.startswith("__")}
     res = verify_owner_confirmation(confirmation, action, delegation)
     assert res["valid"] is True, f"TS fixture failed Python verify: {res.get('reason')}"
@@ -225,7 +234,7 @@ def test_ts_fixture_chain_passes_with_confirmation():
     delegation = fx.get("__delegation__")
     action = fx.get("__action__")
     if delegation is None or action is None:
-        pytest.xfail("fixture missing __delegation__ / __action__ blocks")
+        pytest.fail("fixture missing __delegation__ / __action__ blocks — " + _REGEN_HINT)
     confirmation = {k: v for k, v in fx.items() if not k.startswith("__")}
     res = verify_v2_delegation_for_action(delegation, action, [confirmation])
     assert res["valid"] is True

@@ -1,0 +1,24 @@
+{
+  "id": "6ae380b6aeab344b2d1056716d3c5baaf402b314ef315f05b19f08daa9319cb0",
+  "version": "1.0",
+  "citer": "agent:ts-fixture-citer",
+  "citer_public_key": "64c30815ff26d5c4aff8e11274a38ed6dd0553049da4c10372a9575b7a776909",
+  "cited_principal": "principal:ts-fixture-cited",
+  "cited_principal_public_key": "4508a07aa941707f3eb2db94c8897a80b2c1197476b6de213ac273df7d86c4ff",
+  "citation_content": "The cited principal endorsed narrowing scope, not widening it.",
+  "binding_context": "charter:ts-fixture-abc",
+  "created_at": {
+    "logicalTime": 1,
+    "wallClockEarliest": 1751327999000,
+    "wallClockLatest": 1751328001000,
+    "gatewayId": "ts-fixture-gw"
+  },
+  "expires_at": {
+    "logicalTime": 2,
+    "wallClockEarliest": 4904927999000,
+    "wallClockLatest": 4904928001000,
+    "gatewayId": "ts-fixture-gw"
+  },
+  "citer_signature": "97504ae0d3295645db93cb0c396a9f61f611047192760b1484caf62415714dc036359ef891b71981cdcb0787683f2def7786de938ce34cd8aecde0c632529c0f",
+  "cited_principal_signature": "8136ddce4abbaa01a1399622aeac8cf1b5c9db1a0a2a8a7d8ceda68e35372370bb80a362103731604fb0546d0d9d4dbc38a48c18dd22f3509fe5012a23aca609"
+}

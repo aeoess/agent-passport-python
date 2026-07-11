@@ -21,9 +21,16 @@ from agent_passport import (
 )
 
 
-FLOOR_YAML_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "..", "..", "..", "agent-passport-system", "values", "floor.yaml"
+# The canonical floor.yaml lives in the agent-passport-system repo, expected
+# as a sibling checkout of this repo (../agent-passport-system from the repo
+# root — i.e. two levels up from this file). Worktrees or clones that are not
+# adjacent to the sibling can point APS_SYSTEM_CHECKOUT at it.
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_SYSTEM_CHECKOUT = os.environ.get(
+    "APS_SYSTEM_CHECKOUT",
+    os.path.normpath(os.path.join(_REPO_ROOT, "..", "agent-passport-system")),
 )
+FLOOR_YAML_PATH = os.path.join(_SYSTEM_CHECKOUT, "values", "floor.yaml")
 
 FLOOR_JSON = """{
   "version": "0.1",
@@ -51,12 +58,26 @@ class TestFloorLoading:
         assert floor["version"] == "0.1"
         assert len(floor["floor"]) == 7
 
+    @pytest.mark.skipif(
+        not os.path.exists(FLOOR_YAML_PATH),
+        reason=(
+            "sibling agent-passport-system checkout not present at "
+            "../agent-passport-system (relative to the repo root) and "
+            "APS_SYSTEM_CHECKOUT is not set — floor.yaml unavailable; "
+            "runs wherever the sibling checkout exists"
+        ),
+    )
     def test_loads_from_yaml_file(self):
-        if not os.path.exists(FLOOR_YAML_PATH):
-            pytest.skip("floor.yaml not found")
         floor = load_floor_from_file(FLOOR_YAML_PATH)
         assert floor["version"] == "0.1"
-        assert len(floor["floor"]) == 7
+        # The real v0.1 floor manifest carries 8 principles (F-001..F-008).
+        assert len(floor["floor"]) == 8
+        ids = [p["id"] for p in floor["floor"]]
+        assert ids == [f"F-{n:03d}" for n in range(1, 9)]
+        by_id = {p["id"]: p for p in floor["floor"]}
+        assert by_id["F-001"]["name"] == "Traceability"
+        assert by_id["F-004"]["name"] == "Revocability"
+        assert by_id["F-008"]["name"] == "Epistemic Security"
 
     def test_enforcement_modes_resolved(self):
         floor = load_floor(FLOOR_JSON)

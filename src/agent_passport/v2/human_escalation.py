@@ -92,6 +92,14 @@ DEFAULT_FLAGGED_ACTION_CLASSES = (
 # ── Helpers ──────────────────────────────────────────────────────────
 
 
+def _hash_object(obj: dict) -> str:
+    """sha256 hex of the canonical serialization — mirrors hashObject in
+    src/v2/bridge.ts. TS signObject/verifyObject sign the HASH string, not
+    the canonical JSON itself; Python must do the same for cross-language
+    signature parity."""
+    return hashlib.sha256(canonicalize(obj).encode("utf-8")).hexdigest()
+
+
 def hash_action_details(details: dict) -> str:
     """sha256(JSON.stringify(details)) — mirrors the TS implementation
     (note: not canonicalize; uses standard JSON serialization). Both
@@ -194,7 +202,8 @@ def record_owner_confirmation(
         "confirmed_at": _now_iso(confirmed_at_ms),
         "expires_at": _now_iso(expires_at_ms),
     }
-    signature = sign(canonicalize(data), owner_private_key)
+    # Sign the sha256 of the canonical form (TS bridge.ts signObject parity).
+    signature = sign(_hash_object(data), owner_private_key)
     return {**data, "signature": signature}
 
 
@@ -245,7 +254,8 @@ def verify_owner_confirmation(
         return match
     signable = {k: v for k, v in confirmation.items() if k != "signature"}
     try:
-        ok = verify(canonicalize(signable), confirmation["signature"], delegation["delegator"])
+        # Verify over the sha256 of the canonical form (TS verifyObject parity).
+        ok = verify(_hash_object(signable), confirmation["signature"], delegation["delegator"])
     except Exception:
         ok = False
     if not ok:
