@@ -22,12 +22,19 @@ def test_different_inputs_different_roots():
 
 
 def test_single_element():
+    # Day-145 audit (receipt format v1.1 -> v1.2): a single leaf hashes under
+    # the 0x00 leaf tag instead of passing through, so an internal node value
+    # can never be replayed as a single-leaf root.
     h = _hash("only")
-    assert build_merkle_root([h]) == h
+    root = build_merkle_root([h])
+    assert root != h
+    assert root == hashlib.sha256(("\x00" + h).encode("utf-8")).hexdigest()
 
 
 def test_empty():
-    assert build_merkle_root([]) == ""
+    # Day-145 audit: empty input returns sha256("empty"), matching the
+    # TypeScript reference, instead of the old empty-string sentinel.
+    assert build_merkle_root([]) == hashlib.sha256(b"empty").hexdigest()
 
 
 def test_proof_and_verify():
