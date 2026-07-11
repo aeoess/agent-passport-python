@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from .crypto import sign, verify
-from .canonical import canonicalize
+from .canonical import canonicalize, has_non_finite
 from ._time import parse_iso_utc
 
 
@@ -72,6 +72,10 @@ def verify_delegation(delegation: dict) -> dict:
 
     if not sig or not delegated_by:
         errors.append("Missing signature or delegator key")
+    elif has_non_finite(delegation):
+        # json.loads accepts NaN/Infinity by default, but canonicalize() raises
+        # on them. Fail closed instead of letting the verifier crash.
+        errors.append("Delegation contains non-finite numeric field")
     else:
         without_sig = {k: v for k, v in delegation.items() if k != "signature"}
         canonical = canonicalize(without_sig)

@@ -9,7 +9,28 @@ Rules:
 """
 
 import json
+import math
 import re
+
+
+def has_non_finite(obj) -> bool:
+    """Return True if obj contains a NaN or Infinity float anywhere within it.
+
+    canonicalize() raises ValueError on non-finite floats (they are not valid
+    JSON per RFC 8259), but Python's json.loads accepts them by default, so a
+    poisoned input reaches the canonicalizing verifiers and crashes them.
+    Verifier entry paths call this first to fail closed (valid=False) instead
+    of raising. Pure predicate: it never changes canonical output.
+    """
+    if isinstance(obj, bool):
+        return False
+    if isinstance(obj, float):
+        return math.isnan(obj) or math.isinf(obj)
+    if isinstance(obj, list):
+        return any(has_non_finite(item) for item in obj)
+    if isinstance(obj, dict):
+        return any(has_non_finite(v) for v in obj.values())
+    return False
 
 
 def _es_number(value: float) -> str:
