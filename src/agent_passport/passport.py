@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from .crypto import generate_key_pair, sign, verify
-from .canonical import canonicalize
+from .canonical import canonicalize, has_non_finite
 from ._time import parse_iso_utc
 
 DEFAULT_EXPIRY_DAYS = 365
@@ -128,12 +128,22 @@ def verify_passport(signed_passport: dict) -> dict:
         errors.append("Missing public key")
 
     if not errors:
-        canonical = canonicalize(passport)
-        if not verify(canonical, signature, public_key):
-            errors.append("Invalid signature")
+        # Guard non-finite numerics before canonicalize(): json.loads accepts
+        # NaN/Infinity by default, but canonicalize() raises on them. Fail
+        # closed instead of letting the verifier crash.
+        if has_non_finite(passport):
+            errors.append("Passport contains non-finite numeric field")
+        else:
+            canonical = canonicalize(passport)
+            if not verify(canonical, signature, public_key):
+                errors.append("Invalid signature")
 
+    # Expiry is an ERROR, not a warning: an expired passport with a valid
+    # signature is not valid. Matches the TS reference (verifyPassport pushes
+    # 'Passport expired' to errors) and this repo's verify_delegation /
+    # verify_endorsement, which already treat expiry as an error.
     if is_expired(passport):
-        warnings.append("Passport is expired")
+        errors.append("Passport expired")
 
     return {
         "valid": len(errors) == 0,
