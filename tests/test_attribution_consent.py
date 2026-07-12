@@ -234,7 +234,11 @@ FIXTURE_PATH = os.path.join(os.path.dirname(__file__), "fixtures", "attribution_
 
 def _load_ts_fixture():
     if not os.path.exists(FIXTURE_PATH):
-        pytest.xfail("fixture generation pending, TS→Python verify loop")
+        pytest.fail(
+            "committed TS fixture missing: tests/fixtures/attribution_receipt_from_ts.json — "
+            "regenerate with the TS reference SDK: "
+            "../agent-passport-system/node_modules/.bin/tsx scripts/generate_ts_fixtures.mjs"
+        )
     with open(FIXTURE_PATH) as f:
         return json.load(f)
 

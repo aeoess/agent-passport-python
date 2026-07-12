@@ -206,9 +206,18 @@ def test_process_dead_man_transitions_to_withdrawn(keys):
 FIXTURE_PATH = os.path.join(os.path.dirname(__file__), "fixtures", "provisional_statement_from_ts.json")
 
 
+_REGEN_HINT = (
+    "regenerate with the TS reference SDK: "
+    "../agent-passport-system/node_modules/.bin/tsx scripts/generate_ts_fixtures.mjs"
+)
+
+
 def _load_ts_fixture():
     if not os.path.exists(FIXTURE_PATH):
-        pytest.xfail("fixture generation pending, TS→Python verify loop")
+        pytest.fail(
+            "committed TS fixture missing: tests/fixtures/provisional_statement_from_ts.json — "
+            + _REGEN_HINT
+        )
     with open(FIXTURE_PATH) as f:
         return json.load(f)
 
@@ -222,7 +231,7 @@ def test_ts_fixture_promotion_verifies_against_policy():
     fx = _load_ts_fixture()
     policy = fx.get("__policy__")
     if policy is None:
-        pytest.xfail("fixture missing __policy__ block")
+        pytest.fail("fixture missing __policy__ block — " + _REGEN_HINT)
     statement = {k: v for k, v in fx.items() if not k.startswith("__")}
     res = verify_promotion(statement, policy)
     assert res["valid"] is True, f"TS fixture failed Python verify: {res['errors']}"

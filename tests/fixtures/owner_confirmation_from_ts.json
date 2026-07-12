@@ -1,0 +1,37 @@
+{
+  "id": "690238bd-35ab-4827-bf6b-bc3b767c4a88",
+  "request_id": "d52d5a9d-6f71-45f1-aa4e-e60b51d748a7",
+  "delegation_id": "del-ts-fixture-0001",
+  "action_class": "org_creation",
+  "action_details_hash": "7d6570ba6cfb3ab4bae59cb7b2ca89d074eb5b1ec4d20338cc7b0b7ec7d5d1e2",
+  "confirmation_scope": "per_action",
+  "session_id": null,
+  "confirmed_by": "5526f742941711b3bc530ba44ff6f6dab0f0ab71af832f41a7fe3b9fdaed9c60",
+  "confirmed_at": "2026-07-11T22:22:13.329Z",
+  "expires_at": "2126-06-17T22:22:13.329Z",
+  "signature": "1a4fdbaa922550bccec1a412db3cca0d67a3123f3920811a0e66ba15f96dae26b70d612a89207a37deb31820887ecd598dd21ee7a01a310dd12e306238a9cb04",
+  "__delegation__": {
+    "id": "del-ts-fixture-0001",
+    "delegator": "5526f742941711b3bc530ba44ff6f6dab0f0ab71af832f41a7fe3b9fdaed9c60",
+    "scope": {
+      "action_categories": [
+        "org_creation",
+        "read"
+      ],
+      "escalation_requirements": [
+        {
+          "action_class": "org_creation",
+          "requires_owner_confirmation": true,
+          "confirmation_ttl_ms": 3153600000000,
+          "confirmation_scope": "per_action"
+        }
+      ]
+    }
+  },
+  "__action__": {
+    "action_class": "org_creation",
+    "action_details": {
+      "org_name": "AEOESS Fixture Org"
+    }
+  }
+}
