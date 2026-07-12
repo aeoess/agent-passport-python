@@ -75,6 +75,7 @@ from .attribution import (
     build_merkle_root,
     get_merkle_proof,
     verify_merkle_proof,
+    verify_merkle_proof_against_root,
     trace_beneficiary,
 )
 
