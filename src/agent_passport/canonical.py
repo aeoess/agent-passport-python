@@ -13,6 +13,45 @@ import math
 import re
 
 
+class JCSCanonicalizationError(ValueError):
+    """A value cannot be canonicalized under RFC 8785.
+
+    Subclasses ValueError so existing fail-closed handlers that catch ValueError
+    around canonicalization keep working (they fail closed rather than crash).
+
+    Carries a stable machine-readable ``category`` and ``reason`` matching the
+    TypeScript and Go SDKs, so cross-language callers can branch on the failure
+    without parsing the message.
+    """
+
+    #: Stable machine-readable category, shared across the APS SDKs.
+    category = "invalid_unicode"
+
+    def __init__(self, message: str, reason: str = "lone_surrogate") -> None:
+        super().__init__(message)
+        #: Specific failure within the category, e.g. "lone_surrogate".
+        self.reason = reason
+
+
+def _assert_no_lone_surrogate(s: str) -> None:
+    """Reject a string containing an unpaired UTF-16 surrogate.
+
+    A lone surrogate (U+D800..U+DFFF) is not a valid Unicode scalar and has no
+    UTF-8 encoding, so RFC 8785 requires rejecting the input rather than escaping
+    it or replacing it with U+FFFD. Python's JSON parser resolves valid surrogate
+    PAIRS to their single non-BMP code point, so any character that remains in the
+    surrogate range is unpaired.
+    """
+    for ch in s:
+        o = ord(ch)
+        if 0xD800 <= o <= 0xDFFF:
+            raise JCSCanonicalizationError(
+                "canonicalize_jcs: string contains an unpaired UTF-16 surrogate "
+                f"(U+{o:04X}); a lone surrogate has no valid UTF-8 encoding and "
+                "RFC 8785 requires rejection"
+            )
+
+
 def has_non_finite(obj) -> bool:
     """Return True if obj contains a NaN or Infinity float anywhere within it.
 
@@ -149,11 +188,17 @@ def canonicalize_jcs(obj) -> str:
             raise ValueError(f"Cannot canonicalize {obj}")
         return _es_number(obj)
     if isinstance(obj, str):
+        _assert_no_lone_surrogate(obj)
         return json.dumps(obj, ensure_ascii=False)
     if isinstance(obj, list):
         return "[" + ",".join(canonicalize_jcs(item) for item in obj) + "]"
     if isinstance(obj, dict):
         # Preserve null values in objects (unlike legacy canonicalize)
+        # Validate keys before sorting: _canonical_keys encodes each key as
+        # utf-16-be, which itself raises on a lone surrogate. Check first so the
+        # failure is the clean typed error, not a raw UnicodeEncodeError.
+        for key in obj.keys():
+            _assert_no_lone_surrogate(key)
         pairs = []
         for key in _canonical_keys(obj.keys()):
             pairs.append(
