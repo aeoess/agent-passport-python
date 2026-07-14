@@ -105,3 +105,41 @@ def test_sign_preimage_api_fails_closed_on_lone_surrogate():
 
     with pytest.raises(JCSCanonicalizationError):
         compute_action_ref("agent-1", "read", [HIGH], "2026-07-13T00:00:00Z")
+
+
+# --- adversarial raw payloads reach the same terminal state as Go ---
+# The same raw JSON text pinned in the Go scanner tests. Python preserves a lone
+# surrogate through json.loads and rejects it at canonicalize_jcs, so it reaches
+# the same accept/reject terminal state as the Go raw-JSON path.
+
+import json  # noqa: E402
+
+_REJECT = {
+    "space-separated-non-adjacent": r'{"v":"\uD800 \uDC00"}',
+    "newline-separated-non-adjacent": r'{"v":"\uD800\n\uDC00"}',
+    "lone-low-first": r'{"v":"\uDC00"}',
+    "low-then-high": r'{"v":"\uDC00\uD800"}',
+    "high-then-literal-low": r'{"v":"\uD800\\uDC00"}',
+    "lone-in-key": r'{"\uD800":"x"}',
+    "lowercase-hex": r'{"v":"\ud800"}',
+    "literal-backslash-then-lone": r'{"v":"\\\uD800"}',
+}
+
+_ACCEPT = {
+    "valid-adjacent-pair": r'{"v":"😀"}',
+    "escaped-backslash-literal": r'{"v":"\\uD800"}',
+    "double-backslash-literal": r'{"v":"\\\\uD800"}',
+    "genuine-replacement-char": r'{"v":"�"}',
+}
+
+
+@pytest.mark.parametrize("raw", list(_REJECT.values()), ids=list(_REJECT.keys()))
+def test_adversarial_raw_reject(raw):
+    with pytest.raises(JCSCanonicalizationError):
+        canonicalize_jcs(json.loads(raw))
+
+
+@pytest.mark.parametrize("raw", list(_ACCEPT.values()), ids=list(_ACCEPT.keys()))
+def test_adversarial_raw_accept(raw):
+    # Must not raise.
+    canonicalize_jcs(json.loads(raw))
