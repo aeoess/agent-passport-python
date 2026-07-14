@@ -18,7 +18,19 @@ class JCSCanonicalizationError(ValueError):
 
     Subclasses ValueError so existing fail-closed handlers that catch ValueError
     around canonicalization keep working (they fail closed rather than crash).
+
+    Carries a stable machine-readable ``category`` and ``reason`` matching the
+    TypeScript and Go SDKs, so cross-language callers can branch on the failure
+    without parsing the message.
     """
+
+    #: Stable machine-readable category, shared across the APS SDKs.
+    category = "invalid_unicode"
+
+    def __init__(self, message: str, reason: str = "lone_surrogate") -> None:
+        super().__init__(message)
+        #: Specific failure within the category, e.g. "lone_surrogate".
+        self.reason = reason
 
 
 def _assert_no_lone_surrogate(s: str) -> None:
