@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.9.0 (2026-07-13)
+
+### Fixed / Security
+- **JCS canonicalization now rejects lone surrogates (RFC 8785).** `canonicalize` and `canonicalize_jcs` previously accepted strings carrying an unpaired UTF-16 surrogate and let it reach the canonical output, so input that is not valid Unicode could be signed and could diverge across implementations. It is now rejected before hashing with a stable error, matching the TS and Go SDKs.
+
+### Behavior change
+- Input that was previously accepted is now rejected. A value carrying a lone surrogate on a canonicalization or signing path raises instead of producing a signature. Callers that never emit unpaired surrogates see no change. This is why the minor version moves rather than the patch.
+
 ## 2.8.1 (2026-07-10)
 
 ### Fixed / Security (audit 2026-07-10)
