@@ -1,10 +1,12 @@
 import copy
+import re
 
 import pytest
 
 from agent_passport.crypto import public_key_from_private
 from agent_passport.receipt_core import (
     build_decision_ref_v1,
+    compute_decision_component_ref_v1,
     build_evidence_bundle_body_v2,
     build_evidence_bundle_proof_v2,
     classify_supporting_record_format,
@@ -50,7 +52,7 @@ def test_decision_ref_is_content_derived_and_normalizes_constraints():
         decision_output={"constraints": [], "verdict": "permit"},
     )
     assert first["decision_ref"] == reordered["decision_ref"]
-    output = normalize_core_decision_output_v1({"profile": "aps-core-decision-output-v1", "verdict": "narrow", "effective_authority_ref": hx("b"), "constraints": ["é", "read", "e\u0301", "read"]})
+    output = normalize_core_decision_output_v1({"profile": "aps-core-decision-output-v1", "verdict": "narrow", "effective_authority_ref": hx("b"), "constraints": ["é", "read", "e\u0301", "read"], "valid_until": "2026-04-08T12:00:05.000Z"})
     assert output["constraints"] == ["read", "é"]
 
 
@@ -119,3 +121,23 @@ def test_strict_new_write_and_explicit_legacy_dispatch():
         parse_strict_i_json('{"a":1,"\\u0061":2}')
     assert classify_supporting_record_format({"manifest": {"profile": "aps:evidence-bundle:v1"}})["format"] == "evidence-bundle-v1"
     assert classify_supporting_record_format({"profile": "future"})["format"] == "unknown"
+
+
+def test_core_decision_output_binds_valid_until_into_the_hashed_preimage():
+    permit = {"profile": "aps-core-decision-output-v1", "verdict": "permit", "effective_authority_ref": hx("b"), "constraints": ["commerce:read"], "valid_until": "2026-04-08T12:00:05.000Z"}
+    first = compute_decision_component_ref_v1("output", normalize_core_decision_output_v1(permit))
+    later = compute_decision_component_ref_v1("output", normalize_core_decision_output_v1({**permit, "valid_until": "2026-04-08T12:00:06.000Z"}))
+    assert first != later
+
+    deny = normalize_core_decision_output_v1({"profile": "aps-core-decision-output-v1", "verdict": "deny", "effective_authority_ref": None, "constraints": [], "valid_until": None})
+    assert deny["valid_until"] is None
+    assert re.fullmatch(r"[0-9a-f]{64}", compute_decision_component_ref_v1("output", deny))
+
+    with pytest.raises(ValueError, match="valid_until"):
+        normalize_core_decision_output_v1({**permit, "valid_until": None})
+    with pytest.raises(ValueError, match="valid_until"):
+        normalize_core_decision_output_v1({"profile": "aps-core-decision-output-v1", "verdict": "deny", "effective_authority_ref": None, "constraints": [], "valid_until": "2026-04-08T12:00:05.000Z"})
+    with pytest.raises(Exception, match="valid_until"):
+        normalize_core_decision_output_v1({k: v for k, v in permit.items() if k != "valid_until"})
+    with pytest.raises(ValueError, match="valid_until"):
+        normalize_core_decision_output_v1({**permit, "valid_until": "2026-04-08T12:00:05Z"})

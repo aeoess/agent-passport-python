@@ -7,6 +7,7 @@ import re
 import unicodedata
 
 from .jcs import assert_exact_keys, strict_jcs
+from .receipt import _is_exact_utc_milliseconds
 
 DECISION_REF_TAG = "APS-DECISION-REF-V1"
 DECISION_COMPONENT_TAGS = {
@@ -45,7 +46,7 @@ def compute_decision_ref_v1(value: dict) -> str:
 
 
 def normalize_core_decision_output_v1(value: dict) -> dict:
-    keys = {"profile", "verdict", "effective_authority_ref", "constraints"}
+    keys = {"profile", "verdict", "effective_authority_ref", "constraints", "valid_until"}
     assert_exact_keys(value, keys, keys, "CoreDecisionOutputV1")
     strict_jcs(value)
     if value["profile"] != "aps-core-decision-output-v1":
@@ -63,6 +64,12 @@ def normalize_core_decision_output_v1(value: dict) -> dict:
     constraints = value["constraints"]
     if not isinstance(constraints, list) or not all(isinstance(item, str) for item in constraints):
         raise ValueError("CoreDecisionOutputV1: constraints")
+    valid_until = value["valid_until"]
+    if verdict == "deny":
+        if valid_until is not None:
+            raise ValueError("CoreDecisionOutputV1: deny requires null valid_until")
+    elif not isinstance(valid_until, str) or not _is_exact_utc_milliseconds(valid_until):
+        raise ValueError("CoreDecisionOutputV1: permit/narrow require valid_until as exact UTC milliseconds")
     normalized = sorted({unicodedata.normalize("NFC", item) for item in constraints})
     return {**value, "constraints": normalized}
 
