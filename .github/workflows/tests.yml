@@ -1,0 +1,37 @@
+name: Tests
+
+# Runs the whole pytest suite on every pull request and every push to main.
+# Before this, the only checks on a pull request were the drift scan and the
+# cross-impl JCS job, and that job is path filtered to the canonical modules,
+# so a change anywhere else reached main without a single test being run.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      # 3.10 is the floor pyproject declares in requires-python. Testing the
+      # floor is what catches syntax newer than the package claims to support.
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.10"
+
+      - name: Install package and test extra
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]"
+
+      - name: Run test suite
+        run: python3 -m pytest -q
