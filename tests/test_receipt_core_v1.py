@@ -24,7 +24,9 @@ from agent_passport.receipt_core.jcs import IJsonValidationError, parse_strict_i
 PRIVATE_KEY = "00" * 32
 PUBLIC_KEY = public_key_from_private(PRIVATE_KEY)
 KAT = {
-    "decision_ref": "2157809a9a722314ae19dce7a242ea3b54a8948230fab2fab5d5dc15bd663dc2",
+    # Repinned: build_decision_ref_v1 now normalizes before hashing, so the decision output
+    # must be a valid five-member CoreDecisionOutputV1. Was 2157809a9a722314ae19dce7a242ea3b54a8948230fab2fab5d5dc15bd663dc2.
+    "decision_ref": "e474f27bc7e228cd515d4192936cd5525ac8f362fa95173c82eaff02059389e7",
     "receipt_id": "89b0b77807e99845aab403f01bcdaa2f02949f6c9db84e1aca6c0a8449e4d023",
     "receipt_sig": "83deb713568bbdf0c85e1a6d46345530e84dbe86cdefe1cb608b0f14372c176a9e69e0033db11c4c44ff84be3de3bee5e212707eb84206f6c34455206d37f90b",
     "merkle_root": "03700eeba1b453086063612d3df73f711827735c3fe30cf8a8a2a6379a6f6d5f",
@@ -39,17 +41,29 @@ def hx(char):
     return char * 64
 
 
+KAT_OUTPUT = {"profile": "aps-core-decision-output-v1", "verdict": "permit",
+              "effective_authority_ref": "b" * 64, "constraints": [],
+              "valid_until": "2026-04-08T12:00:05.000Z"}
+BUILDER_PLACEHOLDERS = {"action_ref": "a" * 64, "authority_state": {"scope": ["read"], "revoked": False},
+                        "policy_input": {"id": "p1", "version": "1"}, "decision_context": {"tenant": "t1"}}
+CASE1_OUTPUT = {"profile": "aps-core-decision-output-v1", "verdict": "permit",
+                "effective_authority_ref": "3f2a1c9d8e7b6a5f4e3d2c1b0a9f8e7d6c5b4a39281706f5e4d3c2b1a0987654",
+                "constraints": ["commerce:read"], "valid_until": "2026-04-08T12:00:05.000Z"}
+
+
 def test_decision_ref_is_content_derived_and_normalizes_constraints():
     first = build_decision_ref_v1(
         action_ref=hx("a"), authority_state={"scope": ["read"], "revoked": False},
         policy_input={"id": "p1", "version": "1"}, decision_context={"tenant": "t1"},
-        decision_output={"verdict": "permit", "constraints": []},
+        decision_output=KAT_OUTPUT,
     )
     assert first["decision_ref"] == KAT["decision_ref"]
     reordered = build_decision_ref_v1(
         action_ref=hx("a"), authority_state={"revoked": False, "scope": ["read"]},
         policy_input={"version": "1", "id": "p1"}, decision_context={"tenant": "t1"},
-        decision_output={"constraints": [], "verdict": "permit"},
+        decision_output={"valid_until": "2026-04-08T12:00:05.000Z", "constraints": [],
+                         "effective_authority_ref": "b" * 64, "verdict": "permit",
+                         "profile": "aps-core-decision-output-v1"},
     )
     assert first["decision_ref"] == reordered["decision_ref"]
     output = normalize_core_decision_output_v1({"profile": "aps-core-decision-output-v1", "verdict": "narrow", "effective_authority_ref": hx("b"), "constraints": ["é", "read", "e\u0301", "read"], "valid_until": "2026-04-08T12:00:05.000Z"})
@@ -141,3 +155,42 @@ def test_core_decision_output_binds_valid_until_into_the_hashed_preimage():
         normalize_core_decision_output_v1({k: v for k, v in permit.items() if k != "valid_until"})
     with pytest.raises(ValueError, match="valid_until"):
         normalize_core_decision_output_v1({**permit, "valid_until": "2026-04-08T12:00:05Z"})
+
+
+def test_build_decision_ref_v1_end_to_end_binds_the_normalized_five_member_output():
+    built = build_decision_ref_v1(decision_output=CASE1_OUTPUT, **BUILDER_PLACEHOLDERS)
+    assert built["input"]["decision_output_ref"] == "4226e417c01f4d395db503bfcc00a2e022f5f864568b5fb2b88eefe4fbd0c551"
+    assert built["decision_ref"] == "8a9595fd9d7caf15654fca34816e22d02562f9db16dcc7d5958b906541dce8de"
+
+
+def test_build_decision_ref_v1_rejects_every_malformed_decision_output():
+    missing = {k: v for k, v in CASE1_OUTPUT.items() if k != "valid_until"}
+    with pytest.raises(Exception, match="valid_until"):
+        build_decision_ref_v1(decision_output=missing, **BUILDER_PLACEHOLDERS)
+    with pytest.raises(ValueError, match="valid_until"):
+        build_decision_ref_v1(decision_output={**CASE1_OUTPUT, "valid_until": "2026-04-08T12:00:05Z"}, **BUILDER_PLACEHOLDERS)
+    with pytest.raises(ValueError, match="valid_until"):
+        build_decision_ref_v1(decision_output={"profile": "aps-core-decision-output-v1", "verdict": "deny",
+                                               "effective_authority_ref": None, "constraints": [],
+                                               "valid_until": "2026-04-08T12:00:05.000Z"}, **BUILDER_PLACEHOLDERS)
+    with pytest.raises(ValueError, match="valid_until"):
+        build_decision_ref_v1(decision_output={**CASE1_OUTPUT, "valid_until": None}, **BUILDER_PLACEHOLDERS)
+    with pytest.raises(Exception, match="unknown field extra"):
+        build_decision_ref_v1(decision_output={**CASE1_OUTPUT, "extra": "nope"}, **BUILDER_PLACEHOLDERS)
+    with pytest.raises(ValueError, match="CoreDecisionOutputV1 object"):
+        build_decision_ref_v1(decision_output=["not", "an", "object"], **BUILDER_PLACEHOLDERS)
+
+
+def test_decision_ref_changes_when_only_valid_until_changes():
+    a = build_decision_ref_v1(decision_output=CASE1_OUTPUT, **BUILDER_PLACEHOLDERS)
+    b = build_decision_ref_v1(decision_output={**CASE1_OUTPUT, "valid_until": "2026-04-08T12:00:06.000Z"}, **BUILDER_PLACEHOLDERS)
+    assert a["decision_ref"] != b["decision_ref"]
+    assert b["decision_ref"] == "7c45ce5ecfa8f8aa1bd249513c73c81b31eb193b236dfe50530d58b598c388eb"
+
+
+# Hash primitive test, not a conformance path test. compute_decision_component_ref_v1 is the
+# low-level primitive and takes an already-normalized I-JSON value.
+def test_compute_decision_component_ref_v1_hashes_an_arbitrary_i_json_value():
+    digest = compute_decision_component_ref_v1("context", {"tenant": "t1", "nested": [1, 2, 3]})
+    assert re.fullmatch(r"[0-9a-f]{64}", digest)
+    assert digest == compute_decision_component_ref_v1("context", {"nested": [1, 2, 3], "tenant": "t1"})
