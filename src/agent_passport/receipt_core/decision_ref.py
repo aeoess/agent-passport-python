@@ -77,12 +77,17 @@ def normalize_core_decision_output_v1(value: dict) -> dict:
 def build_decision_ref_v1(*, action_ref: str, authority_state, policy_input, decision_context, decision_output) -> dict:
     if not isinstance(action_ref, str) or not HEX64.fullmatch(action_ref):
         raise ValueError("action_ref must be lowercase sha256 hex")
+    if not isinstance(decision_output, dict):
+        raise ValueError("decision_output must be a CoreDecisionOutputV1 object")
+    # Normalize before hashing: the normalizer validates the closed five-member shape, so an
+    # unnormalized or malformed decision output cannot reach the digest through this path.
+    normalized_output = normalize_core_decision_output_v1(decision_output)
     ref_input = {
         "profile": "aps-decision-ref-v1",
         "action_ref": action_ref,
         "authority_state_ref": compute_decision_component_ref_v1("authority", authority_state),
         "policy_ref": compute_decision_component_ref_v1("policy", policy_input),
         "context_ref": compute_decision_component_ref_v1("context", decision_context),
-        "decision_output_ref": compute_decision_component_ref_v1("output", decision_output),
+        "decision_output_ref": compute_decision_component_ref_v1("output", normalized_output),
     }
     return {"input": ref_input, "decision_ref": compute_decision_ref_v1(ref_input)}
