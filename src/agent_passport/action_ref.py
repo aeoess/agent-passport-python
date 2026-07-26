@@ -29,6 +29,34 @@ from datetime import datetime, timezone
 from .canonical import canonicalize_jcs
 
 
+class DuplicateScopeRequiredError(ValueError):
+    """scopeRequired holds two elements that are equal after NFC normalization.
+
+    Spec section 4.1 defines scope_required as a duplicate-free array, so a
+    duplicated array has no canonical form and is rejected rather than
+    deduplicated: an equality key must not map distinct inputs onto one value
+    silently.
+
+    Subclasses ValueError so existing fail-closed handlers that catch
+    ValueError around canonicalization keep working (they fail closed rather
+    than crash).
+
+    Carries a stable machine-readable ``category`` and ``reason`` matching the
+    TypeScript and Go SDKs, so cross-language callers can branch on the failure
+    without parsing the message.
+    """
+
+    #: Stable machine-readable category, shared across the APS SDKs.
+    category = "invalid_scope_required"
+
+    def __init__(
+        self, message: str, reason: str = "duplicate_scope_required"
+    ) -> None:
+        super().__init__(message)
+        #: Specific failure within the category.
+        self.reason = reason
+
+
 def _normalize_timestamp(ts: str) -> str:
     """Second-precision UTC with the literal Z, matching the TS SDK.
 
@@ -59,20 +87,37 @@ def _normalize_timestamp(ts: str) -> str:
 
 
 def _canonicalize_scope_required(scope_required):
-    """NFC per scope string; code-point sort of a list, on a copy.
+    """NFC per scope string; reject duplicates; code-point sort, on a copy.
 
     A single string is NFC-normalized. A list (or tuple) of strings is
     NFC-normalized per element and sorted; the caller's list is never
     mutated. None and any non-conforming shape pass through unchanged so
     the strict-JCS null-preservation contract and legacy behavior for
     out-of-spec input both match the TS reference.
+
+    Spec 4.1 defines scope_required as a duplicate-free array. Duplicates are
+    detected AFTER normalization, so two spellings that collide only under NFC
+    (U+00E9 and "e" + U+0301) reject as well. Rejection rather than dedupe:
+    silently collapsing ["a","a"] to ["a"] would map two distinct inputs onto
+    one identity with no error, and would change the identity previously
+    computed for the duplicated input. Valid lists are byte-unchanged.
     """
     if isinstance(scope_required, str):
         return unicodedata.normalize("NFC", scope_required)
     if isinstance(scope_required, (list, tuple)) and all(
         isinstance(s, str) for s in scope_required
     ):
-        return sorted(unicodedata.normalize("NFC", s) for s in scope_required)
+        normalized = [unicodedata.normalize("NFC", s) for s in scope_required]
+        seen = set()
+        for s in normalized:
+            if s in seen:
+                raise DuplicateScopeRequiredError(
+                    "compute_action_ref: scope_required contains duplicate "
+                    "elements after NFC normalization "
+                    f"(duplicate_scope_required): {s!r}"
+                )
+            seen.add(s)
+        return sorted(normalized)
     return scope_required
 
 
@@ -83,6 +128,12 @@ def compute_action_ref(agent_id, action_type, scope_required, timestamp) -> str:
     actionType, scopeRequired, timestamp. scopeRequired may be a single
     scope string, a list of scope strings (the section 4.1 form), or None
     (preserved as null in the canonical bytes).
+
+    Raises DuplicateScopeRequiredError when a list scopeRequired holds two
+    elements equal after NFC normalization. The raise happens inside
+    canonicalization, before the digest is computed, so a duplicated list can
+    never present as an identity mismatch downstream: there is no action_ref
+    to compare in the first place.
 
     Not the attribution reference: see compute_attribution_action_ref in
     v2/attribution_primitive/construct.py for the {agentId, actionType,
