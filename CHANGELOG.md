@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.10.0 (2026-07-26)
+
+### Added
+- **receipt-core v1 module.** The Python port of the receipt-core module lands with the same shapes and the same canonical bytes as the TypeScript SDK.
+
+### Behavior change
+- **`scope_required` now rejects duplicate elements after NFC normalization.** Section 4.1 defines `scope_required` as a duplicate-free array. The canonicalizer normalized and sorted but neither deduplicated nor rejected, so `["a","a"]` and `["a"]` produced different action references while the specification admits one form. `canonicalize_scope_required` now raises `DuplicateScopeRequiredError`, a `ValueError` subclass carrying category `invalid_scope_required` and reason `duplicate_scope_required`, before any identity is computed. Detection runs after NFC, so two spellings that collide only under normalization also reject. Input that previously produced an `action_ref` now raises, and only duplicated input is affected.
+
+### Fixed
+- **`decision_ref` construction now normalizes before hashing.** The decision reference was computed over unnormalized input on one path, so two byte-different encodings of the same decision could produce different references.
+- **`valid_until` is now bound in `CoreDecisionOutputV1`.** The field was carried but not covered by the signed material, so a validity window could be altered without invalidating the signature.
+
 ## 2.9.0 (2026-07-13)
 
 ### Fixed / Security
