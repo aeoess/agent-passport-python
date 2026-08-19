@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from .crypto import sign, verify
-from .canonical import canonicalize
+from .canonical import canonicalize, canonicalize_for_write
 from .passport import verify_passport
 
 
@@ -269,7 +269,7 @@ def sign_commerce_receipt(
         "delegationChain": delegation_chain,
         "beneficiary": beneficiary,
     }
-    payload = canonicalize(receipt)
+    payload = canonicalize_for_write(receipt)
     sig = sign(payload, private_key)
     return {**receipt, "signature": sig}
 

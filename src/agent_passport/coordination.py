@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 from .crypto import sign, verify
-from .canonical import canonicalize
+from .canonical import canonicalize, canonicalize_for_write
 
 
 def _rand_hex(n: int = 4) -> str:
@@ -60,7 +60,7 @@ def create_task_brief(
         "status": "draft",
     }
 
-    signature = sign(canonicalize(brief), operator_private_key)
+    signature = sign(canonicalize_for_write(brief), operator_private_key)
     return {**brief, "signature": signature}
 
 
@@ -127,7 +127,7 @@ def assign_task(
         "assignedAt": datetime.now(timezone.utc).isoformat(),
     }
 
-    op_sig = sign(canonicalize(assignment_content), operator_private_key)
+    op_sig = sign(canonicalize_for_write(assignment_content), operator_private_key)
     assignment = {**assignment_content, "operatorSignature": op_sig}
 
     updated_roles = [
@@ -138,7 +138,7 @@ def assign_task(
     brief_content = {k: v for k, v in brief.items() if k != "signature"}
     brief_content["roles"] = updated_roles
     brief_content["status"] = "assigned" if all_assigned else "draft"
-    new_sig = sign(canonicalize(brief_content), operator_private_key)
+    new_sig = sign(canonicalize_for_write(brief_content), operator_private_key)
 
     return {"assignment": assignment, "updatedBrief": {**brief_content, "signature": new_sig}}
 
@@ -147,7 +147,7 @@ def accept_task(assignment: dict, agent_private_key: str) -> dict:
     """Agent accepts a task assignment."""
     accepted_at = datetime.now(timezone.utc).isoformat()
     to_sign = {"assignmentId": assignment["assignmentId"], "taskId": assignment["taskId"], "acceptedAt": accepted_at}
-    agent_sig = sign(canonicalize(to_sign), agent_private_key)
+    agent_sig = sign(canonicalize_for_write(to_sign), agent_private_key)
     return {**assignment, "acceptedAt": accepted_at, "agentSignature": agent_sig}
 
 
@@ -188,7 +188,7 @@ def submit_evidence(
         },
     }
 
-    signature = sign(canonicalize(content), submitter_private_key)
+    signature = sign(canonicalize_for_write(content), submitter_private_key)
     return {**content, "signature": signature}
 
 
@@ -245,7 +245,7 @@ def review_evidence(
         "rationale": rationale,
         "issues": issues,
     }
-    signature = sign(canonicalize(content), reviewer_private_key)
+    signature = sign(canonicalize_for_write(content), reviewer_private_key)
     return {**content, "signature": signature}
 
 
@@ -298,7 +298,7 @@ def handoff_evidence(
         "toAgent": to_agent_public_key,
         "handoffAt": datetime.now(timezone.utc).isoformat(),
     }
-    op_sig = sign(canonicalize(content), operator_private_key)
+    op_sig = sign(canonicalize_for_write(content), operator_private_key)
     return {**content, "operatorSignature": op_sig}
 
 
@@ -343,7 +343,7 @@ def submit_deliverable(
         "citationCount": citation_count,
         "gapsFlagged": gaps_flagged,
     }
-    signature = sign(canonicalize(deliv), submitter_private_key)
+    signature = sign(canonicalize_for_write(deliv), submitter_private_key)
     return {**deliv, "signature": signature}
 
 
@@ -409,7 +409,7 @@ def complete_task(
         "metrics": metrics,
         "retrospective": retrospective,
     }
-    signature = sign(canonicalize(completion), operator_private_key)
+    signature = sign(canonicalize_for_write(completion), operator_private_key)
     return {**completion, "signature": signature}
 
 

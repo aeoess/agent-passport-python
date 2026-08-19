@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from .crypto import sign, verify
-from .canonical import canonicalize, has_non_finite
+from .canonical import canonicalize, has_non_finite, canonicalize_for_write
 from ._time import parse_iso_utc
 
 
@@ -55,7 +55,7 @@ def create_delegation(
     }
 
     # Sign delegation (excluding signature field)
-    canonical = canonicalize(delegation)
+    canonical = canonicalize_for_write(delegation)
     delegation["signature"] = sign(canonical, private_key)
     return delegation
 
@@ -204,7 +204,7 @@ def sub_delegate(
         "createdAt": now.isoformat(),
     }
 
-    canonical = canonicalize(delegation)
+    canonical = canonicalize_for_write(delegation)
     delegation["signature"] = sign(canonical, private_key)
     return delegation
 
@@ -227,7 +227,7 @@ def revoke_delegation(
         "revokedAt": now.isoformat(),
         "reason": reason,
     }
-    canonical = canonicalize(revocation)
+    canonical = canonicalize_for_write(revocation)
     revocation["signature"] = sign(canonical, private_key)
 
     # Mark original delegation as revoked
@@ -306,7 +306,7 @@ def create_action_receipt(
         "delegationChain": delegation_chain or [],
     }
 
-    canonical = canonicalize(receipt)
+    canonical = canonicalize_for_write(receipt)
     receipt["signature"] = sign(canonical, private_key)
     return receipt
 

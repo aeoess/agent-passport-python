@@ -8,14 +8,13 @@ import hashlib
 from typing import Optional
 
 from ...crypto import sign
-from ...canonical import canonicalize
+from ...canonical import canonicalize, canonicalize_for_write
 from .types import AttributionReceipt, HybridTimestamp
 
 
-def receipt_core(receipt: dict) -> str:
-    """Canonical unsigned core string. Both citer and cited principal sign
-    exactly this payload, and the receipt id is sha256(core)."""
-    return canonicalize({
+def _receipt_core_impl(receipt: dict, _canon) -> str:
+    """Shared body so the read and write twins can never drift on the field list."""
+    return _canon({
         "version": receipt["version"],
         "citer": receipt["citer"],
         "citer_public_key": receipt["citer_public_key"],
@@ -26,6 +25,24 @@ def receipt_core(receipt: dict) -> str:
         "created_at": receipt["created_at"],
         "expires_at": receipt["expires_at"],
     })
+
+
+def receipt_core(receipt: dict) -> str:
+    """Canonical unsigned core string. Both citer and cited principal sign
+    exactly this payload, and the receipt id is sha256(core)."""
+    return _receipt_core_impl(receipt, canonicalize)
+
+
+def receipt_core_for_write(receipt: dict) -> str:
+    """Write-boundary twin of :func:`receipt_core`.
+
+    Emits the same bytes as :func:`receipt_core` for every value it accepts. The only
+    difference is that an integer-valued number outside the interoperable IEEE 754
+    range is refused instead of serialized. Use at signing and new-write boundaries
+    only: :func:`receipt_core` stays unrestricted so an artifact signed before this rule
+    existed keeps verifying.
+    """
+    return _receipt_core_impl(receipt, canonicalize_for_write)
 
 
 def create_attribution_receipt(
@@ -60,7 +77,7 @@ def create_attribution_receipt(
         "expires_at": dict(expires_at),
     }
 
-    core = receipt_core(unsigned)
+    core = receipt_core_for_write(unsigned)
     receipt_id = hashlib.sha256(core.encode("utf-8")).hexdigest()
     citer_signature = sign(core, citer_private_key)
 

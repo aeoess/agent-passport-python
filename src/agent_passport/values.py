@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from .crypto import sign, verify
-from .canonical import canonicalize
+from .canonical import canonicalize, canonicalize_for_write
 
 # Enforcement escalation order (higher = stricter)
 ENFORCEMENT_ESCALATION: dict[str, int] = {
@@ -188,7 +188,7 @@ def attest_floor(
         "commitment": f"floor:{floor_version}|ext:{','.join(sorted(extensions)) or 'none'}|ts:{now.isoformat().replace('+00:00', 'Z')}",
     }
 
-    canonical = canonicalize(attestation)
+    canonical = canonicalize_for_write(attestation)
     signature = sign(canonical, private_key)
     return {**attestation, "signature": signature}
 
@@ -258,7 +258,7 @@ def evaluate_compliance(
         "generatedAt": now_iso,
     }
 
-    canonical = canonicalize(report)
+    canonical = canonicalize_for_write(report)
     signature = sign(canonical, verifier_private_key)
     return {**report, "signature": signature}
 

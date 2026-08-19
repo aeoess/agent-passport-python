@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 from .crypto import sign, verify
-from .canonical import canonicalize
+from .canonical import canonicalize, canonicalize_for_write
 
 
 def _msg_id() -> str:
@@ -73,7 +73,7 @@ def create_agora_message(
     if reply_to:
         message_content["replyTo"] = reply_to
 
-    canonical = canonicalize(message_content)
+    canonical = canonicalize_for_write(message_content)
     signature = sign(canonical, private_key)
 
     return {**message_content, "signature": signature}

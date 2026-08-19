@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 from hashlib import sha256
 from typing import Any, Dict, List, Optional
 
-from ...canonical import canonicalize_jcs
+from ...canonical import canonicalize_jcs, canonicalize_jcs_for_write
 from ...crypto import public_key_from_private, sign
 from .types import (
     ActionPayload,
@@ -99,9 +99,9 @@ def create_action_receipt(
         signature="",
     )
 
-    receipt_id = _sha256_hex(canonicalize_jcs(draft.to_canonical_dict()))
+    receipt_id = _sha256_hex(canonicalize_jcs_for_write(draft.to_canonical_dict()))
     draft.receipt_id = receipt_id
-    signature = sign(canonicalize_jcs(draft.to_canonical_dict()), signer_private_key)
+    signature = sign(canonicalize_jcs_for_write(draft.to_canonical_dict()), signer_private_key)
     draft.signature = signature
     return draft
 
@@ -138,9 +138,9 @@ def create_authority_boundary_receipt(
         signature="",
     )
 
-    receipt_id = _sha256_hex(canonicalize_jcs(draft.to_canonical_dict()))
+    receipt_id = _sha256_hex(canonicalize_jcs_for_write(draft.to_canonical_dict()))
     draft.receipt_id = receipt_id
-    signature = sign(canonicalize_jcs(draft.to_canonical_dict()), evaluator_private_key)
+    signature = sign(canonicalize_jcs_for_write(draft.to_canonical_dict()), evaluator_private_key)
     draft.signature = signature
     return draft
 
@@ -179,9 +179,9 @@ def create_custody_receipt(
         signature="",
     )
 
-    receipt_id = _sha256_hex(canonicalize_jcs(draft.to_canonical_dict()))
+    receipt_id = _sha256_hex(canonicalize_jcs_for_write(draft.to_canonical_dict()))
     draft.receipt_id = receipt_id
-    signature = sign(canonicalize_jcs(draft.to_canonical_dict()), custodian_private_key)
+    signature = sign(canonicalize_jcs_for_write(draft.to_canonical_dict()), custodian_private_key)
     draft.signature = signature
     return draft
 
@@ -234,11 +234,11 @@ def create_contestability_receipt(
     # Receipt_id and signature are computed over the filing form: no
     # controller_response, signature: "" present.
     receipt_id = _sha256_hex(
-        canonicalize_jcs(draft.to_canonical_dict(drop_controller_response=True))
+        canonicalize_jcs_for_write(draft.to_canonical_dict(drop_controller_response=True))
     )
     draft.receipt_id = receipt_id
     signature = sign(
-        canonicalize_jcs(draft.to_canonical_dict(drop_controller_response=True)),
+        canonicalize_jcs_for_write(draft.to_canonical_dict(drop_controller_response=True)),
         contestant_private_key,
     )
     draft.signature = signature
@@ -287,7 +287,7 @@ def attach_controller_response(
         signature=receipt.signature,
     )
     response_signature = sign(
-        canonicalize_jcs(
+        canonicalize_jcs_for_write(
             receipt_with_response.to_canonical_dict(drop_response_signature=True)
         ),
         controller_private_key,

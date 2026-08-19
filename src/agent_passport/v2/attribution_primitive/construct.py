@@ -7,15 +7,16 @@ from ...crypto import sign
 from .canonical import (
     assert_canonical_timestamp,
     canonical_hash_hex,
+    canonical_hash_hex_for_write,
     canonical_timestamp,
-    envelope_bytes,
+    envelope_bytes_for_write,
 )
-from .merkle import build_merkle_frame
+from .merkle import build_merkle_frame_for_write
 from .types import AttributionAction, AttributionAxes, AttributionPrimitive
 
 
-def compute_attribution_action_ref(action: AttributionAction) -> str:
-    """Derive action_ref from an action tuple. §1.2 / §3.4."""
+def _compute_attribution_action_ref_impl(action: AttributionAction, _hash) -> str:
+    """Shared body so the read and write twins can never drift on the field list."""
     if not action.get("agentId"):
         raise ValueError("attribution-primitive: action.agentId required")
     if not action.get("actionType"):
@@ -24,12 +25,28 @@ def compute_attribution_action_ref(action: AttributionAction) -> str:
         raise ValueError("attribution-primitive: action.nonce required")
     if not isinstance(action.get("params"), dict):
         raise ValueError("attribution-primitive: action.params must be an object")
-    return canonical_hash_hex({
+    return _hash({
         "agentId": action["agentId"],
         "actionType": action["actionType"],
         "params": action["params"],
         "nonce": action["nonce"],
     })
+
+
+def compute_attribution_action_ref(action: AttributionAction) -> str:
+    """Derive action_ref from an action tuple. §1.2 / §3.4."""
+    return _compute_attribution_action_ref_impl(action, canonical_hash_hex)
+
+
+def _compute_attribution_action_ref_for_write(action: AttributionAction) -> str:
+    """Write-boundary twin of :func:`compute_attribution_action_ref`.
+
+    Module-internal on purpose: it is deliberately absent from the package barrel, so
+    this split adds no public API. The exported :func:`compute_attribution_action_ref`
+    stays unrestricted, because an external verifier re-deriving the action_ref of a
+    primitive signed before this rule must still get the same value.
+    """
+    return _compute_attribution_action_ref_impl(action, canonical_hash_hex_for_write)
 
 
 def construct_attribution_primitive(
@@ -46,13 +63,13 @@ def construct_attribution_primitive(
     if not issuer_private_key:
         raise ValueError("attribution-primitive: issuer_private_key required")
 
-    action_ref = compute_attribution_action_ref(action)
-    frame = build_merkle_frame(axes)
+    action_ref = _compute_attribution_action_ref_for_write(action)
+    frame = build_merkle_frame_for_write(axes)
     merkle_root = frame["root"].hex()
     ts = timestamp if timestamp is not None else canonical_timestamp()
     assert_canonical_timestamp(ts)
 
-    envelope = envelope_bytes({
+    envelope = envelope_bytes_for_write({
         "action_ref": action_ref,
         "merkle_root": merkle_root,
         "issuer": issuer,
@@ -81,13 +98,13 @@ def resign_attribution_primitive(
     """Re-sign a primitive whose axes or metadata have changed."""
     new_axes = axes if axes is not None else primitive["axes"]
     action_ref = (
-        compute_attribution_action_ref(action) if action is not None else primitive["action_ref"]
+        _compute_attribution_action_ref_for_write(action) if action is not None else primitive["action_ref"]
     )
-    frame = build_merkle_frame(new_axes)
+    frame = build_merkle_frame_for_write(new_axes)
     merkle_root = frame["root"].hex()
     ts = timestamp if timestamp is not None else canonical_timestamp()
     assert_canonical_timestamp(ts)
-    envelope = envelope_bytes({
+    envelope = envelope_bytes_for_write({
         "action_ref": action_ref,
         "merkle_root": merkle_root,
         "issuer": primitive["issuer"],

@@ -9,7 +9,7 @@ import time
 from typing import Optional
 
 from ...crypto import sign, verify
-from ...canonical import canonicalize
+from ...canonical import canonicalize, canonicalize_for_write
 from .types import ProvisionalStatement, Ed25519Signature
 from ..attribution_consent.types import HybridTimestamp
 
@@ -32,8 +32,8 @@ def _create_hybrid_timestamp(gateway_id: str, drift_ms: int = _DEFAULT_NTP_DRIFT
     }
 
 
-def statement_signing_payload(s: dict) -> str:
-    """Canonical payload an author signs."""
+def _statement_signing_payload_impl(s: dict, _canon) -> str:
+    """Shared body so the read and write twins can never drift on the field list."""
     base = {
         "id": s["id"],
         "version": s["version"],
@@ -44,7 +44,24 @@ def statement_signing_payload(s: dict) -> str:
     }
     if s.get("dead_man_expires_at"):
         base["dead_man_expires_at"] = s["dead_man_expires_at"]
-    return canonicalize(base)
+    return _canon(base)
+
+
+def statement_signing_payload(s: dict) -> str:
+    """Canonical payload an author signs."""
+    return _statement_signing_payload_impl(s, canonicalize)
+
+
+def statement_signing_payload_for_write(s: dict) -> str:
+    """Write-boundary twin of :func:`statement_signing_payload`.
+
+    Emits the same bytes as :func:`statement_signing_payload` for every value it accepts. The only
+    difference is that an integer-valued number outside the interoperable IEEE 754
+    range is refused instead of serialized. Use at signing and new-write boundaries
+    only: :func:`statement_signing_payload` stays unrestricted so an artifact signed before this rule
+    existed keeps verifying.
+    """
+    return _statement_signing_payload_impl(s, canonicalize_for_write)
 
 
 def create_provisional(
@@ -71,7 +88,7 @@ def create_provisional(
     if dead_man_expires_at is not None:
         base["dead_man_expires_at"] = dict(dead_man_expires_at)
 
-    author_signature = sign(statement_signing_payload(base), author_private_key)
+    author_signature = sign(statement_signing_payload_for_write(base), author_private_key)
 
     return {
         **base,

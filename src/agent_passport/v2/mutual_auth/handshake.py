@@ -14,7 +14,7 @@ import hashlib
 import os
 from typing import List, Optional
 
-from ...canonical import canonicalize_jcs
+from ...canonical import canonicalize_jcs, canonicalize_jcs_for_write
 from ...crypto import sign as ed_sign, verify as ed_verify
 from .certificate import (
     certificate_id,
@@ -83,7 +83,7 @@ def build_attest(
         "certificate": certificate,
         "timestamp": now_ms,
     }
-    canonical = canonicalize_jcs(unsigned)
+    canonical = canonicalize_jcs_for_write(unsigned)
     sig_hex = ed_sign(canonical, own_sk_hex)
     sig_b64 = base64.b64encode(bytes.fromhex(sig_hex)).decode("ascii")
     signed = dict(unsigned)

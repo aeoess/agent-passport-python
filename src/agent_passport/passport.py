@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from .crypto import generate_key_pair, sign, verify
-from .canonical import canonicalize, has_non_finite
+from .canonical import canonicalize, has_non_finite, canonicalize_for_write
 from ._time import parse_iso_utc
 
 DEFAULT_EXPIRY_DAYS = 365
@@ -98,7 +98,7 @@ def sign_passport(passport: dict, private_key: str) -> dict:
     Returns:
         SignedPassport dict with passport, signature, and signedAt.
     """
-    canonical = canonicalize(passport)
+    canonical = canonicalize_for_write(passport)
     signature = sign(canonical, private_key)
     return {
         "passport": passport,

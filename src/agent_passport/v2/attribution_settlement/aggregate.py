@@ -11,9 +11,14 @@ import math
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
-from ...canonical import canonicalize
+from ...canonical import canonicalize, canonicalize_for_write
 from ..attribution_primitive.canonical import assert_canonical_timestamp
-from .merkle import build_merkle_root, empty_axis_merkle_root, leaf_hash
+from .merkle import (
+    build_merkle_root,
+    empty_axis_merkle_root,
+    leaf_hash,
+    leaf_hash_for_write,
+)
 from .types import (
     SettlementAxisIndex,
     SettlementContributor,
@@ -61,6 +66,18 @@ def contributor_leaf_hash_hex(c) -> str:
 
 def residual_leaf_hash_hex(r) -> str:
     return hashlib.sha256(canonicalize(r).encode("utf-8")).hexdigest()
+
+
+def residual_leaf_hash_hex_for_write(r) -> str:
+    """Write-boundary twin of :func:`residual_leaf_hash_hex`.
+
+    Emits the same bytes as :func:`residual_leaf_hash_hex` for every value it accepts. The only
+    difference is that an integer-valued number outside the interoperable IEEE 754
+    range is refused instead of serialized. Use at signing and new-write boundaries
+    only: :func:`residual_leaf_hash_hex` stays unrestricted so an artifact signed before this rule
+    existed keeps verifying.
+    """
+    return hashlib.sha256(canonicalize_for_write(r).encode("utf-8")).hexdigest()
 
 
 class _AxisAccum:
@@ -192,7 +209,7 @@ def _finalize_axis(axis: str, accum: _AxisAccum, period: SettlementPeriod) -> Se
 
     leaves = [bytes.fromhex(c["merkle_leaf_hash"]) for c in contributors]
     if residual_bucket:
-        leaves.append(bytes.fromhex(residual_leaf_hash_hex(residual_bucket)))
+        leaves.append(bytes.fromhex(residual_leaf_hash_hex_for_write(residual_bucket)))
     axis_merkle_root = (
         empty_axis_merkle_root() if not leaves else build_merkle_root(leaves).hex()
     )
@@ -290,7 +307,7 @@ def aggregate_attribution_primitives(
     }
 
     sorted_refs = sorted(r["action_ref"] for r in in_period)
-    ref_leaves = [leaf_hash(ref) for ref in sorted_refs]
+    ref_leaves = [leaf_hash_for_write(ref) for ref in sorted_refs]
     input_receipts_hash = (
         empty_axis_merkle_root() if not ref_leaves else build_merkle_root(ref_leaves).hex()
     )

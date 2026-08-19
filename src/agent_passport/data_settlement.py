@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .crypto import sign, verify
-from .canonical import canonicalize
+from .canonical import canonicalize, canonicalize_for_write
 
 
 def _merkle_root(items: list[str]) -> str:
@@ -74,7 +74,7 @@ def generate_settlement(
         "receiptCount": len(all_receipt_ids),
         "merkleRoot": _merkle_root(all_receipt_ids),
     }
-    record["signature"] = sign(canonicalize(record), generator_private_key)
+    record["signature"] = sign(canonicalize_for_write(record), generator_private_key)
     return record
 
 

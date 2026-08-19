@@ -12,9 +12,9 @@ from typing import List, Optional
 
 from ...crypto import sign as ed_sign_hex
 from .canonicalize import (
-    canonicalize_envelope,
+    canonicalize_envelope_for_write,
     canonicalize_path,
-    compute_context_root,
+    compute_context_root_for_write,
     sha256_hex,
     sort_instruction_files,
 )
@@ -139,7 +139,7 @@ def create_instruction_provenance_receipt(
             )
 
     sorted_files = sort_instruction_files(canonical_files)
-    context_root = compute_context_root(sorted_files)
+    context_root = compute_context_root_for_write(sorted_files)
     issued = issued_at if issued_at is not None else _now_iso()
     signing_key_id = f"ed25519:{public_key_hex[:16]}"
 
@@ -162,7 +162,7 @@ def create_instruction_provenance_receipt(
         expires_at=expires_at,
     )
 
-    canonical_bytes = canonicalize_envelope(unsigned)
+    canonical_bytes = canonicalize_envelope_for_write(unsigned)
     receipt_id = sha256_hex(canonical_bytes)
     signature_hex = sign_ed25519(canonical_bytes, private_key_hex)
 

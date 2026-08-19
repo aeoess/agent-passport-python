@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from hashlib import sha256
 from typing import List, Optional
 
-from ...canonical import canonicalize_jcs
+from ...canonical import canonicalize_jcs, canonicalize_jcs_for_write
 from ...crypto import public_key_from_private, sign, verify
 from .types import (
     APSBundle,
@@ -101,14 +101,14 @@ def create_aps_bundle(
 
     # Receipt_id over canonical form WITHOUT signature key.
     receipt_id = _sha256_hex(
-        canonicalize_jcs(draft.to_canonical_dict(drop_signature_field=True))
+        canonicalize_jcs_for_write(draft.to_canonical_dict(drop_signature_field=True))
     )
     draft.receipt_id = receipt_id
 
     # Signature payload over the SAME form (without signature key), with
     # the receipt_id now populated.
     signature = sign(
-        canonicalize_jcs(draft.to_canonical_dict(drop_signature_field=True)),
+        canonicalize_jcs_for_write(draft.to_canonical_dict(drop_signature_field=True)),
         bundler_private_key,
     )
     draft.signature = signature

@@ -12,6 +12,8 @@ import json
 import math
 import re
 
+from .write_policy import MAX_SAFE_INTEGER, UnsafeIntegerError
+
 
 class JCSCanonicalizationError(ValueError):
     """A value cannot be canonicalized under RFC 8785.
@@ -163,6 +165,63 @@ def canonicalize(obj) -> str:
     return json.dumps(obj, ensure_ascii=False)
 
 
+def canonicalize_for_write(obj, path: str = "$") -> str:
+    """Legacy canonicalization for a NEW WRITE, with the APS unsafe-integer rule applied.
+
+    Byte-identical to :func:`canonicalize` for every value it accepts: same key order,
+    same null stripping, same number and string formatting. The only difference is that
+    an integer-valued number outside the interoperable IEEE 754 range is refused rather
+    than emitted. See :mod:`agent_passport.write_policy` for the rule.
+
+    Use at signing and new-write boundaries ONLY. Verification, recompute, and any path
+    rebuilding the preimage of an existing artifact must keep calling
+    :func:`canonicalize`, which stays unrestricted so historical bytes keep verifying.
+
+    READS EACH KEY EXACTLY ONCE. A separate validating pre-pass followed by
+    :func:`canonicalize` would walk the mapping twice, and a Mapping subclass or an
+    object overriding ``__getitem__`` can answer differently on the second read, so the
+    value checked would not be the value signed. Here the value is captured once into
+    ``val``, checked, and emitted from that same capture.
+
+    Note this deliberately does NOT fix the legacy int-verbatim divergence from the other
+    SDKs: refusing the unsafe range makes that divergence unreachable on write without
+    altering a single historical byte.
+    """
+    if obj is None:
+        return "null"
+    if isinstance(obj, bool):
+        return "true" if obj else "false"
+    if isinstance(obj, int):
+        if abs(obj) > MAX_SAFE_INTEGER:
+            raise UnsafeIntegerError(f"{path}: integer exceeds the interoperable IEEE 754 range")
+        return json.dumps(obj)
+    if isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            raise ValueError(f"Cannot canonicalize {obj}: NaN and Infinity are not valid JSON per RFC 8259")
+        if obj.is_integer() and abs(obj) > MAX_SAFE_INTEGER:
+            raise UnsafeIntegerError(f"{path}: integer exceeds the interoperable IEEE 754 range")
+        return _es_number(obj)
+    if isinstance(obj, str):
+        return json.dumps(obj, ensure_ascii=False)
+    if isinstance(obj, list):
+        return "[" + ",".join(
+            canonicalize_for_write(item, f"{path}[{index}]") for index, item in enumerate(obj)
+        ) + "]"
+    if isinstance(obj, dict):
+        pairs = []
+        for key in _canonical_keys(obj.keys()):
+            val = obj[key]  # the single read; everything below uses this capture
+            if val is None:
+                continue
+            pairs.append(
+                json.dumps(key, ensure_ascii=False)
+                + ":"
+                + canonicalize_for_write(val, f"{path}.{key}")
+            )
+        return "{" + ",".join(pairs) + "}"
+    return json.dumps(obj, ensure_ascii=False)
+
+
 def canonicalize_jcs(obj) -> str:
     """RFC 8785 JSON Canonicalization Scheme (strict).
 
@@ -223,6 +282,56 @@ def canonicalize_jcs(obj) -> str:
         for key in _canonical_keys(obj.keys()):
             pairs.append(
                 json.dumps(key, ensure_ascii=False) + ":" + canonicalize_jcs(obj[key])
+            )
+        return "{" + ",".join(pairs) + "}"
+    return json.dumps(obj, ensure_ascii=False)
+
+
+def canonicalize_jcs_for_write(obj, path: str = "$") -> str:
+    """RFC 8785 canonicalization for a NEW WRITE, with the unsafe-integer rule applied.
+
+    Byte-identical to :func:`canonicalize_jcs` for every value it accepts. The only
+    difference is that an integer-valued number outside the interoperable IEEE 754 range
+    is refused rather than emitted.
+
+    Use at signing and new-write boundaries ONLY. Verification and recompute keep calling
+    :func:`canonicalize_jcs`, which stays unrestricted so historical bytes keep verifying.
+
+    READS EACH KEY EXACTLY ONCE, so a Mapping subclass or an object overriding
+    ``__getitem__`` cannot answer safe on a validating pre-pass and unsafe on the
+    emitting pass. The value is captured once, checked, and emitted from that capture.
+    """
+    if obj is None:
+        return "null"
+    if isinstance(obj, bool):
+        return "true" if obj else "false"
+    if isinstance(obj, int):
+        if abs(obj) > MAX_SAFE_INTEGER:
+            raise UnsafeIntegerError(f"{path}: integer exceeds the interoperable IEEE 754 range")
+        return _es_number(float(obj))
+    if isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            raise ValueError(f"Cannot canonicalize {obj}")
+        if obj.is_integer() and abs(obj) > MAX_SAFE_INTEGER:
+            raise UnsafeIntegerError(f"{path}: integer exceeds the interoperable IEEE 754 range")
+        return _es_number(obj)
+    if isinstance(obj, str):
+        _assert_no_lone_surrogate(obj)
+        return json.dumps(obj, ensure_ascii=False)
+    if isinstance(obj, list):
+        return "[" + ",".join(
+            canonicalize_jcs_for_write(item, f"{path}[{index}]") for index, item in enumerate(obj)
+        ) + "]"
+    if isinstance(obj, dict):
+        for key in obj.keys():
+            _assert_no_lone_surrogate(key)
+        pairs = []
+        for key in _canonical_keys(obj.keys()):
+            val = obj[key]  # the single read; everything below uses this capture
+            pairs.append(
+                json.dumps(key, ensure_ascii=False)
+                + ":"
+                + canonicalize_jcs_for_write(val, f"{path}.{key}")
             )
         return "{" + ",".join(pairs) + "}"
     return json.dumps(obj, ensure_ascii=False)

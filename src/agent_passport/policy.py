@@ -22,7 +22,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from .crypto import sign, verify
-from .canonical import canonicalize
+from .canonical import canonicalize, canonicalize_for_write
 
 
 ENFORCEMENT_ESCALATION: dict[str, int] = {
@@ -55,7 +55,7 @@ def create_action_intent(
         "context": context,
         "createdAt": datetime.now(timezone.utc).isoformat(),
     }
-    signature = sign(canonicalize(intent), private_key)
+    signature = sign(canonicalize_for_write(intent), private_key)
     return {**intent, "signature": signature}
 
 
@@ -113,7 +113,7 @@ def evaluate_intent(
         "expiresAt": expires.isoformat(),
     }
 
-    signature = sign(canonicalize(decision), evaluator_private_key)
+    signature = sign(canonicalize_for_write(decision), evaluator_private_key)
     return {**decision, "signature": signature}
 
 
@@ -164,7 +164,7 @@ def create_policy_receipt(
         },
         "verifiedAt": datetime.now(timezone.utc).isoformat(),
     }
-    signature = sign(canonicalize(pr), verifier_private_key)
+    signature = sign(canonicalize_for_write(pr), verifier_private_key)
     return {**pr, "signature": signature}
 
 

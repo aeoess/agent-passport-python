@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .crypto import sign, verify, generate_key_pair, public_key_from_private
-from .canonical import canonicalize
+from .canonical import canonicalize, canonicalize_for_write
 from .attribution import build_merkle_root, get_merkle_proof, verify_merkle_proof
 
 
@@ -57,7 +57,7 @@ def register_self_attested_source(
         "ownerPublicKey": owner_public_key,
         "registeredAt": _now_iso(),
     }
-    receipt["signature"] = sign(canonicalize(receipt), owner_private_key)
+    receipt["signature"] = sign(canonicalize_for_write(receipt), owner_private_key)
     return receipt
 
 
@@ -76,7 +76,7 @@ def register_custodian_attested_source(
         "custodianPublicKey": custodian_public_key,
         "registeredAt": _now_iso(),
     }
-    receipt["signature"] = sign(canonicalize(receipt), custodian_private_key)
+    receipt["signature"] = sign(canonicalize_for_write(receipt), custodian_private_key)
     return receipt
 
 
@@ -95,7 +95,7 @@ def register_gateway_observed_source(
         "gatewayPublicKey": gateway_public_key,
         "registeredAt": _now_iso(),
     }
-    receipt["signature"] = sign(canonicalize(receipt), gateway_private_key)
+    receipt["signature"] = sign(canonicalize_for_write(receipt), gateway_private_key)
     return receipt
 
 
@@ -166,7 +166,7 @@ def record_data_access(
         "accessedAt": _now_iso(),
         "termsAtAccessTime": terms_snapshot,
     }
-    receipt["signature"] = sign(canonicalize(receipt), gateway_private_key)
+    receipt["signature"] = sign(canonicalize_for_write(receipt), gateway_private_key)
     return receipt
 
 

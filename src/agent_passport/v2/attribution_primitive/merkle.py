@@ -3,17 +3,22 @@
 
 from typing import Dict, List, Tuple
 
-from .canonical import hash_axis_leaf, hash_node, normalize_axes
+from .canonical import (
+    hash_axis_leaf,
+    hash_axis_leaf_for_write,
+    hash_node,
+    normalize_axes,
+)
 from .types import AttributionAxes
 
 
-def build_merkle_frame(raw_axes: AttributionAxes) -> dict:
-    """Returns {axes, leaves, nodes, root} mirroring TS MerkleFrame."""
+def _build_merkle_frame_impl(raw_axes: AttributionAxes, _leaf) -> dict:
+    """Shared body so the read and write twins can never drift apart."""
     axes = normalize_axes(raw_axes)
-    leaf_d = hash_axis_leaf(axes["D"])
-    leaf_p = hash_axis_leaf(axes["P"])
-    leaf_g = hash_axis_leaf(axes["G"])
-    leaf_c = hash_axis_leaf(axes["C"])
+    leaf_d = _leaf(axes["D"])
+    leaf_p = _leaf(axes["P"])
+    leaf_g = _leaf(axes["G"])
+    leaf_c = _leaf(axes["C"])
     n_content = hash_node(leaf_d, leaf_p)
     n_auth_infra = hash_node(leaf_g, leaf_c)
     root = hash_node(n_content, n_auth_infra)
@@ -23,6 +28,23 @@ def build_merkle_frame(raw_axes: AttributionAxes) -> dict:
         "nodes": {"N_content": n_content, "N_auth_infra": n_auth_infra},
         "root": root,
     }
+
+
+def build_merkle_frame(raw_axes: AttributionAxes) -> dict:
+    """Returns {axes, leaves, nodes, root} mirroring TS MerkleFrame."""
+    return _build_merkle_frame_impl(raw_axes, hash_axis_leaf)
+
+
+def build_merkle_frame_for_write(raw_axes: AttributionAxes) -> dict:
+    """Write-boundary twin of :func:`build_merkle_frame`.
+
+    Produces the same frame as :func:`build_merkle_frame` for every value it accepts.
+    The only difference is that an integer-valued number outside the interoperable
+    IEEE 754 range is refused instead of hashed into a leaf. Use when CONSTRUCTING a
+    primitive; projection and verification keep calling :func:`build_merkle_frame` so
+    a primitive built before this rule still reconstructs.
+    """
+    return _build_merkle_frame_impl(raw_axes, hash_axis_leaf_for_write)
 
 
 def projection_path(frame: dict, axis: str) -> Tuple[str, str]:
