@@ -184,7 +184,7 @@ def _finalize_axis(axis: str, accum: _AxisAccum, period: SettlementPeriod) -> Se
             "total_weight": total_str,
             "contribution_count": slot["count"],
         }
-        merkle_leaf_hash = hashlib.sha256(canonicalize(leaf_body).encode("utf-8")).hexdigest()
+        merkle_leaf_hash = hashlib.sha256(canonicalize_for_write(leaf_body).encode("utf-8")).hexdigest()
         contributors.append({
             "contributor_did": did,
             "total_weight": total_str,
@@ -198,7 +198,7 @@ def _finalize_axis(axis: str, accum: _AxisAccum, period: SettlementPeriod) -> Se
             raise ValueError("attribution-settlement: governance axis cannot carry a residual bucket")
         sorted_hashes = sorted(accum.per_receipt_residual_hashes)
         pooled_contributors_hash = hashlib.sha256(
-            canonicalize(sorted_hashes).encode("utf-8")
+            canonicalize_for_write(sorted_hashes).encode("utf-8")
         ).hexdigest()
         residual_bucket = {
             "residual_id": f"residual:{axis}",  # type: ignore[typeddict-item]

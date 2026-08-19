@@ -205,7 +205,7 @@ def derive_session(
     agent_cert_id = certificate_id(agent_attest["certificate"])
     is_cert_id = certificate_id(is_attest["certificate"])
 
-    material = canonicalize_jcs({
+    material = canonicalize_jcs_for_write({
         "spec_version": SPEC_VERSION,
         "chosen_version": agent_attest["chosen_version"],
         "agent_cert_id": agent_cert_id,
