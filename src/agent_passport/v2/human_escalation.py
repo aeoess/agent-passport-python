@@ -20,6 +20,7 @@ from typing import List, Optional, TypedDict
 
 from ..crypto import sign, verify
 from ..canonical import canonicalize, canonicalize_for_write
+from ..write_policy import assert_write_safe_numbers
 
 
 # ── Type aliases / TypedDicts ────────────────────────────────────────
@@ -126,6 +127,22 @@ def hash_action_details(details: dict) -> str:
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
+def hash_action_details_for_write(details: dict) -> str:
+    """Write-boundary twin of :func:`hash_action_details`.
+
+    This commitment is minted by :func:`request_owner_confirmation` and recomputed by
+    :func:`is_confirmation_valid`, so the helper is shared and cannot be guarded in
+    place.
+
+    Note it does NOT canonicalize: it hashes ``json.dumps`` output, so no canonicalizer
+    census could see it. The guard therefore VALIDATES ONLY and still hashes the exact
+    same bytes, which keeps every existing commitment reproducible. Mirrors the
+    TypeScript ``hashActionDetailsForWrite``.
+    """
+    assert_write_safe_numbers(details)
+    return hash_action_details(details)
+
+
 def _find_requirement(delegation: dict, action_class: str) -> Optional[EscalationRequirement]:
     reqs = delegation.get("scope", {}).get("escalation_requirements")
     if not reqs:
@@ -186,7 +203,7 @@ def request_owner_confirmation(delegation: dict, action: EscalationAction) -> Co
         "id": str(uuid.uuid4()),
         "delegation_id": delegation["id"],
         "action_class": action["action_class"],
-        "action_details_hash": hash_action_details(action["action_details"]),
+        "action_details_hash": hash_action_details_for_write(action["action_details"]),
         "confirmation_scope": requirement["confirmation_scope"],
         "session_id": action.get("session_id"),
         "confirmation_ttl_ms": requirement["confirmation_ttl_ms"],
