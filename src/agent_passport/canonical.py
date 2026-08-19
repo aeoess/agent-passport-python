@@ -12,7 +12,11 @@ import json
 import math
 import re
 
-from .write_policy import MAX_SAFE_INTEGER, UnsafeIntegerError
+from .write_policy import (
+    MAX_SAFE_INTEGER,
+    UnsafeIntegerError,
+    assert_write_safe_numbers,
+)
 
 
 class JCSCanonicalizationError(ValueError):
@@ -219,6 +223,11 @@ def canonicalize_for_write(obj, path: str = "$") -> str:
                 + canonicalize_for_write(val, f"{path}.{key}")
             )
         return "{" + ",".join(pairs) + "}"
+    # Anything that reaches here (a tuple, in practice) is emitted by the same json.dumps
+    # fallback the READ twin uses, so the bytes stay identical. Validate it first, or an
+    # out-of-range integer inside a tuple would be signed unchecked. A second read is safe
+    # here precisely because the values that reach this branch are immutable.
+    assert_write_safe_numbers(obj, path)
     return json.dumps(obj, ensure_ascii=False)
 
 
@@ -334,4 +343,8 @@ def canonicalize_jcs_for_write(obj, path: str = "$") -> str:
                 + canonicalize_jcs_for_write(val, f"{path}.{key}")
             )
         return "{" + ",".join(pairs) + "}"
+    # Same reasoning as canonicalize_for_write above: emit through the shared fallback so
+    # the bytes match the read twin, but validate first so a tuple cannot smuggle an
+    # out-of-range integer past the rule.
+    assert_write_safe_numbers(obj, path)
     return json.dumps(obj, ensure_ascii=False)

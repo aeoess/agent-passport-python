@@ -155,3 +155,33 @@ def test_pre_rule_disclosure_still_verifies():
     }
     result = verify_disclosure(disclosure)
     assert result["valid"] is True, result
+
+
+# ── Tuple bypass, closed 2026-08-19 ─────────────────────────────────────────
+#
+# A tuple falls through every guarded branch of both write canonicalizers to the
+# terminal json.dumps fallback. Before the fix it was emitted unchecked, so an
+# out-of-range integer inside a tuple could be signed.
+#
+# The fix validates at that fallback but still EMITS through it, because the read twin
+# serializes a tuple the same way. Recursing instead would have emitted "[1,2]" where
+# the read twin emits "[1, 2]", and a signed artifact would then fail verification.
+
+def test_tuple_cannot_smuggle_an_unsafe_integer_past_the_write_rule():
+    for writer in (canonicalize_for_write, canonicalize_jcs_for_write):
+        with pytest.raises(UnsafeIntegerError) as exc:
+            writer({"v": (UNSAFE,)})
+        assert str(exc.value).startswith("$.v[0]:"), str(exc.value)
+
+
+def test_tuple_bytes_are_unchanged_between_the_read_and_write_twins():
+    """The bypass fix must not move a byte for a tuple the rule accepts."""
+    safe = {"v": (1, 2)}
+    assert canonicalize_for_write(safe) == canonicalize(safe)
+    assert canonicalize_jcs_for_write(safe) == canonicalize_jcs(safe)
+
+
+def test_the_read_twins_still_accept_a_tuple_carrying_an_unsafe_integer():
+    """Historical bytes stay reproducible: the rule is write-only, tuples included."""
+    canonicalize({"v": (UNSAFE,)})
+    canonicalize_jcs({"v": (UNSAFE,)})

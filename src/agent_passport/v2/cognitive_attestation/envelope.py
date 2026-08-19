@@ -156,7 +156,7 @@ def sign_attestation(
     if not isinstance(signer_did, str) or len(signer_did) == 0:
         raise ValueError("sign_attestation: signer_did must be a non-empty string")
 
-    canonical_bytes = canonicalize_attestation(att)
+    canonical_bytes = canonicalize_attestation_for_write(att)
     canonical_str = canonical_bytes.decode("utf-8")
     private_key_hex = bytes(private_key).hex()
     sig_hex = ed_sign_hex(canonical_str, private_key_hex)
