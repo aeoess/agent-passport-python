@@ -17,7 +17,7 @@ import hashlib
 import re
 from typing import Dict, List, Optional, Sequence
 
-from ...canonical import canonicalize_jcs
+from ...canonical import canonicalize_jcs, canonicalize_jcs_for_write
 from ...crypto import public_key_from_private, sign, verify as ed_verify
 
 from .sampler import commit_spans, derive_seed, sample_spans, score_responses
@@ -53,8 +53,25 @@ def canonical_no_sig(record: dict) -> str:
     """Canonical signing preimage: RFC 8785 JCS of the record with the
     "sig" key removed entirely. Accepts a signed record (sig dropped)
     or an unsigned draft (no sig key present)."""
+    return _canonical_no_sig_impl(record, canonicalize_jcs)
+
+
+def _canonical_no_sig_impl(record: dict, _canon) -> str:
+    """Shared body so the read and write twins can never drift apart."""
     rest = {k: v for k, v in record.items() if k != "sig"}
-    return canonicalize_jcs(rest)
+    return _canon(rest)
+
+
+def canonical_no_sig_for_write(record: dict) -> str:
+    """Write-boundary twin of :func:`canonical_no_sig`.
+
+    Emits the same bytes as :func:`canonical_no_sig` for every value it accepts. The only
+    difference is that an integer-valued number outside the interoperable IEEE 754
+    range is refused instead of serialized. Use at signing and new-write boundaries
+    only: :func:`canonical_no_sig` stays unrestricted so an artifact signed before this rule
+    existed keeps verifying.
+    """
+    return _canonical_no_sig_impl(record, canonicalize_jcs_for_write)
 
 
 def _challenge_shape_reason(value: object) -> Optional[ReadFidelityVerifyReason]:
@@ -217,7 +234,7 @@ def create_read_fidelity_receipt(fields: dict, private_key_hex: str) -> ReadFide
             "content_digest, presentation_digest, nonce, and version"
         )
 
-    sig = sign(canonical_no_sig(draft), private_key_hex)
+    sig = sign(canonical_no_sig_for_write(draft), private_key_hex)
     return {**draft, "sig": sig}  # type: ignore[return-value]
 
 

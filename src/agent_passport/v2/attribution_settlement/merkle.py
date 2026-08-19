@@ -23,7 +23,7 @@ import hashlib
 import re
 from typing import List
 
-from ...canonical import canonicalize
+from ...canonical import canonicalize, canonicalize_for_write
 
 
 _HEX64 = re.compile(r"^[0-9a-f]{64}$", re.IGNORECASE)
@@ -62,6 +62,18 @@ def _reduce_level(level: List[bytes]) -> List[bytes]:
 def leaf_hash(obj) -> bytes:
     """sha256(canonicalize(obj)) as raw 32 bytes."""
     return hashlib.sha256(canonicalize(obj).encode("utf-8")).digest()
+
+
+def leaf_hash_for_write(obj) -> bytes:
+    """Write-boundary twin of :func:`leaf_hash`.
+
+    Emits the same bytes as :func:`leaf_hash` for every value it accepts. The only
+    difference is that an integer-valued number outside the interoperable IEEE 754
+    range is refused instead of serialized. Use at signing and new-write boundaries
+    only: :func:`leaf_hash` stays unrestricted so an artifact signed before this rule
+    existed keeps verifying.
+    """
+    return hashlib.sha256(canonicalize_for_write(obj).encode("utf-8")).digest()
 
 
 def build_merkle_root(leaves: List[bytes]) -> bytes:

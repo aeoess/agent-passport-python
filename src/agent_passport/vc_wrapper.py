@@ -9,7 +9,7 @@ as VC evidence. Cross-language compatible with the TypeScript SDK.
 import base64
 from datetime import datetime, timezone
 
-from .canonical import canonicalize
+from .canonical import canonicalize, canonicalize_for_write
 from .crypto import sign, verify, public_key_from_private
 from .did_interop import to_did_key, from_did_key, _hex_to_multibase
 
@@ -235,7 +235,7 @@ def verify_verifiable_presentation(vp: dict) -> dict:
 # ── Proof helpers ──
 
 def _create_proof(data: dict, private_key: str, did: str, purpose: str, options: dict = None) -> dict:
-    canonical = canonicalize(data)
+    canonical = canonicalize_for_write(data)
     sig = sign(canonical, private_key)
     proof = {
         "type": "Ed25519Signature2020",

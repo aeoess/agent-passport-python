@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .crypto import sign, verify
-from .canonical import canonicalize
+from .canonical import canonicalize, canonicalize_for_write
 
 TRAINING_USE_TYPES = [
     "fine_tune", "lora_adapter", "embedding", "rag_index",
@@ -54,9 +54,9 @@ def create_training_attribution(
         "recordedAt": datetime.now(timezone.utc).isoformat(),
     }
     receipt["contentHash"] = hashlib.sha256(
-        canonicalize(receipt).encode()
+        canonicalize_for_write(receipt).encode()
     ).hexdigest()
-    receipt["signature"] = sign(canonicalize(receipt), trainer_private_key)
+    receipt["signature"] = sign(canonicalize_for_write(receipt), trainer_private_key)
     return receipt
 
 

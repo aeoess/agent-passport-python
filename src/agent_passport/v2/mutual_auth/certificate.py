@@ -5,7 +5,7 @@ import base64
 import hashlib
 from typing import Optional, List
 
-from ...canonical import canonicalize_jcs
+from ...canonical import canonicalize_jcs, canonicalize_jcs_for_write
 from ...crypto import sign as ed_sign, verify as ed_verify
 from .types import MutualAuthCertificate, TrustAnchor
 
@@ -52,7 +52,7 @@ def build_certificate(
 
 def sign_certificate(unsigned: dict, issuer_sk_hex: str) -> MutualAuthCertificate:
     """Sign an unsigned certificate. Signature is Ed25519 over JCS canonical form."""
-    canonical = canonicalize_jcs(unsigned)
+    canonical = canonicalize_jcs_for_write(unsigned)
     sig_hex = ed_sign(canonical, issuer_sk_hex)
     sig_b64 = base64.b64encode(bytes.fromhex(sig_hex)).decode("ascii")
     signed = dict(unsigned)

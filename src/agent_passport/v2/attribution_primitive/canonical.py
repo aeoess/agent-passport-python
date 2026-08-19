@@ -9,7 +9,12 @@ import re
 from datetime import datetime, timezone
 from typing import Any, List, Union
 
-from ...canonical import canonicalize, canonicalize_jcs
+from ...canonical import (
+    canonicalize,
+    canonicalize_for_write,
+    canonicalize_jcs,
+    canonicalize_jcs_for_write,
+)
 from .types import (
     AttributionAxes,
     ComputeAxisEntry,
@@ -128,6 +133,18 @@ def hash_axis_leaf(axis: Any) -> bytes:
     return hashlib.sha256(canonicalize(axis).encode("utf-8")).digest()
 
 
+def hash_axis_leaf_for_write(axis: Any) -> bytes:
+    """Write-boundary twin of :func:`hash_axis_leaf`.
+
+    Emits the same bytes as :func:`hash_axis_leaf` for every value it accepts. The only
+    difference is that an integer-valued number outside the interoperable IEEE 754
+    range is refused instead of serialized. Use at signing and new-write boundaries
+    only: :func:`hash_axis_leaf` stays unrestricted so an artifact signed before this rule
+    existed keeps verifying.
+    """
+    return hashlib.sha256(canonicalize_for_write(axis).encode("utf-8")).digest()
+
+
 def hash_node(left: bytes, right: bytes) -> bytes:
     return hashlib.sha256(left + right).digest()
 
@@ -147,12 +164,41 @@ def canonical_hash_hex(obj: Any) -> str:
     return hashlib.sha256(canonicalize_jcs(obj).encode("utf-8")).hexdigest()
 
 
-def envelope_bytes(env) -> str:
-    """Canonical envelope string §2.3. Accepts TypedDict or plain dict."""
+def canonical_hash_hex_for_write(obj: Any) -> str:
+    """Write-boundary twin of :func:`canonical_hash_hex`.
+
+    Emits the same bytes as :func:`canonical_hash_hex` for every value it accepts. The only
+    difference is that an integer-valued number outside the interoperable IEEE 754
+    range is refused instead of serialized. Use at signing and new-write boundaries
+    only: :func:`canonical_hash_hex` stays unrestricted so an artifact signed before this rule
+    existed keeps verifying.
+    """
+    return hashlib.sha256(canonicalize_jcs_for_write(obj).encode("utf-8")).hexdigest()
+
+
+def _envelope_bytes_impl(env, _canon) -> str:
+    """Shared body so the read and write twins can never drift on the field list."""
     assert_canonical_timestamp(env["timestamp"])
-    return canonicalize({
+    return _canon({
         "action_ref": env["action_ref"],
         "merkle_root": env["merkle_root"],
         "issuer": env["issuer"],
         "timestamp": env["timestamp"],
     })
+
+
+def envelope_bytes(env) -> str:
+    """Canonical envelope string §2.3. Accepts TypedDict or plain dict."""
+    return _envelope_bytes_impl(env, canonicalize)
+
+
+def envelope_bytes_for_write(env) -> str:
+    """Write-boundary twin of :func:`envelope_bytes`.
+
+    Emits the same bytes as :func:`envelope_bytes` for every value it accepts. The only
+    difference is that an integer-valued number outside the interoperable IEEE 754
+    range is refused instead of serialized. Use at signing and new-write boundaries
+    only: :func:`envelope_bytes` stays unrestricted so an artifact signed before this rule
+    existed keeps verifying.
+    """
+    return _envelope_bytes_impl(env, canonicalize_for_write)

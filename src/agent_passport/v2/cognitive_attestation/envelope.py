@@ -15,7 +15,7 @@ from dataclasses import replace
 from hashlib import sha256
 from typing import List, Optional
 
-from ...canonical import canonicalize_jcs
+from ...canonical import canonicalize_jcs, canonicalize_jcs_for_write
 from ...crypto import sign as ed_sign_hex
 from .types import (
     AggregationPolicy,
@@ -113,10 +113,27 @@ def canonicalize_attestation(att: CognitiveAttestation) -> bytes:
     payload produce byte-identical input regardless of signing order.
     Feature activations are sorted canonically. Returns UTF-8 bytes.
     """
+    return _canonicalize_attestation_impl(att, canonicalize_jcs)
+
+
+def _canonicalize_attestation_impl(att: CognitiveAttestation, _canon) -> bytes:
+    """Shared body so the read and write twins can never drift apart."""
     sorted_features = sort_feature_activations(att.feature_activations)
     view = replace(att, feature_activations=sorted_features, signatures=[])
-    canonical_str = canonicalize_jcs(view.to_canonical_dict())
+    canonical_str = _canon(view.to_canonical_dict())
     return canonical_str.encode("utf-8")
+
+
+def canonicalize_attestation_for_write(att: CognitiveAttestation) -> bytes:
+    """Write-boundary twin of :func:`canonicalize_attestation`.
+
+    Emits the same bytes as :func:`canonicalize_attestation` for every value it accepts. The only
+    difference is that an integer-valued number outside the interoperable IEEE 754
+    range is refused instead of serialized. Use at signing and new-write boundaries
+    only: :func:`canonicalize_attestation` stays unrestricted so an artifact signed before this rule
+    existed keeps verifying.
+    """
+    return _canonicalize_attestation_impl(att, canonicalize_jcs_for_write)
 
 
 def sign_attestation(
@@ -139,7 +156,7 @@ def sign_attestation(
     if not isinstance(signer_did, str) or len(signer_did) == 0:
         raise ValueError("sign_attestation: signer_did must be a non-empty string")
 
-    canonical_bytes = canonicalize_attestation(att)
+    canonical_bytes = canonicalize_attestation_for_write(att)
     canonical_str = canonical_bytes.decode("utf-8")
     private_key_hex = bytes(private_key).hex()
     sig_hex = ed_sign_hex(canonical_str, private_key_hex)

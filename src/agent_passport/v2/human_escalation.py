@@ -19,7 +19,8 @@ import uuid
 from typing import List, Optional, TypedDict
 
 from ..crypto import sign, verify
-from ..canonical import canonicalize
+from ..canonical import canonicalize, canonicalize_for_write
+from ..write_policy import assert_write_safe_numbers
 
 
 # ── Type aliases / TypedDicts ────────────────────────────────────────
@@ -92,12 +93,29 @@ DEFAULT_FLAGGED_ACTION_CLASSES = (
 # ── Helpers ──────────────────────────────────────────────────────────
 
 
+def _hash_object_impl(obj: dict, _canon) -> str:
+    """Shared body so the read and write twins can never drift apart."""
+    return hashlib.sha256(_canon(obj).encode("utf-8")).hexdigest()
+
+
 def _hash_object(obj: dict) -> str:
     """sha256 hex of the canonical serialization — mirrors hashObject in
     src/v2/bridge.ts. TS signObject/verifyObject sign the HASH string, not
     the canonical JSON itself; Python must do the same for cross-language
     signature parity."""
-    return hashlib.sha256(canonicalize(obj).encode("utf-8")).hexdigest()
+    return _hash_object_impl(obj, canonicalize)
+
+
+def _hash_object_for_write(obj: dict) -> str:
+    """Write-boundary twin of :func:`_hash_object`.
+
+    Emits the same bytes as :func:`_hash_object` for every value it accepts. The only
+    difference is that an integer-valued number outside the interoperable IEEE 754
+    range is refused instead of serialized. Use at signing and new-write boundaries
+    only: :func:`_hash_object` stays unrestricted so an artifact signed before this rule
+    existed keeps verifying.
+    """
+    return _hash_object_impl(obj, canonicalize_for_write)
 
 
 def hash_action_details(details: dict) -> str:
@@ -107,6 +125,22 @@ def hash_action_details(details: dict) -> str:
     Use simple, stable detail dicts for cross-language compatibility."""
     serialized = json.dumps(details, separators=(",", ":"))
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def hash_action_details_for_write(details: dict) -> str:
+    """Write-boundary twin of :func:`hash_action_details`.
+
+    This commitment is minted by :func:`request_owner_confirmation` and recomputed by
+    :func:`is_confirmation_valid`, so the helper is shared and cannot be guarded in
+    place.
+
+    Note it does NOT canonicalize: it hashes ``json.dumps`` output, so no canonicalizer
+    census could see it. The guard therefore VALIDATES ONLY and still hashes the exact
+    same bytes, which keeps every existing commitment reproducible. Mirrors the
+    TypeScript ``hashActionDetailsForWrite``.
+    """
+    assert_write_safe_numbers(details)
+    return hash_action_details(details)
 
 
 def _find_requirement(delegation: dict, action_class: str) -> Optional[EscalationRequirement]:
@@ -169,7 +203,7 @@ def request_owner_confirmation(delegation: dict, action: EscalationAction) -> Co
         "id": str(uuid.uuid4()),
         "delegation_id": delegation["id"],
         "action_class": action["action_class"],
-        "action_details_hash": hash_action_details(action["action_details"]),
+        "action_details_hash": hash_action_details_for_write(action["action_details"]),
         "confirmation_scope": requirement["confirmation_scope"],
         "session_id": action.get("session_id"),
         "confirmation_ttl_ms": requirement["confirmation_ttl_ms"],
@@ -203,7 +237,7 @@ def record_owner_confirmation(
         "expires_at": _now_iso(expires_at_ms),
     }
     # Sign the sha256 of the canonical form (TS bridge.ts signObject parity).
-    signature = sign(_hash_object(data), owner_private_key)
+    signature = sign(_hash_object_for_write(data), owner_private_key)
     return {**data, "signature": signature}
 
 

@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 from .crypto import sign, verify
-from .canonical import canonicalize
+from .canonical import canonicalize, canonicalize_for_write
 from .passport import verify_passport
 
 
@@ -59,7 +59,7 @@ def assign_role(
         "scope": scope,
     }
 
-    signature = sign(canonicalize(assignment), assigner_private_key)
+    signature = sign(canonicalize_for_write(assignment), assigner_private_key)
     return {**assignment, "signature": signature}
 
 
@@ -134,7 +134,7 @@ def create_intent_document(
         "expiresAt": expires_at,
     }
 
-    signature = sign(canonicalize(doc), author_private_key)
+    signature = sign(canonicalize_for_write(doc), author_private_key)
     return {**doc, "signature": signature}
 
 
@@ -215,7 +215,7 @@ def submit_consensus_round(
         "positionDelta": position_delta,
     }
 
-    signature = sign(canonicalize(round_content), private_key)
+    signature = sign(canonicalize_for_write(round_content), private_key)
     rnd = {**round_content, "signature": signature}
 
     updated = {
@@ -303,7 +303,7 @@ def resolve_deliberation(
         "resolvedAt": datetime.now(timezone.utc).isoformat(),
     }
 
-    outcome_sig = sign(canonicalize(outcome_content), resolver_private_key)
+    outcome_sig = sign(canonicalize_for_write(outcome_content), resolver_private_key)
     precedent_id = f"prec-{_rand_hex()}"
     outcome = {**outcome_content, "precedentId": precedent_id, "signature": outcome_sig}
 

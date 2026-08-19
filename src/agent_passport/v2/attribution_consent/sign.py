@@ -2,7 +2,7 @@
 """sign_attribution_consent — cited principal adds the consent signature."""
 
 from ...crypto import sign, verify
-from .create import receipt_core
+from .create import receipt_core, receipt_core_for_write
 from .types import AttributionReceipt
 
 
@@ -12,7 +12,7 @@ def sign_attribution_consent(
 ) -> AttributionReceipt:
     """Add the cited principal's consent signature. Does not mutate the input.
     Raises ValueError if the private key does not match cited_principal_public_key."""
-    core = receipt_core(receipt)
+    core = receipt_core_for_write(receipt)
     cited_principal_signature = sign(core, cited_principal_private_key)
 
     if not verify(core, cited_principal_signature, receipt["cited_principal_public_key"]):

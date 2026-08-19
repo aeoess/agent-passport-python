@@ -12,7 +12,7 @@ import unicodedata
 from hashlib import sha256
 from typing import List
 
-from ...canonical import canonicalize_jcs
+from ...canonical import canonicalize_jcs, canonicalize_jcs_for_write
 from .types import FilesystemMode, InstructionFile, InstructionProvenanceReceipt
 
 
@@ -126,9 +126,26 @@ def compute_context_root(files: List[InstructionFile]) -> str:
     sha256 of the JCS canonicalization of the instruction_files array
     (sorted). Must be byte-identical across languages.
     """
+    return _compute_context_root_impl(files, canonicalize_jcs)
+
+
+def _compute_context_root_impl(files: List[InstructionFile], _canon) -> str:
+    """Shared body so the read and write twins can never drift apart."""
     sorted_files = sort_instruction_files(files)
-    canon = canonicalize_jcs([f.to_canonical_dict() for f in sorted_files])
+    canon = _canon([f.to_canonical_dict() for f in sorted_files])
     return sha256_hex(canon)
+
+
+def compute_context_root_for_write(files: List[InstructionFile]) -> str:
+    """Write-boundary twin of :func:`compute_context_root`.
+
+    Emits the same bytes as :func:`compute_context_root` for every value it accepts. The only
+    difference is that an integer-valued number outside the interoperable IEEE 754
+    range is refused instead of serialized. Use at signing and new-write boundaries
+    only: :func:`compute_context_root` stays unrestricted so an artifact signed before this rule
+    existed keeps verifying.
+    """
+    return _compute_context_root_impl(files, canonicalize_jcs_for_write)
 
 
 def canonicalize_envelope(envelope: InstructionProvenanceReceipt) -> str:
@@ -138,5 +155,19 @@ def canonicalize_envelope(envelope: InstructionProvenanceReceipt) -> str:
     and Ed25519 signing. Spec §5.2.
     """
     return canonicalize_jcs(
+        envelope.to_canonical_dict(drop_signature=True, drop_receipt_id=True)
+    )
+
+
+def canonicalize_envelope_for_write(envelope: InstructionProvenanceReceipt) -> str:
+    """Write-boundary twin of :func:`canonicalize_envelope`.
+
+    Emits the same bytes as :func:`canonicalize_envelope` for every value it accepts. The only
+    difference is that an integer-valued number outside the interoperable IEEE 754
+    range is refused instead of serialized. Use at signing and new-write boundaries
+    only: :func:`canonicalize_envelope` stays unrestricted so an artifact signed before this rule
+    existed keeps verifying.
+    """
+    return canonicalize_jcs_for_write(
         envelope.to_canonical_dict(drop_signature=True, drop_receipt_id=True)
     )

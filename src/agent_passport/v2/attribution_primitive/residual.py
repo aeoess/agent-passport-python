@@ -4,7 +4,7 @@
 import hashlib
 from typing import List
 
-from ...canonical import canonicalize
+from ...canonical import canonicalize_for_write
 from .canonical import to_weight_string
 from .types import (
     ComputeAxisEntry,
@@ -29,7 +29,7 @@ def _is_residual(x) -> bool:
 
 def _pooled_hash(entries) -> str:
     sorted_entries = sorted(entries, key=lambda e: e["did"])
-    return hashlib.sha256(canonicalize(sorted_entries).encode("utf-8")).hexdigest()
+    return hashlib.sha256(canonicalize_for_write(sorted_entries).encode("utf-8")).hexdigest()
 
 
 def aggregate_data_axis(entries: List[DataAxisItem], *, min_weight: float = DEFAULT_MIN_WEIGHT) -> dict:

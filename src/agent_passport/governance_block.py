@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from typing import Optional, Literal
 
 from .crypto import sign, verify
-from .canonical import canonicalize
+from .canonical import canonicalize, canonicalize_for_write
 
 UsagePermission = Literal[
     "permitted", "prohibited", "compensation_required", "attribution_required"
@@ -82,7 +82,7 @@ def generate_governance_block(
         "revocation_policy": dict(revocation_policy or DEFAULT_REVOCATION_POLICY),
     }
 
-    payload = canonicalize(block)
+    payload = canonicalize_for_write(block)
     signature = sign(payload, private_key)
     block["signature"] = signature
     return block

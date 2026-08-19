@@ -10,7 +10,7 @@ import uuid
 import hashlib
 from datetime import datetime, timedelta, timezone
 from .crypto import generate_key_pair, sign, verify
-from .canonical import canonicalize
+from .canonical import canonicalize, canonicalize_for_write
 
 
 def _utcnow():
@@ -67,7 +67,7 @@ def endorse_agent(
         "endorsedAt": now.isoformat() + "Z",
         "expiresAt": expiry.isoformat() + "Z",
     }
-    canonical = canonicalize(payload)
+    canonical = canonicalize_for_write(payload)
     signature = sign(canonical, principal_private_key)
     return {**payload, "revoked": False, "signature": signature}
 
@@ -152,7 +152,7 @@ def create_disclosure(principal, principal_private_key, level=None):
             "contactChannel": principal.get("contactChannel"),
         }
 
-    canonical = canonicalize(revealed)
+    canonical = canonicalize_for_write(revealed)
     proof = sign(canonical, principal_private_key)
 
     return {
