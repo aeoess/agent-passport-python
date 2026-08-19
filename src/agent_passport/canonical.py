@@ -179,11 +179,31 @@ def canonicalize_jcs(obj) -> str:
     if obj is None:
         return "null"
     if isinstance(obj, bool):
+        # Must stay ahead of the int branch: bool is a subclass of int in Python,
+        # and reordering would serialize True as 1.
         return "true" if obj else "false"
     if isinstance(obj, int):
-        return json.dumps(obj)
+        # RFC 8785 section 3.2.2.3 defines the JCS number domain as IEEE-754
+        # binary64 serialized under ECMAScript Number::toString. Python's int is
+        # arbitrary precision, so emitting it verbatim preserves a decimal
+        # spelling the double does not have: 2**60 would serialize as
+        # 1152921504606846976 where the double is 1152921504606847000. Widen to
+        # binary64 first, then take exactly the same path a float takes.
+        try:
+            as_double = float(obj)
+        except OverflowError:
+            as_double = math.inf
+        if math.isinf(as_double):
+            raise JCSCanonicalizationError(
+                f"canonicalize_jcs: integer {obj} exceeds the IEEE-754 binary64 "
+                "range and has no representation in the RFC 8785 number domain",
+                reason="number_out_of_double_range",
+            )
+        return _es_number(as_double)
     if isinstance(obj, float):
-        import math
+        # math is imported at module scope. A local "import math" here would make
+        # the name function-local for the whole of canonicalize_jcs and shadow it
+        # from the int branch above.
         if math.isnan(obj) or math.isinf(obj):
             raise ValueError(f"Cannot canonicalize {obj}")
         return _es_number(obj)

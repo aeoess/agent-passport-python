@@ -21,7 +21,7 @@ VECTORS = json.loads(
 
 
 def test_canonical_bytes_jcs_parity():
-    assert len(VECTORS) == 8
+    assert len(VECTORS) == 10
     for v in VECTORS:
         canon = canonicalize_jcs(v["input"])
         assert canon == v["canonical"], f"{v['name']}: {canon!r} != {v['canonical']!r}"

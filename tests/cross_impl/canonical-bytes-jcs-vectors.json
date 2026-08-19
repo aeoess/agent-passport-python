@@ -95,6 +95,26 @@
       "canonical": "{\"arr\":[3,1,2],\"outer\":{\"a\":1,\"b\":2}}",
       "canonical_bytes_hex": "7b22617272223a5b332c312c325d2c226f75746572223a7b2261223a312c2262223a327d7d",
       "canonical_sha256": "be6fc370ca7efc25ae4b5ee7736507cbbac8fbc8278cb3371d1b8020a2bd0ca3"
+    },
+    {
+      "name": "integer-2pow60-inside-int64",
+      "description": "2^60 is inside signed 64-bit range but above 2^53, so its shortest round-trip double differs from its exact decimal. RFC 8785 serializes from the binary64 value, not from the caller's spelling.",
+      "input": {
+        "value": 1152921504606846976
+      },
+      "canonical": "{\"value\":1152921504606847000}",
+      "canonical_bytes_hex": "7b2276616c7565223a313135323932313530343630363834373030307d",
+      "canonical_sha256": "001814306319dfed540de7a22f61e88baf0288ebe916380796e8995d5db5eb00"
+    },
+    {
+      "name": "integer-2pow68-above-int64",
+      "description": "2^68 exceeds signed 64-bit range and is exactly representable as a binary64. Shortest round-trip is 2.9514790517935283e+20 and |x| < 1e21 forces decimal notation.",
+      "input": {
+        "value": 295147905179352825856
+      },
+      "canonical": "{\"value\":295147905179352830000}",
+      "canonical_bytes_hex": "7b2276616c7565223a3239353134373930353137393335323833303030307d",
+      "canonical_sha256": "57c82398dfd8be4a4ac903d1d2d01beee4c1d7179c9a5afc574bdf972646783b"
     }
   ]
 }
