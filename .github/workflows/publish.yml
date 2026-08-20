@@ -24,6 +24,10 @@ jobs:
           python -m pip install --upgrade build
           python -m build
       - name: Publish to PyPI (Trusted Publishing, PEP 740 attestations)
-        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
+        # v1.14.2 or newer is required, not cosmetic: hatchling now emits
+        # Metadata-Version 2.5, and the twine bundled in v1.14.0 refuses it with
+        # "InvalidDistribution: '2.5' is not a valid metadata version". v1.14.2
+        # ships twine 7, which accepts it. The 2.11.0 tag failed on exactly this.
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           attestations: true
