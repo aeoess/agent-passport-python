@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.11.0 (2026-08-20)
+
+### Fixed / Security
+
+- **`canonicalize_jcs` serializes `int` through the RFC 8785 number domain, so canonical bytes agree with the TypeScript and Go SDKs.** RFC 8785 section 3.2.2.3 defines the JCS number domain as IEEE 754 binary64 serialized under ECMAScript `Number::toString`. Python's `int` is arbitrary precision and the previous code emitted it verbatim, keeping a decimal spelling the double does not have: 2^60 emitted as `1152921504606846976` where the binary64 serialization is `1152921504606847000`. Where those two spellings differ, a digest or signature computed over `canonicalize_jcs` output disagreed with the same object canonicalized by the TypeScript or Go SDK, both of which already emitted the binary64 form, so such an artifact verified in this SDK and failed for a peer that recomputed the bytes through the RFC 8785 number domain. The `int` branch now widens to binary64 first and takes the same path a `float` takes. An integer beyond the binary64 range raises `JCSCanonicalizationError` with reason `number_out_of_double_range`, since RFC 8785 defines no representation for it. The generic `canonicalize` is untouched.
+
+### Behavior change
+
+- **Canonical JCS bytes move for integers whose decimal spelling differs from the binary64 serialization of the same value, which is why the minor version moves rather than the patch.** Not every large integer is affected. `9007199254740992` and `9007199254740994` are unchanged, while `9007199254740993` now emits `9007199254740992`, 2^60 emits `1152921504606847000` and 2^68 emits `295147905179352830000`. A signature made by 2.10.0 or earlier over an affected value does not verify against bytes recomputed by 2.11.0. Those artifacts were already unverifiable outside Python for the reason above, so this release makes the failure visible in one place instead of leaving it to the peer. The pinned canonicalization baselines are unchanged and the generic `canonicalize` keeps its previous output.
+- **Signing and new-write boundaries refuse integer-valued numbers outside the interoperable IEEE 754 range.** RFC 7493 section 2.2 says an I-JSON sender cannot expect a receiver to treat an integer whose absolute value exceeds 9007199254740991 as an exact value, and recommends encoding such a value as a JSON string. A new-write value carrying such an integer now raises `UnsafeIntegerError`, a `ValueError` subclass carrying the JSON path of the offending member. Only integer-valued numbers are bounded. Verification and recompute paths keep calling the unrestricted canonicalizer, so this rule refuses nothing on the verification side: where a pre-2.11.0 artifact stops verifying, the cause is the canonicalization change above and not this rule. The guard is internal: no write-policy name is exported from `agent_passport`, and `write_policy.py` ships in the wheel for internal use. One limit worth knowing at the call site: a documented set of exported helpers both mint and re-derive a value through the same function and stay unrestricted, so that re-derivation of a value minted before the rule keeps working. Minting an unsafe integer through one of those helpers is not covered. Scope, the call-site inventory and the proofs are in #6.
+
 ## 2.10.0 (2026-07-26)
 
 ### Added
