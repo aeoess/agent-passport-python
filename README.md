@@ -128,7 +128,8 @@ Cross-language parity with the [TypeScript SDK](https://www.npmjs.com/package/ag
   - [Governance in the Medium](https://doi.org/10.5281/zenodo.19582550)
   - [Cognitive Attestation](https://doi.org/10.5281/zenodo.19646276)
   - [The Evidence-Safety Gap](https://doi.org/10.5281/zenodo.19914628)
-  - IETF Internet-Draft: `draft-pidlisnyi-aps-01`
+  - [Plausibly Wrong](https://doi.org/10.5281/zenodo.21208555)
+  - IETF Internet-Draft: [`draft-pidlisnyi-aps`](https://datatracker.ietf.org/doc/draft-pidlisnyi-aps/)
 - **LLM docs**: https://agent-passport.org/llms-full.txt
 
 ## Tests
