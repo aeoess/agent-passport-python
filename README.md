@@ -10,7 +10,7 @@
 pip install agent-passport-system
 ```
 
-> **Current stable**: `2.11.0`, installed by default with `pip install agent-passport-system`. The 2.4 line adds the Wave 1 accountability primitives (ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle), Cognitive Attestation (Paper 4), and Instruction Provenance Receipts (v0.2). It also adds evidentiary type safety: a claim and evidence registry, a claim verifier, and a contestation cascade. All primitives are tested for byte-identical canonical JSON against the TypeScript SDK npm 3.1.0 fixtures.
+> **Current stable**: the version on [PyPI](https://pypi.org/project/agent-passport-system/), installed by default with `pip install agent-passport-system`. The 2.4 line added the Wave 1 accountability primitives (ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle), Cognitive Attestation (Paper 4), and Instruction Provenance Receipts (v0.2). It also adds evidentiary type safety: a claim and evidence registry, a claim verifier, and a contestation cascade. All primitives are tested for byte-identical canonical JSON against the TypeScript SDK npm 3.1.0 fixtures.
 
 
 ## Quick Start
@@ -110,7 +110,7 @@ This Python SDK implements all 8 Agent Passport Protocol layers:
 7. **Integration Wiring**: Cross-layer bridges (commerce+intent, coordination+agora)
 8. **Agentic Commerce**: 4-gate checkout, human approval, spend limits
 
-Cross-language parity with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) at npm v4.4.0. Python SDK 2.11.0 ships the full Wave 1 surface: ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle (with balanced Merkle commitment), Cognitive Attestation (Paper 4: three-stage verification, typed dispute primitives), and Instruction Provenance Receipts v0.2 (path canonicalization, context-root binding, action-time recompute). The four evidentiary type safety primitives also ship in 2.11.0. All surfaces are tested against TS-issued fixtures for byte-identical canonical JSON. Cross-language signature verification covers every signed primitive in the SDK. Also available via the [MCP server](https://mcp.aeoess.com/sse).
+Cross-language parity with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) at the reference version pinned in this repository's fixtures. Python SDK 2.11.0 ships the full Wave 1 surface: ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle (with balanced Merkle commitment), Cognitive Attestation (Paper 4: three-stage verification, typed dispute primitives), and Instruction Provenance Receipts v0.2 (path canonicalization, context-root binding, action-time recompute). The four evidentiary type safety primitives also ship in 2.11.0. All surfaces are tested against TS-issued fixtures for byte-identical canonical JSON. Cross-language signature verification covers every signed primitive in the SDK. Also available via the [MCP server](https://mcp.aeoess.com/sse).
 
 ## Links
 
@@ -137,7 +137,7 @@ Cross-language parity with the [TypeScript SDK](https://www.npmjs.com/package/ag
 ```bash
 pip install -e ".[test]"
 pytest tests/
-# 568 passed, 1 skipped, 6 xfailed. Coverage spans all 8 protocol layers
+# the tally is whatever pytest reports on the current checkout
 # plus the v2 evidentiary type safety, Wave 1 accountability, Cognitive Attestation,
 # and Instruction Provenance Receipt surfaces. The cross-impl byte-parity tests assert
 # byte-identical canonical JSON against TS-issued fixtures (rfc8785 ships in the test
