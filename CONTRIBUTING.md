@@ -1,6 +1,6 @@
 # Contributing to agent-passport-python
 
-Thanks for showing up here. This is the Python SDK for the Agent Passport System — Ed25519 identity, delegation, governance, and commerce primitives for AI agents. The TypeScript SDK at [`agent-passport-system`](https://github.com/aeoess/agent-passport-system) is the reference implementation; this library tracks its API surface in Python-idiomatic form.
+Thanks for showing up here. This is the Python SDK for the Agent Passport System: Ed25519 identity, delegation, governance, and commerce primitives for AI agents. The TypeScript SDK at [`agent-passport-system`](https://github.com/aeoess/agent-passport-system) is the reference implementation; this library tracks its API surface in Python-idiomatic form.
 
 ## Quick start
 
@@ -8,21 +8,21 @@ Thanks for showing up here. This is the Python SDK for the Agent Passport System
 
 1. A failing test that reproduces the bug (in the existing test module where it logically belongs)
 2. The minimal fix that makes the test pass without breaking other tests
-3. No scope expansion — fix the bug, don't refactor adjacent code in the same PR
+3. No scope expansion, fix the bug, don't refactor adjacent code in the same PR
 
 **For a feature addition**, open an issue first. Features should track the TypeScript SDK's capability surface unless there's a Python-specific reason for divergence. Once the direction is clear, a PR can follow.
 
 **For documentation**, straight PR is fine. No issue needed first.
 
-**Submission mechanics:** fork the repo, create a feature branch from `main`, open a PR against `main`. Keep PRs focused — one concern per PR.
+**Submission mechanics:** fork the repo, create a feature branch from `main`, open a PR against `main`. Keep PRs focused: one concern per PR.
 
 ---
 
 ## What makes a PR mergeable
 
-1. **Tests pass.** Run `pytest` at repo root. 125+ tests currently, PR should not drop the count or decrease coverage of touched code.
+1. **Tests pass.** Run `pytest` at repo root. 1,106 tests currently, PR should not drop the count or decrease coverage of touched code.
 2. **Type checks pass.** `mypy` clean on modified files.
-3. **Format is consistent.** `ruff format` and `ruff check` clean. Module layout matches existing patterns — one concept per module, shared types in `types.py`.
+3. **Format is consistent.** `ruff format` and `ruff check` clean. Module layout matches existing patterns, one concept per module, shared types in `types.py`.
 4. **API tracks TypeScript SDK** where feasible. If you're porting a TS module, keep the public surface close. Diverge only where Python idioms demand it (async/await, dataclasses, type hints) and note the divergence in the PR.
 5. **Changes to the public API include a CHANGELOG entry** and a version bump rationale in the PR description.
 
@@ -58,7 +58,7 @@ Substantive declines include the reason.
 - **Review timing:** maintainer-bandwidth dependent. If a PR has had no response after 5 business days, ping it.
 - **CLA / DCO:** no CLA is required. Contributions accepted on the understanding that the submitter has the right to contribute under the Apache 2.0 license.
 - **Security issues:** open a private security advisory via GitHub rather than a public issue.
-- **Code of Conduct:** Contributor Covenant 2.1 — see [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md).
+- **Code of Conduct:** Contributor Covenant 2.1, see [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md).
 
 ---
 

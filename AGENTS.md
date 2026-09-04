@@ -58,6 +58,7 @@ This repo IS NOT:
 ## Related
 
 - TypeScript SDK: https://github.com/aeoess/agent-passport-system
+- Rust SDK: https://crates.io/crates/agent-passport-system
 - Go SDK: https://github.com/aeoess/agent-passport-go
 - MCP server: https://github.com/aeoess/agent-passport-mcp
 - Website: https://aeoess.com
