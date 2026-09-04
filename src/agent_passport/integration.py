@@ -37,8 +37,16 @@ def commerce_with_intent(
     evaluator_id: str,
     evaluator_public_key: str,
     evaluator_private_key: str,
+    *,
+    trusted_issuers: Optional[list[str]] = None,
+    allow_self_signed: bool = False,
 ) -> dict:
-    """Full commerce flow: Intent -> Policy -> Preflight."""
+    """Full commerce flow: Intent -> Policy -> Preflight.
+
+    The trust input is threaded to the preflight passport gate. Without it the
+    gate does not pass, because a passport carries the key that verifies it and
+    so vouches only for itself. See verify_passport.
+    """
     intent = create_action_intent(
         agent_id=signed_passport["passport"]["agentId"],
         agent_public_key=signed_passport["passport"]["publicKey"],
@@ -77,6 +85,8 @@ def commerce_with_intent(
         delegation=commerce_delegation,
         merchant_name=merchant_name,
         estimated_total=estimated_total,
+        trusted_issuers=trusted_issuers,
+        allow_self_signed=allow_self_signed,
     )
     return {
         "intent": intent, "decision": decision, "preflight": pf,

@@ -88,13 +88,17 @@ class TestFulfillAndVerify:
         assert result["valid"] is False
         assert any("challenge mismatch" in c for c in result["checks"])
 
-    def test_no_challenge_check_passes(self):
+    def test_omitting_the_expected_challenge_is_refused(self):
+        """Previously this passed: with no expected challenge the comparison
+        was skipped and any response to any request verified. A response
+        checked against nothing is replayable by anyone who has seen it, so
+        the omission is now the failure rather than the way around it."""
         passport, kp = self._make_passport()
         req = create_credential_request(["grade"], "did:key:z6MkV")
         vp = fulfill_credential_request(req, passport, kp["privateKey"])
 
-        result = verify_credential_response(vp)
-        assert result["valid"] is True
+        assert verify_credential_response(vp)["valid"] is False
+        assert verify_credential_response(vp, req["challenge"])["valid"] is True
 
     def test_tampered_vp_fails(self):
         passport, kp = self._make_passport()
@@ -120,5 +124,5 @@ class TestFulfillAndVerify:
         vc = vp["verifiableCredential"][0]
         assert len(vc["evidence"]) == 1
 
-        result = verify_credential_response(vp)
+        result = verify_credential_response(vp, req["challenge"])
         assert result["valid"] is True

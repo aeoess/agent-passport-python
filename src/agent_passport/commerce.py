@@ -34,8 +34,22 @@ def commerce_preflight(
     delegation: dict,
     merchant_name: str,
     estimated_total: dict,
+    *,
+    trusted_issuers: Optional[list[str]] = None,
+    allow_self_signed: bool = False,
 ) -> dict:
     """Run the 4-gate preflight check for a commerce action.
+
+    Gate 1 is passport verification, and it is an authority gate: without a
+    trust input the passport is a self-vouching credential and the gate does
+    not pass. Before this parameter existed, a passport minted with any key
+    passed Gate 1 and, with a matching delegation, produced permitted True.
+
+    Args:
+        trusted_issuers: Public keys whose countersignature this relying party
+            accepts for Gate 1. See verify_passport.
+        allow_self_signed: Let Gate 1 pass on a self-signed passport. Off by
+            default.
 
     Returns:
         CommercePreflightResult dict.
@@ -44,7 +58,11 @@ def commerce_preflight(
     warnings: list[str] = []
 
     # Gate 1: Passport verification
-    passport_result = verify_passport(signed_passport)
+    passport_result = verify_passport(
+        signed_passport,
+        trusted_issuers=trusted_issuers,
+        allow_self_signed=allow_self_signed,
+    )
     checks.append({
         "check": "passport_valid", "passed": passport_result["valid"],
         "detail": (

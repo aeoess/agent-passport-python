@@ -28,7 +28,7 @@ Remote MCP: https://mcp.aeoess.com/sse
 Docs: https://agent-passport.org/llms-full.txt
 """
 
-__version__ = "2.9.0"
+__version__ = "3.0.0"
 
 # Crypto
 from .crypto import generate_key_pair, sign, verify, public_key_from_private
@@ -127,7 +127,9 @@ from .policy import (
     evaluate_intent,
     verify_policy_decision,
     create_policy_receipt,
+    PolicyReceiptChainInputs,
     verify_policy_receipt,
+    verify_policy_receipt_envelope,
     FloorValidatorV1,
     request_action,
 )

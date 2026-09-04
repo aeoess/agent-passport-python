@@ -1,0 +1,336 @@
+{
+  "_comment": "Generated from the TypeScript SDK's parseRfc3339/formatRfc3339 (agent-passport-system src/core/rfc3339.ts) at commit 14c4d6a, branch security/daybreak-2026-09-03. Each entry records what that implementation does with the input: whether it parses, the instant in milliseconds, the spelling formatRfc3339 emits for that instant, and the stated reason when it refuses. agent_passport._time.parse_rfc3339 must agree on all four. A divergence means the two SDKs disagree about what a timestamp on an artifact means, which is a cross-implementation security difference, not a style difference.",
+  "vectors": [
+    {
+      "input": "1970-01-01T00:00:00Z",
+      "ok": true,
+      "ms": 0,
+      "formatted": "1970-01-01T00:00:00.000Z"
+    },
+    {
+      "input": "2026-01-01T00:00:00Z",
+      "ok": true,
+      "ms": 1767225600000,
+      "formatted": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "input": "2026-01-01T00:00:00.000Z",
+      "ok": true,
+      "ms": 1767225600000,
+      "formatted": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "input": "2026-01-01T00:00:00.123Z",
+      "ok": true,
+      "ms": 1767225600123,
+      "formatted": "2026-01-01T00:00:00.123Z"
+    },
+    {
+      "input": "2026-01-01T00:00:00.1Z",
+      "ok": true,
+      "ms": 1767225600100,
+      "formatted": "2026-01-01T00:00:00.100Z"
+    },
+    {
+      "input": "2026-01-01T00:00:00.12Z",
+      "ok": true,
+      "ms": 1767225600120,
+      "formatted": "2026-01-01T00:00:00.120Z"
+    },
+    {
+      "input": "2026-01-01T00:00:00.123456789Z",
+      "ok": true,
+      "ms": 1767225600123,
+      "formatted": "2026-01-01T00:00:00.123Z"
+    },
+    {
+      "input": "2026-01-01T00:00:00.999999Z",
+      "ok": true,
+      "ms": 1767225600999,
+      "formatted": "2026-01-01T00:00:00.999Z"
+    },
+    {
+      "input": "2026-01-01t00:00:00z",
+      "ok": true,
+      "ms": 1767225600000,
+      "formatted": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "input": "2026-01-01T00:00:00z",
+      "ok": true,
+      "ms": 1767225600000,
+      "formatted": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "input": "2026-01-01t00:00:00Z",
+      "ok": true,
+      "ms": 1767225600000,
+      "formatted": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "input": "2026-01-01T05:30:00+05:30",
+      "ok": true,
+      "ms": 1767225600000,
+      "formatted": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "input": "2025-12-31T18:30:00-05:30",
+      "ok": true,
+      "ms": 1767225600000,
+      "formatted": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "input": "2026-01-01T00:00:00+00:00",
+      "ok": true,
+      "ms": 1767225600000,
+      "formatted": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "input": "2026-01-01T00:00:00-00:00",
+      "ok": true,
+      "ms": 1767225600000,
+      "formatted": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "input": "2026-01-01T00:00:00+23:59",
+      "ok": true,
+      "ms": 1767139260000,
+      "formatted": "2025-12-31T00:01:00.000Z"
+    },
+    {
+      "input": "2026-01-01T00:00:00-23:59",
+      "ok": true,
+      "ms": 1767311940000,
+      "formatted": "2026-01-01T23:59:00.000Z"
+    },
+    {
+      "input": "2024-02-29T00:00:00Z",
+      "ok": true,
+      "ms": 1709164800000,
+      "formatted": "2024-02-29T00:00:00.000Z"
+    },
+    {
+      "input": "2000-02-29T00:00:00Z",
+      "ok": true,
+      "ms": 951782400000,
+      "formatted": "2000-02-29T00:00:00.000Z"
+    },
+    {
+      "input": "1900-02-29T00:00:00Z",
+      "ok": false,
+      "reason": "field_out_of_range"
+    },
+    {
+      "input": "2026-02-30T00:00:00Z",
+      "ok": false,
+      "reason": "field_out_of_range"
+    },
+    {
+      "input": "2026-04-31T00:00:00Z",
+      "ok": false,
+      "reason": "field_out_of_range"
+    },
+    {
+      "input": "2025-02-29T00:00:00Z",
+      "ok": false,
+      "reason": "field_out_of_range"
+    },
+    {
+      "input": "2026-13-01T00:00:00Z",
+      "ok": false,
+      "reason": "field_out_of_range"
+    },
+    {
+      "input": "2026-00-01T00:00:00Z",
+      "ok": false,
+      "reason": "field_out_of_range"
+    },
+    {
+      "input": "2026-01-00T00:00:00Z",
+      "ok": false,
+      "reason": "field_out_of_range"
+    },
+    {
+      "input": "2026-01-32T00:00:00Z",
+      "ok": false,
+      "reason": "field_out_of_range"
+    },
+    {
+      "input": "2026-01-01T24:00:00Z",
+      "ok": false,
+      "reason": "field_out_of_range"
+    },
+    {
+      "input": "2026-01-01T25:00:00Z",
+      "ok": false,
+      "reason": "field_out_of_range"
+    },
+    {
+      "input": "2026-01-01T00:60:00Z",
+      "ok": false,
+      "reason": "field_out_of_range"
+    },
+    {
+      "input": "2026-01-01T00:00:61Z",
+      "ok": false,
+      "reason": "field_out_of_range"
+    },
+    {
+      "input": "2026-12-31T23:59:60Z",
+      "ok": false,
+      "reason": "leap_second"
+    },
+    {
+      "input": "2026-01-01T00:00:60Z",
+      "ok": false,
+      "reason": "leap_second"
+    },
+    {
+      "input": "2026-01-01T00:00:00+24:00",
+      "ok": false,
+      "reason": "field_out_of_range"
+    },
+    {
+      "input": "2026-01-01T00:00:00+00:60",
+      "ok": false,
+      "reason": "field_out_of_range"
+    },
+    {
+      "input": "2026-01-01T00:00:00",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "2026-01-01",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "not-a-date",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "2026-01-01 00:00:00Z",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "  2026-01-01T00:00:00Z  ",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "2026-01-01T00:00:00Z ",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "2026-01-01T00:00:00.Z",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "2026-01-01T00:00:00.1234567890Z",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "2026-01-01T00:00:00ZZ",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "+002026-01-01T00:00:00Z",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "0000-01-01T00:00:00Z",
+      "ok": true,
+      "ms": -62167219200000,
+      "formatted": "0000-01-01T00:00:00.000Z"
+    },
+    {
+      "input": "9999-12-31T23:59:59.999Z",
+      "ok": true,
+      "ms": 253402300799999,
+      "formatted": "9999-12-31T23:59:59.999Z"
+    },
+    {
+      "input": "0001-01-01T00:00:00Z",
+      "ok": true,
+      "ms": -62135596800000,
+      "formatted": "0001-01-01T00:00:00.000Z"
+    },
+    {
+      "input": "2026-1-01T00:00:00Z",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "2026-01-1T00:00:00Z",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "2026-01-01T0:00:00Z",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "2026-01-01T00:00:00+5:30",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "2026-01-01T00:00:00+0530",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "20260101T000000Z",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "2026-01-01T00:00:00Z\n",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "\n2026-01-01T00:00:00Z",
+      "ok": false,
+      "reason": "malformed"
+    },
+    {
+      "input": "2026-01-01T00:00:00.000+00:00",
+      "ok": true,
+      "ms": 1767225600000,
+      "formatted": "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "input": "2026-06-15T12:34:56.789-07:00",
+      "ok": true,
+      "ms": 1781552096789,
+      "formatted": "2026-06-15T19:34:56.789Z"
+    },
+    {
+      "input": "1969-12-31T23:59:59.999Z",
+      "ok": true,
+      "ms": -1,
+      "formatted": "1969-12-31T23:59:59.999Z"
+    },
+    {
+      "input": "1960-01-01T00:00:00Z",
+      "ok": true,
+      "ms": -315619200000,
+      "formatted": "1960-01-01T00:00:00.000Z"
+    }
+  ]
+}

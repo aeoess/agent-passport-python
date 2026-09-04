@@ -1,0 +1,24 @@
+{
+  "id": "2f1586b63bcd158ac8b06522571d0ea578183bb3a0ad6a9b8343c2aa562b581a",
+  "version": "1.0",
+  "citer": "did:key:z6MkexardXt491Q4s97r6uKJ5W3ngYb9DVQtkHZDGn976Giz",
+  "citer_public_key": "07831cf7d301963a0f122921b7ded835b6e74e27ebd3b558a91b064587677787",
+  "cited_principal": "did:key:z6MkomQdSkxeoa4ieGoeFiHDDULCktxLfMjoi8FQ4T6vqr66",
+  "cited_principal_public_key": "8a5f57ae421add12ba4bbda68487da59ccd5e585ed0a1ff1e51aac2cdc2755fb",
+  "citation_content": "The cited principal endorsed narrowing scope, not widening it.",
+  "binding_context": "charter:ts-fixture-abc",
+  "created_at": {
+    "logicalTime": 1,
+    "wallClockEarliest": 1751327999000,
+    "wallClockLatest": 1751328001000,
+    "gatewayId": "ts-fixture-gw"
+  },
+  "expires_at": {
+    "logicalTime": 2,
+    "wallClockEarliest": 4904927999000,
+    "wallClockLatest": 4904928001000,
+    "gatewayId": "ts-fixture-gw"
+  },
+  "citer_signature": "b3858dbfee480b3df2b54d7cc3e05a94edb10141a34ded7e3aa81e8255d42380b7d524c2857e1cedde45976783d114815a65e44f53104f93facd7d86a04d0101",
+  "cited_principal_signature": "4ed916c02f3bb87a710e6465239f4f2bdb7684acade09ba53966ff28734bb019cb9e75267d9c302a3aea67a4dd611869af93a1b77714876545dec2641f437d0f"
+}

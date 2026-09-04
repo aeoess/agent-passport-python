@@ -12,6 +12,8 @@ import random
 import string
 from datetime import datetime, timezone
 
+from ._time import now_ms, parse_rfc3339
+from ._vc_proof import bind_verification_method, proof_signing_input
 from .canonical import canonicalize
 from .crypto import sign, verify, public_key_from_private
 from .did_interop import to_did_key, from_did_key, _hex_to_multibase
@@ -162,61 +164,102 @@ def verify_credential_response(
 
     Args:
         vp: Verifiable Presentation dict.
-        expected_challenge: Optional expected challenge for replay protection.
+        expected_challenge: The nonce this verifier issued. Required. A
+            response verified against no challenge is a response to nothing in
+            particular, replayable by anyone who has seen it, so omitting it
+            is refused rather than skipped.
 
     Returns:
-        dict with 'valid' (bool), 'claims' (dict), and 'checks' (list).
+        dict with 'valid' (bool), 'claims' (dict), 'holder_did' (str) and
+        'checks' (list). 'valid' does not mean the holder is trusted; the
+        bound DID is returned so the caller can apply its own allowlist.
     """
     checks = []
     valid = True
 
     if not all(k in vp for k in ("holder", "proof", "verifiableCredential")):
         checks.append("FAIL: missing required VP fields")
-        return {"valid": False, "claims": {}, "checks": checks}
+        return {"valid": False, "claims": {}, "holder_did": "", "checks": checks}
     checks.append("PASS: required VP fields present")
 
-    # Verify challenge
-    proof = vp["proof"]
-    if expected_challenge:
-        if proof.get("challenge") == expected_challenge:
-            checks.append("PASS: challenge matches")
-        else:
-            checks.append(
-                f'FAIL: challenge mismatch - expected "{expected_challenge}", '
-                f'got "{proof.get("challenge")}"'
-            )
-            valid = False
+    proof = vp["proof"] if isinstance(vp.get("proof"), dict) else {}
 
-    # Verify VP proof
-    try:
-        vm_did = proof["verificationMethod"].split("#")[0]
-        public_key = from_did_key(vm_did) if vm_did.startswith("did:key:") else vm_did.split(":")[-1]
-        vp_without_proof = {k: v for k, v in vp.items() if k != "proof"}
-        canonical = canonicalize(vp_without_proof)
-        sig_hex = _base64url_to_hex(proof["proofValue"])
-        sig_valid = verify(canonical, sig_hex, public_key)
-
-        if sig_valid:
-            checks.append("PASS: presentation signature valid")
-        else:
-            checks.append("FAIL: presentation signature invalid")
-            valid = False
-    except Exception as e:
-        checks.append(f"FAIL: presentation signature error - {e}")
+    # The challenge compared here is inside the signed bytes. Before, it was
+    # attached to the proof after signing, so the presenter could rewrite it to
+    # whatever a verifier asked for and this comparison established nothing.
+    # Absent an expected challenge the comparison was skipped entirely, which
+    # was worse: it accepted any response to any request.
+    if not isinstance(expected_challenge, str) or not expected_challenge:
+        checks.append(
+            "FAIL: no expected challenge supplied; a response verified against "
+            "no challenge answers any request"
+        )
         valid = False
+    elif proof.get("challenge") == expected_challenge:
+        checks.append("PASS: challenge matches")
+    else:
+        checks.append(
+            f'FAIL: challenge mismatch - expected "{expected_challenge}", '
+            f'got "{proof.get("challenge")}"'
+        )
+        valid = False
+
+    if proof.get("proofPurpose") != "authentication":
+        checks.append(
+            f"FAIL: proof was made for {proof.get('proofPurpose')!r}, not authentication"
+        )
+        valid = False
+
+    # Whose key: the proof's own verificationMethod is the presenter's claim
+    # about itself, so it is bound to the holder the presentation names.
+    binding = bind_verification_method(vp.get("holder"), proof.get("verificationMethod"))
+    holder_did = ""
+    if binding.public_key is None:
+        checks.append(f"FAIL: holder binding {binding.key_authority} - {binding.reason}")
+        valid = False
+    else:
+        holder_did = vp["holder"]
+        try:
+            sig_hex = _base64url_to_hex(proof["proofValue"])
+            sig_valid = verify(
+                proof_signing_input(vp, proof, canonicalize), sig_hex, binding.public_key
+            )
+            if sig_valid:
+                checks.append("PASS: presentation signature valid")
+            else:
+                checks.append("FAIL: presentation signature invalid")
+                valid = False
+        except Exception as e:
+            checks.append(f"FAIL: presentation signature error - {e}")
+            valid = False
 
     # Verify each credential and extract claims
     claims = {}
 
     for i, vc in enumerate(vp["verifiableCredential"]):
+        vc_proof = vc["proof"] if isinstance(vc.get("proof"), dict) else {}
+        vc_binding = bind_verification_method(
+            vc.get("issuer"), vc_proof.get("verificationMethod")
+        )
+        if vc_binding.public_key is None:
+            checks.append(
+                f"FAIL: credential[{i}] issuer binding "
+                f"{vc_binding.key_authority} - {vc_binding.reason}"
+            )
+            valid = False
+            continue
+        if vc_proof.get("proofPurpose") != "assertionMethod":
+            checks.append(
+                f"FAIL: credential[{i}] proof was made for "
+                f"{vc_proof.get('proofPurpose')!r}, not assertionMethod"
+            )
+            valid = False
+            continue
         try:
-            vm_did = vc["proof"]["verificationMethod"].split("#")[0]
-            public_key = from_did_key(vm_did) if vm_did.startswith("did:key:") else vm_did.split(":")[-1]
-            vc_without_proof = {k: v for k, v in vc.items() if k != "proof"}
-            canonical = canonicalize(vc_without_proof)
-            sig_hex = _base64url_to_hex(vc["proof"]["proofValue"])
-            sig_valid = verify(canonical, sig_hex, public_key)
-
+            sig_hex = _base64url_to_hex(vc_proof["proofValue"])
+            sig_valid = verify(
+                proof_signing_input(vc, vc_proof, canonicalize), sig_hex, vc_binding.public_key
+            )
             if sig_valid:
                 checks.append(f"PASS: credential[{i}] signature valid")
             else:
@@ -230,8 +273,11 @@ def verify_credential_response(
 
         # Check expiration
         if vc.get("expirationDate"):
-            exp = datetime.fromisoformat(vc["expirationDate"].replace("Z", "+00:00"))
-            if exp < datetime.now(timezone.utc):
+            parsed = parse_rfc3339(vc["expirationDate"])
+            if parsed.ms is None:
+                checks.append(f"FAIL: credential[{i}] expirationDate unreadable ({parsed.reason})")
+                valid = False
+            elif parsed.ms < now_ms():
                 checks.append(f"FAIL: credential[{i}] expired")
                 valid = False
             else:
@@ -243,4 +289,4 @@ def verify_credential_response(
             if key != "id" and value is not None:
                 claims[key] = value
 
-    return {"valid": valid, "claims": claims, "checks": checks}
+    return {"valid": valid, "claims": claims, "holder_did": holder_did, "checks": checks}

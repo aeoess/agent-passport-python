@@ -37,13 +37,34 @@ def assign_role(
     assigner_private_key: str,
     assigner_public_key: str,
     department: Optional[str] = None,
+    *,
+    trusted_issuers: Optional[list[str]] = None,
+    allow_self_signed: bool = False,
 ) -> dict:
     """Assign a role to an agent after verifying their passport.
 
+    The trust input is threaded to verify_passport and is not optional in
+    substance: assigning a role is an authority decision, and without a
+    trusted issuer (or a deliberate allow_self_signed) the passport is only a
+    self-vouching credential. Before this parameter existed, anyone who could
+    generate a key pair could mint a passport claiming any agentId and be
+    assigned any role by this function.
+
+    Args:
+        trusted_issuers: Public keys whose countersignature authorizes this
+            assignment. See verify_passport.
+        allow_self_signed: Accept a passport nobody countersigned. Off by
+            default.
+
     Raises:
-        ValueError: If passport verification fails.
+        ValueError: If passport verification fails, including when authority
+            was never established.
     """
-    verification = verify_passport(signed_passport)
+    verification = verify_passport(
+        signed_passport,
+        trusted_issuers=trusted_issuers,
+        allow_self_signed=allow_self_signed,
+    )
     if not verification["valid"]:
         raise ValueError(
             f"Cannot assign role: passport verification failed — {', '.join(verification['errors'])}"

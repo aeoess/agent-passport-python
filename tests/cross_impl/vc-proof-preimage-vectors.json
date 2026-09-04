@@ -1,0 +1,63 @@
+{
+  "_comment": "The exact bytes a credential proof is signed over, and their SHA-256, as produced by the TypeScript SDK's proofSigningInput (agent-passport-system src/core/vc-proof.ts) at commit 14c4d6a. agent_passport._vc_proof.proof_signing_input must produce the same bytes for the same input. If it does not, a proof made by one SDK does not verify in the other, which is a protocol break rather than a test failure. The document deliberately carries a stale proof member, a proofValue that must be excluded, nested objects and arrays, null, booleans, and non-ASCII text.",
+  "document": {
+    "@context": [
+      "https://www.w3.org/ns/credentials/v2",
+      "https://w3id.org/security/suites/ed25519-2020/v1",
+      "https://aeoess.com/ns/agent-passport/v1"
+    ],
+    "id": "urn:aps:credential:passport:agent-parity",
+    "type": [
+      "VerifiableCredential",
+      "AgentPassportCredential"
+    ],
+    "issuer": "did:key:z6MkjchhfUsD6mmvni8mCdXHw216Xrm9bQe2mBH1P5RDjVJG",
+    "issuanceDate": "2026-01-01T00:00:00.000Z",
+    "expirationDate": "2027-01-01T00:00:00.000Z",
+    "credentialSubject": {
+      "id": "did:key:z6MkfCorPNPBLtQ6TAbCJPJHPmHrfg8HFcjSyBLYSbeUFjMH",
+      "agentId": "agent-parity",
+      "publicKey": "did:key:z6MkfCorPNPBLtQ6TAbCJPJHPmHrfg8HFcjSyBLYSbeUFjMH",
+      "grade": "A",
+      "delegationScope": [
+        "data:read",
+        "data:write"
+      ],
+      "nested": {
+        "b": 2,
+        "a": [
+          1,
+          2,
+          {
+            "z": null,
+            "y": true
+          }
+        ]
+      },
+      "unicode": "café ünïcode 日本語 é"
+    },
+    "proof": {
+      "type": "IGNORED",
+      "proofValue": "IGNORED"
+    }
+  },
+  "proof": {
+    "type": "Ed25519Signature2020",
+    "created": "2026-01-01T00:00:00.000Z",
+    "verificationMethod": "did:key:z6MkjchhfUsD6mmvni8mCdXHw216Xrm9bQe2mBH1P5RDjVJG#key-1",
+    "proofPurpose": "authentication",
+    "challenge": "nonce-parity-1",
+    "domain": "verifier-a.example",
+    "proofValue": "MUST-BE-EXCLUDED-FROM-THE-PREIMAGE"
+  },
+  "expected": {
+    "canonicalize": {
+      "sha256": "b222a31dd46c86165fe3e06ff9aa48272d418ed3c061291e6a7438d202badb74",
+      "preimage": "{\"@context\":[\"https://www.w3.org/ns/credentials/v2\",\"https://w3id.org/security/suites/ed25519-2020/v1\",\"https://aeoess.com/ns/agent-passport/v1\"],\"credentialSubject\":{\"agentId\":\"agent-parity\",\"delegationScope\":[\"data:read\",\"data:write\"],\"grade\":\"A\",\"id\":\"did:key:z6MkfCorPNPBLtQ6TAbCJPJHPmHrfg8HFcjSyBLYSbeUFjMH\",\"nested\":{\"a\":[1,2,{\"y\":true}],\"b\":2},\"publicKey\":\"did:key:z6MkfCorPNPBLtQ6TAbCJPJHPmHrfg8HFcjSyBLYSbeUFjMH\",\"unicode\":\"café ünïcode 日本語 é\"},\"expirationDate\":\"2027-01-01T00:00:00.000Z\",\"id\":\"urn:aps:credential:passport:agent-parity\",\"issuanceDate\":\"2026-01-01T00:00:00.000Z\",\"issuer\":\"did:key:z6MkjchhfUsD6mmvni8mCdXHw216Xrm9bQe2mBH1P5RDjVJG\",\"proof\":{\"challenge\":\"nonce-parity-1\",\"created\":\"2026-01-01T00:00:00.000Z\",\"domain\":\"verifier-a.example\",\"proofPurpose\":\"authentication\",\"type\":\"Ed25519Signature2020\",\"verificationMethod\":\"did:key:z6MkjchhfUsD6mmvni8mCdXHw216Xrm9bQe2mBH1P5RDjVJG#key-1\"},\"type\":[\"VerifiableCredential\",\"AgentPassportCredential\"]}"
+    },
+    "canonicalizeForWrite": {
+      "sha256": "b222a31dd46c86165fe3e06ff9aa48272d418ed3c061291e6a7438d202badb74",
+      "preimage": "{\"@context\":[\"https://www.w3.org/ns/credentials/v2\",\"https://w3id.org/security/suites/ed25519-2020/v1\",\"https://aeoess.com/ns/agent-passport/v1\"],\"credentialSubject\":{\"agentId\":\"agent-parity\",\"delegationScope\":[\"data:read\",\"data:write\"],\"grade\":\"A\",\"id\":\"did:key:z6MkfCorPNPBLtQ6TAbCJPJHPmHrfg8HFcjSyBLYSbeUFjMH\",\"nested\":{\"a\":[1,2,{\"y\":true}],\"b\":2},\"publicKey\":\"did:key:z6MkfCorPNPBLtQ6TAbCJPJHPmHrfg8HFcjSyBLYSbeUFjMH\",\"unicode\":\"café ünïcode 日本語 é\"},\"expirationDate\":\"2027-01-01T00:00:00.000Z\",\"id\":\"urn:aps:credential:passport:agent-parity\",\"issuanceDate\":\"2026-01-01T00:00:00.000Z\",\"issuer\":\"did:key:z6MkjchhfUsD6mmvni8mCdXHw216Xrm9bQe2mBH1P5RDjVJG\",\"proof\":{\"challenge\":\"nonce-parity-1\",\"created\":\"2026-01-01T00:00:00.000Z\",\"domain\":\"verifier-a.example\",\"proofPurpose\":\"authentication\",\"type\":\"Ed25519Signature2020\",\"verificationMethod\":\"did:key:z6MkjchhfUsD6mmvni8mCdXHw216Xrm9bQe2mBH1P5RDjVJG#key-1\"},\"type\":[\"VerifiableCredential\",\"AgentPassportCredential\"]}"
+    }
+  }
+}

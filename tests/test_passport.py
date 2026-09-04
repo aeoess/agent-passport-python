@@ -35,7 +35,7 @@ def test_creates_valid_passport():
     assert len(passport["signature"]) == 128  # 64 bytes hex
 
     # Verify
-    check = verify_passport(passport)
+    check = verify_passport(passport, allow_self_signed=True)
     assert check["valid"]
     assert check["errors"] == []
 
@@ -51,7 +51,7 @@ def test_rejects_tampered():
     )
     passport = result["signedPassport"]
     passport["passport"]["agentId"] = "TAMPERED"
-    check = verify_passport(passport)
+    check = verify_passport(passport, allow_self_signed=True)
     assert not check["valid"]
     assert "Invalid signature" in check["errors"]
 
@@ -82,5 +82,5 @@ def test_update_and_resign():
 
     updated = update_passport(passport, {"agentName": "Updated"}, kp["privateKey"])
     assert updated["passport"]["agentName"] == "Updated"
-    check = verify_passport(updated)
+    check = verify_passport(updated, allow_self_signed=True)
     assert check["valid"]

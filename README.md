@@ -97,6 +97,10 @@ data = {"z": 1, "a": 2, "nested": {"b": 3, "a": 1}}
 assert canonical_json(data) == '{"a":2,"nested":{"a":1,"b":3},"z":1}'
 ```
 
+## Verification boundary
+
+[The verification boundary](https://github.com/aeoess/agent-passport-python/blob/main/docs/verification-boundary.md) names the verification APIs that establish authority from caller-supplied trust, and the trust input each one takes.
+
 ## Protocol Layers
 
 This Python SDK implements all 8 Agent Passport Protocol layers:
@@ -142,7 +146,7 @@ pytest tests/
 # and Instruction Provenance Receipt surfaces. The cross-impl byte-parity tests assert
 # byte-identical canonical JSON against TS-issued fixtures (rfc8785 ships in the test
 # extra). Two cross-language tests also need the agent-passport-system TS SDK checked
-# out next to this repo; without that sibling they skip (566 passed, 3 skipped).
+# out next to this repo; without that sibling they skip.
 ```
 
 ## License

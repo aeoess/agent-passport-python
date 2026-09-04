@@ -167,8 +167,27 @@ def test_full_three_signature_chain():
         receipt=receipt, verifier_private_key=evaluator_kp["privateKey"],
     )
     assert pr["policyReceiptId"]
-    check = verify_policy_receipt(pr, evaluator_kp["publicKey"])
-    assert check["valid"]
+    # The chain inputs are the relying party's: the three objects the receipt
+    # copied signatures out of, and an anchor for each. The receipt carries
+    # only the strings, so a verifier that was handed just the receipt could
+    # never have checked them.
+    check = verify_policy_receipt(pr, evaluator_kp["publicKey"], {
+        "intent": result["intent"],
+        "decision": result["decision"],
+        "receipt": receipt,
+        "intentSignerPublicKey": agent_kp["publicKey"],
+        "decisionSignerPublicKey": evaluator_kp["publicKey"],
+        "receiptSignerPublicKey": agent_kp["publicKey"],
+    })
+    assert check["valid"], check["errors"]
+    assert check["chain_verified"] is True
+
+    # And the two-argument call, which used to return valid: True for any
+    # receipt with three non-empty strings, now says what it did not check.
+    unchecked = verify_policy_receipt(pr, evaluator_kp["publicKey"])
+    assert unchecked["valid"] is False
+    assert unchecked["chain_verified"] is False
+    assert unchecked["envelope_signature_valid"] is True
 
 
 def test_request_action_convenience():

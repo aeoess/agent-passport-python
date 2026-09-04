@@ -19,9 +19,10 @@ from __future__ import annotations
 import os
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
+from typing import Any, Optional, TypedDict
 
 from .crypto import sign, verify
+from ._time import now_ms, parse_rfc3339
 from .canonical import canonicalize, canonicalize_for_write
 
 
@@ -125,10 +126,14 @@ def verify_policy_decision(decision: dict) -> dict:
         errors.append("Invalid decision signature")
     exp = decision.get("expiresAt", "")
     if exp:
-        exp_dt = datetime.fromisoformat(exp.replace("Z", "+00:00")) if "Z" in exp else datetime.fromisoformat(exp)
-        if exp_dt.tzinfo is None:
-            exp_dt = exp_dt.replace(tzinfo=timezone.utc)
-        if exp_dt < datetime.now(timezone.utc):
+        parsed = parse_rfc3339(exp)
+        if parsed.ms is None:
+            # A verifier states a result; it does not raise at a caller that
+            # handed it an artifact. This parse had no guard at all, so a
+            # malformed expiresAt left through a function whose contract is a
+            # result dict.
+            errors.append(f"Unreadable expiresAt ({parsed.reason})")
+        elif parsed.ms < now_ms():
             errors.append("Policy decision expired")
     if not decision.get("intentId"):
         errors.append("Missing intentId")
@@ -168,20 +173,171 @@ def create_policy_receipt(
     return {**pr, "signature": signature}
 
 
-def verify_policy_receipt(policy_receipt: dict, verifier_public_key: str) -> dict:
-    """Verify a policy receipt's signature and chain integrity."""
+class PolicyReceiptChainInputs(TypedDict):
+    """What a relying party must supply to have the chain checked.
+
+    A policy receipt carries three signature STRINGS and not the objects they
+    were made over, so the preimages cannot be reconstructed from it. They
+    come from the relying party, which is also where the three trust anchors
+    belong: an anchor read out of the artifact being checked is the artifact's
+    claim about itself.
+    """
+
+    intent: dict[str, Any]
+    decision: dict[str, Any]
+    receipt: dict[str, Any]
+    #: Agent whose intent signature this relying party accepts.
+    intentSignerPublicKey: str
+    #: Evaluator whose decision signature this relying party accepts.
+    decisionSignerPublicKey: str
+    #: Executor whose action-receipt signature this relying party accepts.
+    receiptSignerPublicKey: str
+
+
+def verify_policy_receipt_envelope(
+    policy_receipt: dict[str, Any], verifier_public_key: str
+) -> dict[str, Any]:
+    """Verify only that the receipt envelope was signed by the given key.
+
+    Establishes: the bytes of this policy receipt were signed by
+    ``verifier_public_key`` and have not been altered since.
+
+    Does NOT establish anything about the intent, decision or action receipt
+    the envelope names. Their signatures are copied into ``chain`` as strings
+    and are not checked here, because the objects they were made over are not
+    in the receipt. Use :func:`verify_policy_receipt` with chain inputs for
+    that.
+
+    The name is the point. A caller reaching for this one is saying it does
+    not need the chain checked; a caller that does need it cannot get this
+    answer by accident.
+    """
     errors: list[str] = []
     unsigned = {k: v for k, v in policy_receipt.items() if k != "signature"}
-    if not verify(canonicalize(unsigned), policy_receipt.get("signature", ""), verifier_public_key):
+    envelope_signature_valid = verify(
+        canonicalize(unsigned), policy_receipt.get("signature", ""), verifier_public_key
+    )
+    if not envelope_signature_valid:
         errors.append("Invalid policy receipt signature")
-    chain = policy_receipt.get("chain", {})
-    if not chain.get("intentSignature"):
-        errors.append("Missing intent signature in chain")
-    if not chain.get("decisionSignature"):
-        errors.append("Missing decision signature in chain")
-    if not chain.get("receiptSignature"):
-        errors.append("Missing receipt signature in chain")
-    return {"valid": len(errors) == 0, "errors": errors}
+    return {
+        "valid": envelope_signature_valid,
+        "envelope_signature_valid": envelope_signature_valid,
+        "errors": errors,
+    }
+
+
+def _policy_chain_mismatches(
+    policy_receipt: dict[str, Any], chain: PolicyReceiptChainInputs
+) -> list[str]:
+    """Verify the three inner signatures against the caller's anchors and
+    check that every id in the receipt links the objects it names.
+
+    One entry per failure; empty means the chain holds.
+    """
+    errors: list[str] = []
+    intent, decision, receipt = chain["intent"], chain["decision"], chain["receipt"]
+
+    # Each inner signature is verified over its own object, against the anchor
+    # the caller named, never against a key the object carries about itself.
+    intent_sig = intent.get("signature", "")
+    unsigned_intent = {k: v for k, v in intent.items() if k != "signature"}
+    if not verify(canonicalize(unsigned_intent), intent_sig, chain["intentSignerPublicKey"]):
+        errors.append("Intent signature does not verify under the supplied intent signer")
+    decision_sig = decision.get("signature", "")
+    unsigned_decision = {k: v for k, v in decision.items() if k != "signature"}
+    if not verify(canonicalize(unsigned_decision), decision_sig, chain["decisionSignerPublicKey"]):
+        errors.append("Decision signature does not verify under the supplied decision signer")
+    receipt_sig = receipt.get("signature", "")
+    unsigned_receipt = {k: v for k, v in receipt.items() if k != "signature"}
+    if not verify(canonicalize(unsigned_receipt), receipt_sig, chain["receiptSignerPublicKey"]):
+        errors.append("Action receipt signature does not verify under the supplied receipt signer")
+
+    # The signature strings the receipt copied must be the signatures on those
+    # objects. Without this a receipt could carry three real signatures taken
+    # from some other chain.
+    carried = policy_receipt.get("chain") or {}
+    if carried.get("intentSignature") != intent_sig:
+        errors.append("Receipt carries an intent signature that is not the supplied intent's")
+    if carried.get("decisionSignature") != decision_sig:
+        errors.append("Receipt carries a decision signature that is not the supplied decision's")
+    if carried.get("receiptSignature") != receipt_sig:
+        errors.append("Receipt carries an action-receipt signature that is not the supplied receipt's")
+
+    # Linkage. Each id must name the object presented for it, and the decision
+    # must decide the intent presented rather than some other one.
+    if policy_receipt.get("intentId") != intent.get("intentId"):
+        errors.append("Receipt intentId does not name the supplied intent")
+    if policy_receipt.get("decisionId") != decision.get("decisionId"):
+        errors.append("Receipt decisionId does not name the supplied decision")
+    if policy_receipt.get("receiptId") != receipt.get("receiptId"):
+        errors.append("Receipt receiptId does not name the supplied action receipt")
+    if decision.get("intentId") != intent.get("intentId"):
+        errors.append("Decision does not decide the supplied intent: intentId mismatch")
+
+    # A receipt is proof of a permitted action. A denied decision has no
+    # receipt to attest to; create_policy_receipt refuses to build one, and a
+    # verifier must refuse to accept one built another way.
+    if decision.get("verdict") == "deny":
+        errors.append("Receipt attests to a denied decision")
+
+    expiry = parse_rfc3339(decision.get("expiresAt"))
+    if expiry.ms is None:
+        errors.append(f"Invalid decision expiresAt ({expiry.reason})")
+
+    return errors
+
+
+def verify_policy_receipt(
+    policy_receipt: dict[str, Any],
+    verifier_public_key: str,
+    chain: Optional[PolicyReceiptChainInputs] = None,
+) -> dict[str, Any]:
+    """Verify a policy receipt AND the three-signature chain it attests to.
+
+    SCOPE OF CLAIM.
+      Establishes, when ``valid`` is true: the receipt envelope was signed by
+        ``verifier_public_key``; the intent, decision and action receipt
+        supplied by the caller were signed by the three anchors the caller
+        supplied; the decision decides that intent; the receipt records that
+        intent; and the three signature strings the receipt carries are the
+        signatures on those three objects.
+      Does NOT establish: that the four keys are the right ones, that they
+        belong to four different parties, that the action described actually
+        happened, or that the evaluator was entitled to permit it.
+
+    ``chain`` is required in substance. Older callers passed two arguments and
+    received ``valid: True`` for a receipt whose three inner signature strings
+    were arbitrary text: the strings were tested for presence, never verified,
+    and the objects they were made over were never seen. A caller that still
+    omits it gets ``valid: False`` with ``chain_verified: False`` rather than
+    an exception, because a verifier states a result. A relying party that
+    only wants envelope integrity should say so by name with
+    :func:`verify_policy_receipt_envelope`.
+    """
+    envelope = verify_policy_receipt_envelope(policy_receipt, verifier_public_key)
+    errors: list[str] = list(envelope["errors"])
+
+    if chain is None:
+        errors.append(
+            "Chain not verified: the intent, decision and action receipt, and a "
+            "trust anchor for each, are required. Use "
+            "verify_policy_receipt_envelope for an envelope-integrity check."
+        )
+        return {
+            "valid": False,
+            "envelope_signature_valid": envelope["envelope_signature_valid"],
+            "chain_verified": False,
+            "errors": errors,
+        }
+
+    chain_errors = _policy_chain_mismatches(policy_receipt, chain)
+    errors.extend(chain_errors)
+    return {
+        "valid": len(errors) == 0,
+        "envelope_signature_valid": envelope["envelope_signature_valid"],
+        "chain_verified": len(chain_errors) == 0,
+        "errors": errors,
+    }
 
 
 # ══════════════════════════════════════
@@ -326,14 +482,16 @@ class FloorValidatorV1:
         issues: list[str] = []
         exp = delegation.get("expiresAt", "")
         if exp:
-            try:
-                exp_dt = datetime.fromisoformat(exp.replace("Z", "+00:00")) if "Z" in exp else datetime.fromisoformat(exp)
-                if exp_dt.tzinfo is None:
-                    exp_dt = exp_dt.replace(tzinfo=timezone.utc)
-                if exp_dt < datetime.now(timezone.utc):
-                    issues.append("Delegation expired")
-            except (ValueError, TypeError):
-                pass
+            parsed = parse_rfc3339(exp)
+            if parsed.ms is None:
+                # An expiry that cannot be read is not an expiry that has not
+                # passed. This parse used to be wrapped in a bare `pass`, which
+                # made writing garbage into expiresAt strictly better for the
+                # holder than writing an honest date: the honest expired
+                # delegation failed Auditability and the unreadable one did not.
+                issues.append(f"Delegation expiresAt unreadable ({parsed.reason})")
+            elif parsed.ms < now_ms():
+                issues.append("Delegation expired")
         if delegation.get("currentDepth", 0) > delegation.get("maxDepth", 1):
             issues.append("Depth limit exceeded")
         if issues:

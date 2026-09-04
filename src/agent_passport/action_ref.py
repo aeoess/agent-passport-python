@@ -23,6 +23,7 @@ and the two values are never interchangeable.
 """
 
 import hashlib
+import re
 import unicodedata
 from datetime import datetime, timezone
 
@@ -57,12 +58,53 @@ class DuplicateScopeRequiredError(ValueError):
         self.reason = reason
 
 
+# The shape the legacy action_ref timestamp must have before it is parsed.
+# `datetime.fromisoformat` is a convenience parser, not RFC 3339: it takes a
+# space in place of the date-time separator and rolls hour 24 into the next
+# day. Both produced an action_ref that the TypeScript normalizer, tightened
+# at 2f9aeeb, refuses to recompute, so a Python producer could mint a content
+# address no TypeScript verifier could reproduce.
+#
+# ASCII digits are spelled out rather than \d, which in Python matches every
+# Unicode decimal digit and would read Arabic-Indic digits as a year, and the
+# match is a fullmatch rather than a $-anchored search, because Python's $ also
+# matches before a final newline.
+#
+# The uppercase T and Z are deliberate and are NOT relaxed here. This surface
+# has always refused the lowercase forms while the TypeScript one accepts them;
+# that divergence is a decided outcome, recorded in the session 1d report, and
+# tightening this function is not the moment to reopen it.
+_RFC3339_ACTION_REF = re.compile(
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
+    r"(?:\.[0-9]+)?"
+    r"(?:Z|[+-][0-9]{2}:[0-9]{2})"
+)
+
+
 def _normalize_timestamp(ts: str) -> str:
     """Second-precision UTC with the literal Z, matching the TS SDK.
 
     The TS reference does new Date(ts).toISOString() then strips the
     fractional-seconds component, which truncates within the second.
+
+    Every input that produced an action_ref before still produces the same
+    one. What is refused is the set that never had a TypeScript counterpart:
+    a space separator and hour 24.
     """
+    if not isinstance(ts, str) or not _RFC3339_ACTION_REF.fullmatch(ts):
+        raise ValueError(
+            f"compute_action_ref: invalid timestamp {ts!r}; requires RFC 3339 "
+            "as YYYY-MM-DDTHH:MM:SS[.fff](Z|+HH:MM), with the uppercase T "
+            "separator and an hour of 23 or less"
+        )
+    # Hour 24 matches the grammar above and is a real ISO 8601 end-of-day form,
+    # so it is range-checked rather than left to fromisoformat, which would
+    # roll it into the next day and hand back an instant with two spellings.
+    if int(ts[11:13]) > 23:
+        raise ValueError(
+            f"compute_action_ref: invalid timestamp {ts!r}; hour 24 denotes the "
+            "next day's 00:00:00 and would give one instant two action_refs"
+        )
     try:
         dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
     except (ValueError, TypeError) as exc:

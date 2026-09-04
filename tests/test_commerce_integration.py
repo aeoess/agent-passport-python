@@ -42,6 +42,7 @@ def test_commerce_preflight_permits():
         signed_passport=sp, delegation=deleg,
         merchant_name="TestShop",
         estimated_total={"amount": 50, "currency": "usd"},
+        allow_self_signed=True,
     )
     assert result["permitted"]
     assert all(c["passed"] for c in result["checks"])
@@ -58,6 +59,7 @@ def test_commerce_preflight_denies_overspend():
         signed_passport=sp, delegation=deleg,
         merchant_name="AnyShop",
         estimated_total={"amount": 50, "currency": "usd"},
+        allow_self_signed=True,
     )
     assert not result["permitted"]
 
@@ -72,6 +74,7 @@ def test_commerce_preflight_denies_unapproved_merchant():
         signed_passport=sp, delegation=deleg,
         merchant_name="EvilShop",
         estimated_total={"amount": 10, "currency": "usd"},
+        allow_self_signed=True,
     )
     assert not result["permitted"]
 
@@ -196,6 +199,7 @@ def test_commerce_with_intent():
         evaluator_id="eval-1",
         evaluator_public_key=evaluator_kp["publicKey"],
         evaluator_private_key=evaluator_kp["privateKey"],
+        allow_self_signed=True,
     )
     assert result["permitted"]
     assert result["decision"]["verdict"] == "permit"

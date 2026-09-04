@@ -9,6 +9,7 @@ import time
 from typing import Optional, List
 
 from ...crypto import verify
+from ..._vc_proof import bind_verification_method
 from .create import receipt_core
 from .types import (
     AttributionReceipt,
@@ -50,6 +51,28 @@ def _now_stamp(gateway_id: str = "attribution-verifier") -> HybridTimestamp:
     }
 
 
+def _binding_failure(party: str, did: object, public_key: object) -> Optional[str]:
+    """None when the party's DID commits to the key beside it, else the reason.
+
+    Reuses bind_verification_method from the P1 credential repair, including
+    its canonicality round-trip, so one signer cannot hold two identities. The
+    reason vocabulary matches those surfaces: a method that is not
+    self-certifying is `unresolved`, which is not an acceptance, and a method
+    that commits to a different key is `rejected`.
+    """
+    if not isinstance(public_key, str) or not public_key:
+        return f"{party}_public_key missing"
+    binding = bind_verification_method(did, did)
+    if binding.public_key is None:
+        return f"{party} binding {binding.key_authority}: {binding.reason}"
+    if binding.public_key != public_key:
+        return (
+            f"{party} binding rejected: {did} commits to a different key than the "
+            f"{party}_public_key beside it"
+        )
+    return None
+
+
 def verify_attribution_consent(
     receipt: AttributionReceipt,
     now: Optional[HybridTimestamp] = None,
@@ -60,6 +83,20 @@ def verify_attribution_consent(
     expected_id = hashlib.sha256(core.encode("utf-8")).hexdigest()
     if expected_id != receipt.get("id"):
         return _fail("receipt id does not match canonical core — tampered")
+
+    # Each party is named twice, as a DID and as a key. Nothing bound the two,
+    # so the principal whose consent is being proved supplied the key that
+    # proves it: an attacker could name a victim, put their own key in the
+    # victim's key field, sign the consent themselves, and this verified.
+    #
+    # The binding is the F-02 helper from the credential surfaces and nothing
+    # else. The DID must commit to the key beside it. A DID that commits to no
+    # key cannot be bound without a DID document, this package resolves none,
+    # so it is refused rather than assumed.
+    for party in ("citer", "cited_principal"):
+        problem = _binding_failure(party, receipt.get(party), receipt.get(f"{party}_public_key"))
+        if problem is not None:
+            return _fail(problem)
 
     try:
         if not verify(core, receipt["citer_signature"], receipt["citer_public_key"]):
