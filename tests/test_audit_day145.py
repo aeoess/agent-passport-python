@@ -44,7 +44,7 @@ def test_expired_passport_with_valid_signature_is_invalid():
     # Signed while already expired, so the signature is genuinely valid over
     # the (expired) passport bytes — the ONLY thing making it invalid is expiry.
     signed = _signed_passport(expires_in_days=-1)
-    check = verify_passport(signed)
+    check = verify_passport(signed, allow_self_signed=True)
     assert check["valid"] is False
     assert any("expired" in e.lower() for e in check["errors"]), check["errors"]
     assert check["passport"] is None
@@ -52,7 +52,7 @@ def test_expired_passport_with_valid_signature_is_invalid():
 
 def test_unexpired_passport_still_valid():
     signed = _signed_passport(expires_in_days=365)
-    check = verify_passport(signed)
+    check = verify_passport(signed, allow_self_signed=True)
     assert check["valid"] is True
     assert check["errors"] == []
 
@@ -64,7 +64,7 @@ def test_non_finite_passport_field_fails_closed_without_raising():
     # Poison a numeric field with a non-finite float. json.loads would accept
     # this by default; canonicalize() rejects it — the verifier must not crash.
     signed["passport"]["metadata"] = {"score": float("nan")}
-    check = verify_passport(signed)  # must not raise
+    check = verify_passport(signed, allow_self_signed=True)  # must not raise
     assert check["valid"] is False
 
 
