@@ -93,7 +93,7 @@ class TestVerifiablePresentation:
         assert vp["holder"].startswith("did:key:z")
         assert len(vp["verifiableCredential"]) == 1
 
-        result = verify_verifiable_presentation(vp)
+        result = verify_verifiable_presentation(vp, expected_challenge="test-challenge")
         assert result["valid"] is True
         assert len(result["credentials"]) == 1
 
@@ -119,7 +119,7 @@ class TestVerifiablePresentation:
             {"agentId": "agent-001", "publicKey": kp["publicKey"]},
             kp["privateKey"],
         )
-        vp = create_verifiable_presentation([vc], kp["privateKey"])
+        vp = create_verifiable_presentation([vc], kp["privateKey"], challenge="nonce-a")
         vp["holder"] = "did:key:z6MkTAMPERED"
-        result = verify_verifiable_presentation(vp)
+        result = verify_verifiable_presentation(vp, expected_challenge="nonce-a")
         assert result["valid"] is False
