@@ -114,12 +114,13 @@ This Python SDK implements all 8 Agent Passport Protocol layers:
 7. **Integration Wiring**: Cross-layer bridges (commerce+intent, coordination+agora)
 8. **Agentic Commerce**: 4-gate checkout, human approval, spend limits
 
-Cross-language parity with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) at the reference version pinned in this repository's fixtures. Python SDK 2.11.0 ships the full Wave 1 surface: ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle (with balanced Merkle commitment), Cognitive Attestation (Paper 4: three-stage verification, typed dispute primitives), and Instruction Provenance Receipts v0.2 (path canonicalization, context-root binding, action-time recompute). The four evidentiary type safety primitives also ship in 2.11.0. All surfaces are tested against TS-issued fixtures for byte-identical canonical JSON. Cross-language signature verification covers every signed primitive in the SDK. Also available via the [MCP server](https://mcp.aeoess.com/sse).
+Cross-language parity with the [TypeScript SDK](https://www.npmjs.com/package/agent-passport-system) at the reference version pinned in this repository's fixtures. Python SDK 3.0.0 ships the full Wave 1 surface: ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle (with balanced Merkle commitment), Cognitive Attestation (Paper 4: three-stage verification, typed dispute primitives), and Instruction Provenance Receipts v0.2 (path canonicalization, context-root binding, action-time recompute). The four evidentiary type safety primitives also ship in 3.0.0. All surfaces are tested against TS-issued fixtures for byte-identical canonical JSON. Cross-language signature verification covers every signed primitive in the SDK. Also available via the [MCP server](https://mcp.aeoess.com/sse).
 
 ## Links
 
 - **Website**: https://agent-passport.org
 - **TypeScript SDK**: https://www.npmjs.com/package/agent-passport-system
+- **Rust SDK**: https://crates.io/crates/agent-passport-system
 - **Go SDK**: https://pkg.go.dev/github.com/aeoess/agent-passport-go
 - **MCP Server**: https://www.npmjs.com/package/agent-passport-system-mcp
 - **Remote MCP**: https://mcp.aeoess.com/sse

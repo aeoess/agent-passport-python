@@ -27,6 +27,6 @@ If you discover a security vulnerability in the Agent Passport System Python SDK
 | Older versions | ❌ |
 
 Every `agent-passport-system` version on PyPI from 0.2.0 through 2.11.0 is
-unsupported; the advisory for 3.0.0, published at
+unsupported; the advisory for 3.0.0, GHSA-xxm3-6jwr-hpxr, published at
 https://github.com/aeoess/agent-passport-python/security/advisories, describes
 the verification defects they carry.
