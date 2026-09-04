@@ -10,7 +10,7 @@
 pip install agent-passport-system
 ```
 
-> **Current stable**: `2.11.0`, installed by default with `pip install agent-passport-system`. The 2.4 line adds the Wave 1 accountability primitives (ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle), Cognitive Attestation (Paper 4), and Instruction Provenance Receipts (v0.2). It also adds evidentiary type safety: a claim and evidence registry, a claim verifier, and a contestation cascade. All primitives are tested for byte-identical canonical JSON against the TypeScript SDK npm 3.1.0 fixtures.
+> **Current stable**: `3.0.0`, installed by default with `pip install agent-passport-system`. The 2.4 line adds the Wave 1 accountability primitives (ActionReceipt, AuthorityBoundaryReceipt, CustodyReceipt, ContestabilityReceipt, APSBundle), Cognitive Attestation (Paper 4), and Instruction Provenance Receipts (v0.2). It also adds evidentiary type safety: a claim and evidence registry, a claim verifier, and a contestation cascade. All primitives are tested for byte-identical canonical JSON against the TypeScript SDK npm 3.1.0 fixtures.
 
 
 ## Quick Start
@@ -97,6 +97,10 @@ data = {"z": 1, "a": 2, "nested": {"b": 3, "a": 1}}
 assert canonical_json(data) == '{"a":2,"nested":{"a":1,"b":3},"z":1}'
 ```
 
+## Verification boundary
+
+[The verification boundary](https://github.com/aeoess/agent-passport-python/blob/main/docs/verification-boundary.md) names the verification APIs that establish authority from caller-supplied trust, and the trust input each one takes.
+
 ## Protocol Layers
 
 This Python SDK implements all 8 Agent Passport Protocol layers:
@@ -137,12 +141,12 @@ Cross-language parity with the [TypeScript SDK](https://www.npmjs.com/package/ag
 ```bash
 pip install -e ".[test]"
 pytest tests/
-# 568 passed, 1 skipped, 6 xfailed. Coverage spans all 8 protocol layers
+# 1106 passed. Coverage spans all 8 protocol layers
 # plus the v2 evidentiary type safety, Wave 1 accountability, Cognitive Attestation,
 # and Instruction Provenance Receipt surfaces. The cross-impl byte-parity tests assert
 # byte-identical canonical JSON against TS-issued fixtures (rfc8785 ships in the test
 # extra). Two cross-language tests also need the agent-passport-system TS SDK checked
-# out next to this repo; without that sibling they skip (566 passed, 3 skipped).
+# out next to this repo; without that sibling they skip.
 ```
 
 ## License

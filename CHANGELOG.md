@@ -1,5 +1,75 @@
 # Changelog
 
+## 3.0.0 ({{RELEASE_DATE}})
+
+Security release. The full cross-SDK account, including the affected version
+ranges and the severity assessment, is in the security advisory for this
+release. [The verification boundary](https://github.com/aeoess/agent-passport-python/blob/main/docs/verification-boundary.md)
+names the verification APIs that establish authority from caller-supplied trust,
+and the trust input each takes.
+
+Several exported verification functions returned a successful verification
+result (`valid: true` or an equivalent) without establishing all of the trust,
+linkage, context and temporal conditions the result implied. In the affected
+paths the verification key came from the artifact itself, the claimed identity
+was not bound to the key that signed, chained artifacts were not linked to the
+artifacts they claimed to derive from, or an unreadable timestamp compared as
+neither expired nor stale. A relying party that treated those results as
+authorization could accept an artifact an attacker produced with keys the
+attacker controls.
+
+This release changes what the affected functions establish. Trust anchors and
+the expected challenge are caller-supplied where the result claims authority;
+the presentation domain is signed, and a caller that uses domain as a
+relying-party boundary compares it through the expected-domain option.
+Identities are bound to keys. Chains are linked. Invalid time fails closed.
+Creators refuse to mint artifacts their own verifiers reject. The affected
+verifiers return a rejection on a malformed timestamp or a missing chain
+instead of raising; creators and `assign_role` raise.
+
+### Affected surfaces
+
+One row per exported surface and defect class; a surface with two defect classes
+appears twice. Copied from the security advisory for this release.
+
+| exported name | module path | defect class | consumer change |
+|---|---|---|---|
+| `verify_passport` | src/agent_passport/passport.py | authority false accept | Two keyword-only params with defaults, so positional calls still bind, but the answer changes: a self-signed passport now returns valid False. Callers establishing issuer authority pass trusted_issuers; allow_self_signed=True explicitly accepts a self-signed passport and is appropriate only where issuer authority is not being established.|
+| `assign_role` | src/agent_passport/intent.py | authority false accept | Two keyword-only params added. A call that omits both now raises ValueError instead of returning a role assignment |
+| `commerce_preflight` | src/agent_passport/commerce.py | authority false accept | Two keyword-only params added; positional calls still bind. Calls that previously reported permitted True on a self-signed passport now report permitted False until trust is supplied |
+| `commerce_with_intent` | src/agent_passport/integration.py | authority false accept | Two keyword-only params added after evaluator_private_key; positional calls still bind but a self-signed passport no longer yields a permitted preflight |
+| `verify_verifiable_credential` | src/agent_passport/vc_wrapper.py | artifact key used as trust root | Result gains key_authority (verified/rejected/unresolved), issuer_did (empty unless binding succeeded) and proof_of_possession. Non-self-certifying issuers such as did:web now return unresolved and valid False. Credentials issued under the old body-only preimage no longer verify |
+| `verify_verifiable_presentation` | src/agent_passport/vc_wrapper.py | identity not bound to key | Signature widens to (vp, expected_challenge=None, expected_domain=None); a one-argument call now returns valid False. Result gains key_authority, holder_did, proof_of_possession, challenge and domain. Presentations made under the old preimage no longer verify |
+| `create_verifiable_presentation` | src/agent_passport/vc_wrapper.py | identity not bound to key | Signature gains a required challenge and an optional domain; omitting challenge raises TypeError: omitting it raises TypeError instead of minting an artifact. Presentations it emits do not verify against a before the fixed version verifier and vice versa |
+| `passport_to_verifiable_credential` | src/agent_passport/vc_wrapper.py | identity not bound to key | No signature change. The artifact changes: credentials it emits are a new preimage that before the fixed version verifiers reject, and credentials it produced before the fixed version no longer verify. The signed preimage is identical in the TypeScript and Python SDKs. |
+| `fulfill_credential_request` | src/agent_passport/credential_request.py | identity not bound to key | No signature change. Responses it emits are a new preimage: before the fixed version verify_credential_response rejects them and responses produced before the fixed version no longer verify |
+| `verify_credential_response` | src/agent_passport/credential_request.py | identity not bound to key | Signature unchanged, but a call that omits expected_challenge now returns valid False. Result gains holder_did, empty unless the binding held. Non-self-certifying holders and issuers now fail as unresolved |
+| `verify_policy_receipt` | src/agent_passport/policy.py | chain not linked | Third parameter chain added. A two-argument call now returns valid False with chain_verified False, not an exception. Result gains envelope_signature_valid and chain_verified. Callers that only want envelope integrity should move to verify_policy_receipt_envelope |
+| `verify_policy_receipt_envelope` | src/agent_passport/policy.py | chain not linked | New export added to src/agent_passport/__init__.py. A caller that does not need the chain checked must now name this function; it cannot get that answer by accident from verify_policy_receipt |
+| `verify_policy_decision` | src/agent_passport/policy.py | invalid time fails open | An expiresAt outside strict RFC 3339 (zone-less, space separator, hour 24, leap second, lowercase t/z, sub-millisecond over 9 digits) now yields valid False with a stated reason instead of an exception or a silent pass |
+| `verify_attestation` | src/agent_passport/values.py | invalid time fails open | Returns valid False with a reason instead of raising. Attestations carrying a non-RFC-3339 expiresAt no longer verify |
+| `negotiate_common_ground` | src/agent_passport/values.py | invalid time fails open | Returns a refusal reason instead of raising. Two agents whose attestations carry non-RFC-3339 expiries no longer reach common ground |
+| `FloorValidatorV1.evaluate` | src/agent_passport/policy.py | invalid time fails open | Delegations carrying a non-RFC-3339 expiresAt now fail Auditability under whatever enforcement mode is configured (inline, audit or warn). evaluate_intent and request_action, which call the validator, inherit the new verdict |
+| `verify_attribution_consent` | src/agent_passport/v2/attribution_consent/verify.py | artifact key used as trust root | Signature unchanged. Behavioural break: receipts whose parties are named by opaque identifiers (agent:citer, did:web:...) no longer verify. Reissuance under did:key is the migration. The signed preimage did not move: both the did:key and the opaque-identifier fixtures still hash to the same id |
+| `check_artifact_citations` | src/agent_passport/v2/attribution_consent/verify.py | artifact key used as trust root | Signature unchanged. Artifacts citing receipts with opaque party identifiers stop passing the gate; same reissuance migration as verify_attribution_consent |
+| `compute_action_ref` | src/agent_passport/action_ref.py | invalid time fails open | The two spellings now raise ValueError instead of returning a hash. Every input that produced an address before still produces the same one: one instant written six ways still hashes to f00d48a5c11c16a535d93c4b2daeed15fefbb5943ac3b4ca58698d2c8bf918f5, and the shared cross-language vectors are unaffected. One divergence remains by decision: lowercase t/z, which TypeScript accepts and Python refuses |
+
+### Migration
+
+| package | old call shape | new call shape | unmigrated call | artifacts reissued |
+|---|---|---|---|---|
+| python | `verify_passport(signed_passport) returned valid True for a self-minted passport` | `verify_passport(signed_passport, trusted_issuers=[...]) or verify_passport(signed_passport, allow_self_signed=True)` | valid false: the additions are keyword-only with defaults so every positional call still binds; result carries issuer_trust_checked and self_signed_accepted | no: no artifact shape changes; issuer_signature_preimage is exported so an issuer can countersign an existing passport |
+| python | `assign_role(signed_passport, role, autonomy_level, scope, assigner_private_key, assigner_public_key, department=None)` | `same call plus trusted_issuers=[...] or allow_self_signed=True` | exception: raises ValueError, as it already did for an invalid passport | no: no artifact changes |
+| python | `commerce_preflight(signed_passport, delegation, merchant_name, estimated_total)` | `same call plus trusted_issuers=[...] or allow_self_signed=True` | valid false: Gate 1 reports passed False, which makes permitted False | no: no artifact changes |
+| python | `commerce_with_intent(..., evaluator_private_key) with no trust input` | `same call plus trusted_issuers=[...] or allow_self_signed=True` | valid false: it threads the trust input to the preflight, so permitted is False without one | no: no artifact changes |
+| python | `verify_attribution_consent(receipt) accepted citer and cited_principal as opaque identifiers with any key beside them` | `same call, with each party named by a did:key or a multibase did:aps that commits to the key beside it` | valid false: reason is 'unresolved' or 'rejected'; check_artifact_citations inherits it | yes: receipts naming parties by opaque identifiers must be reissued under did:key; both fixtures still hash to the same id, so the signed preimage did not move |
+| python | `compute_action_ref(..., timestamp) accepted the space separator '2026-04-05 03:39:31Z' and rolled '2026-04-05T24:00:00Z' into the next day` | `compute_action_ref(..., timestamp) with the uppercase T separator and an hour of 23 or less` | exception: ValueError naming the rule, raised from _normalize_timestamp | no: every input that produced an address still produces the same one, and one instant written six ways still hashes to f00d48a5c11c16a535d93c4b2daeed15fefbb5943ac3b4ca58698d2c8bf918f5 |
+| python | `verify_verifiable_credential(vc) and verify_verifiable_presentation(vp) over a proof signed on the body only, with created written by datetime.isoformat` | `same calls; the proof configuration is inside the signed bytes and created is written by format_rfc3339` | valid false: there is no dual-verification path, so a before the fixed version artifact does not verify | yes: every Python-minted VC and VP issued before the fixed version must be reissued |
+| python | `verify_verifiable_presentation(vp) and verify_credential_response(vp) with no expected challenge (the comparison was skipped entirely)` | `verify_verifiable_presentation(vp, expected_challenge) and verify_credential_response(vp, expected_challenge)` | valid false: the parameters still default to None so the call binds, but a presentation verified against no challenge is refused | no reissue for the expected-challenge change itself; credential responses minted under the previous signed preimage must be reissued (see the fulfill_credential_request row) |
+| python | `create_verifiable_presentation(credentials, holder_private_key) minted a presentation carrying no challenge` | `create_verifiable_presentation(credentials, holder_private_key, challenge, domain=None)` | exception: TypeError; creators raise where verifiers return | yes: a challenge-less presentation is one this package's own verifier always rejects |
+| python | `verify_policy_receipt(policy_receipt, verifier_public_key) returned valid True with three fake inner signature strings` | `verify_policy_receipt(policy_receipt, verifier_public_key, chain: PolicyReceiptChainInputs), or verify_policy_receipt_envelope for the envelope-only check` | valid false: chain is still Optional with a None default so the call binds; the result carries chain_verified False and no exception is raised | no: receipts unchanged; the caller must present the intent, decision and action receipt plus an anchor for each |
+| python | `FloorValidatorV1 swallowed an unreadable expiresAt and produced no Auditability finding; verify_policy_decision, verify_attestation, negotiate_common_ground, verify_verifiable_credential and verify_credential_response parsed with no guard at all` | `all six route through _time.parse_rfc3339 and report the refusal in the vocabulary the site already uses` | valid false: a present-but-unreadable expiresAt now produces a finding where it produced none; an absent or empty expiresAt still means no stated end | yes: artifacts whose expiresAt is present but unreadable; every spelling this package emits is inside the grammar, so conforming artifacts are unaffected |
+
 ## 2.11.0 (2026-08-20)
 
 ### Fixed / Security
