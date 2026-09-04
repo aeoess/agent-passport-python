@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from .crypto import sign, verify
+from ._time import now_ms, parse_rfc3339
 from .canonical import canonicalize, canonicalize_for_write
 
 # Enforcement escalation order (higher = stricter)
@@ -204,8 +205,13 @@ def verify_attestation(attestation: dict[str, Any]) -> dict[str, Any]:
 
     expires_at = attestation.get("expiresAt", "")
     if expires_at:
-        exp = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
-        if exp < datetime.now(timezone.utc):
+        parsed = parse_rfc3339(expires_at)
+        if parsed.ms is None:
+            # A verifier states a result; it does not raise at the caller that
+            # handed it the artifact. An unreadable expiry is also not an
+            # unexpired one.
+            errors.append(f"Unreadable expiresAt ({parsed.reason})")
+        elif parsed.ms < now_ms():
             errors.append("Attestation expired")
 
     if not attestation.get("floorVersion"):
@@ -336,12 +342,19 @@ def negotiate_common_ground(
     """Determine shared ethical ground between two agents."""
     reasons: list[str] = []
     now = datetime.now(timezone.utc)
+    # One clock read, used both for the comparisons below and for negotiatedAt.
+    now_ms_value = int(now.timestamp() * 1000)
 
     for label, att, passport in [("A", attestation_a, passport_a), ("B", attestation_b, passport_b)]:
         exp = att.get("expiresAt", "")
         if exp:
-            exp_dt = datetime.fromisoformat(exp.replace("Z", "+00:00"))
-            if exp_dt < now:
+            parsed = parse_rfc3339(exp)
+            if parsed.ms is None:
+                reasons.append(
+                    f"Agent {passport.get('agentId', label)} attestation expiresAt "
+                    f"unreadable ({parsed.reason})"
+                )
+            elif parsed.ms < now_ms_value:
                 reasons.append(f"Agent {passport.get('agentId', label)} attestation expired")
 
     major_a = attestation_a.get("floorVersion", "").split(".")[0]

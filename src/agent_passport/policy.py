@@ -22,6 +22,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from .crypto import sign, verify
+from ._time import now_ms, parse_rfc3339
 from .canonical import canonicalize, canonicalize_for_write
 
 
@@ -125,10 +126,14 @@ def verify_policy_decision(decision: dict) -> dict:
         errors.append("Invalid decision signature")
     exp = decision.get("expiresAt", "")
     if exp:
-        exp_dt = datetime.fromisoformat(exp.replace("Z", "+00:00")) if "Z" in exp else datetime.fromisoformat(exp)
-        if exp_dt.tzinfo is None:
-            exp_dt = exp_dt.replace(tzinfo=timezone.utc)
-        if exp_dt < datetime.now(timezone.utc):
+        parsed = parse_rfc3339(exp)
+        if parsed.ms is None:
+            # A verifier states a result; it does not raise at a caller that
+            # handed it an artifact. This parse had no guard at all, so a
+            # malformed expiresAt left through a function whose contract is a
+            # result dict.
+            errors.append(f"Unreadable expiresAt ({parsed.reason})")
+        elif parsed.ms < now_ms():
             errors.append("Policy decision expired")
     if not decision.get("intentId"):
         errors.append("Missing intentId")
@@ -326,14 +331,16 @@ class FloorValidatorV1:
         issues: list[str] = []
         exp = delegation.get("expiresAt", "")
         if exp:
-            try:
-                exp_dt = datetime.fromisoformat(exp.replace("Z", "+00:00")) if "Z" in exp else datetime.fromisoformat(exp)
-                if exp_dt.tzinfo is None:
-                    exp_dt = exp_dt.replace(tzinfo=timezone.utc)
-                if exp_dt < datetime.now(timezone.utc):
-                    issues.append("Delegation expired")
-            except (ValueError, TypeError):
-                pass
+            parsed = parse_rfc3339(exp)
+            if parsed.ms is None:
+                # An expiry that cannot be read is not an expiry that has not
+                # passed. This parse used to be wrapped in a bare `pass`, which
+                # made writing garbage into expiresAt strictly better for the
+                # holder than writing an honest date: the honest expired
+                # delegation failed Auditability and the unreadable one did not.
+                issues.append(f"Delegation expiresAt unreadable ({parsed.reason})")
+            elif parsed.ms < now_ms():
+                issues.append("Delegation expired")
         if delegation.get("currentDepth", 0) > delegation.get("maxDepth", 1):
             issues.append("Depth limit exceeded")
         if issues:

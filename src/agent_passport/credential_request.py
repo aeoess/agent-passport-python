@@ -12,6 +12,7 @@ import random
 import string
 from datetime import datetime, timezone
 
+from ._time import now_ms, parse_rfc3339
 from .canonical import canonicalize
 from .crypto import sign, verify, public_key_from_private
 from .did_interop import to_did_key, from_did_key, _hex_to_multibase
@@ -230,8 +231,11 @@ def verify_credential_response(
 
         # Check expiration
         if vc.get("expirationDate"):
-            exp = datetime.fromisoformat(vc["expirationDate"].replace("Z", "+00:00"))
-            if exp < datetime.now(timezone.utc):
+            parsed = parse_rfc3339(vc["expirationDate"])
+            if parsed.ms is None:
+                checks.append(f"FAIL: credential[{i}] expirationDate unreadable ({parsed.reason})")
+                valid = False
+            elif parsed.ms < now_ms():
                 checks.append(f"FAIL: credential[{i}] expired")
                 valid = False
             else:

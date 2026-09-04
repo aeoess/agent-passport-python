@@ -118,16 +118,27 @@ RFC3339_FAILURE_REASONS = (
 class Rfc3339ParseResult(NamedTuple):
     """Outcome of :func:`parse_rfc3339`.
 
-    A failed parse carries ``ms=None`` and never an instant, so a caller that
-    forgets to test ``ok`` raises a TypeError on the comparison rather than
-    silently reading a time out of a failure. That is the whole point: the
-    defect this replaces was a comparison against a value that answered
+    A refusal carries ``ms=None`` and never an instant, so a caller that
+    forgets to test the outcome raises a TypeError on the comparison rather
+    than silently reading a time out of a failure. That is the whole point:
+    the defect this replaces was a comparison against a value that answered
     "not expired" for a string that was not a date.
+
+    ``ms is None`` is the refusal test, and it is the one a type checker
+    narrows on, so a call site written as ``if parsed.ms is None: ... elif
+    parsed.ms < now_ms():`` is checked rather than merely conventional.
+    ``ok`` is a derived reading of the same fact, provided because it names
+    the question at a glance and because the TypeScript SDK's result carries
+    it. It cannot disagree with ``ms``: there is only one stored answer.
     """
 
-    ok: bool
     ms: Optional[int]
     reason: Optional[str]
+
+    @property
+    def ok(self) -> bool:
+        """True when the string named an instant."""
+        return self.ms is not None
 
 
 def _days_in_month(year: int, month: int) -> int:
@@ -169,33 +180,33 @@ def parse_rfc3339(value: object) -> Rfc3339ParseResult:
       - Sub-millisecond digits are validated and then truncated away.
     """
     if not isinstance(value, str):
-        return Rfc3339ParseResult(False, None, "not_a_string")
+        return Rfc3339ParseResult(None, "not_a_string")
 
     # fullmatch, not a '$'-anchored search: Python's '$' also matches before a
     # final newline, so '...Z\n' and '...Z' would be one instant read from two
     # strings.
     m = _RFC3339.fullmatch(value)
     if m is None:
-        return Rfc3339ParseResult(False, None, "malformed")
+        return Rfc3339ParseResult(None, "malformed")
 
     year, month, day = int(m[1]), int(m[2]), int(m[3])
     hour, minute, second = int(m[4]), int(m[5]), int(m[6])
     frac, zulu, offset_sign, offset_hour, offset_minute = m[7], m[8], m[9], m[10], m[11]
 
     if second == 60:
-        return Rfc3339ParseResult(False, None, "leap_second")
+        return Rfc3339ParseResult(None, "leap_second")
     if month < 1 or month > 12:
-        return Rfc3339ParseResult(False, None, "field_out_of_range")
+        return Rfc3339ParseResult(None, "field_out_of_range")
     if day < 1 or day > _days_in_month(year, month):
-        return Rfc3339ParseResult(False, None, "field_out_of_range")
+        return Rfc3339ParseResult(None, "field_out_of_range")
     if hour > 23 or minute > 59 or second > 59:
-        return Rfc3339ParseResult(False, None, "field_out_of_range")
+        return Rfc3339ParseResult(None, "field_out_of_range")
 
     offset_seconds = 0
     if zulu is None:
         oh, om = int(offset_hour), int(offset_minute)
         if oh > 23 or om > 59:
-            return Rfc3339ParseResult(False, None, "field_out_of_range")
+            return Rfc3339ParseResult(None, "field_out_of_range")
         offset_seconds = (oh * 3600 + om * 60) * (-1 if offset_sign == "-" else 1)
 
     # Truncate to millisecond granularity; pad so '.1' is 100ms, not 1ms.
@@ -210,8 +221,8 @@ def parse_rfc3339(value: object) -> Rfc3339ParseResult:
     # the grammar later fails closed here instead of silently returning an
     # instant the TypeScript side would refuse.
     if abs(ms) > 2**53 - 1:
-        return Rfc3339ParseResult(False, None, "not_representable")
-    return Rfc3339ParseResult(True, ms, None)
+        return Rfc3339ParseResult(None, "not_representable")
+    return Rfc3339ParseResult(ms, None)
 
 
 def _civil_from_days(z: int) -> tuple[int, int, int]:
@@ -255,6 +266,16 @@ def format_rfc3339(ms: int) -> str:
     )
 
 
+def now_ms() -> int:
+    """The current instant in milliseconds since the Unix epoch.
+
+    The comparison side of :func:`parse_rfc3339`: both sides of an expiry test
+    are then plain integers, and neither can be a value that compares false in
+    both directions.
+    """
+    return int(datetime.now(timezone.utc).timestamp() * 1000)
+
+
 def now_rfc3339() -> str:
     """The current instant in the SDK's one emission spelling."""
-    return format_rfc3339(int(datetime.now(timezone.utc).timestamp() * 1000))
+    return format_rfc3339(now_ms())

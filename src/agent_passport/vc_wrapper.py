@@ -9,6 +9,7 @@ as VC evidence. Cross-language compatible with the TypeScript SDK.
 import base64
 from datetime import datetime, timezone
 
+from ._time import now_ms, parse_rfc3339
 from .canonical import canonicalize, canonicalize_for_write
 from .crypto import sign, verify, public_key_from_private
 from .did_interop import to_did_key, from_did_key, _hex_to_multibase
@@ -104,8 +105,14 @@ def verify_verifiable_credential(vc: dict) -> dict:
     checks.append("PASS: type includes VerifiableCredential")
 
     if vc.get("expirationDate"):
-        exp = datetime.fromisoformat(vc["expirationDate"].replace("Z", "+00:00"))
-        if exp < datetime.now(timezone.utc):
+        parsed = parse_rfc3339(vc["expirationDate"])
+        if parsed.ms is None:
+            # Previously this parse was unguarded and outside the try below, so
+            # an expirationDate an issuer chose could raise out of a verifier
+            # whose contract is a result dict.
+            checks.append(f"FAIL: credential expirationDate unreadable ({parsed.reason})")
+            valid = False
+        elif parsed.ms < now_ms():
             checks.append("FAIL: credential expired")
             valid = False
         else:
