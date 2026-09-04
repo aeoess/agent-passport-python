@@ -8,12 +8,13 @@ import time
 import pytest
 
 from agent_passport.crypto import generate_key_pair
+from agent_passport.did_interop import to_did_key
 from agent_passport.v2.attribution_consent import (
+    check_artifact_citations,
     create_attribution_receipt,
+    receipt_core,
     sign_attribution_consent,
     verify_attribution_consent,
-    check_artifact_citations,
-    receipt_core,
 )
 
 
@@ -37,11 +38,14 @@ def keys():
 
 
 def _build_receipt(keys, **overrides):
+    # Each party is named by the did:key its own key commits to. Opaque
+    # identifiers such as "agent:citer" bind to nothing, and verification now
+    # refuses what it cannot bind; see test_attribution_consent_binding.py.
     base = dict(
-        citer="agent:citer",
+        citer=to_did_key(keys["citer"]["publicKey"]),
         citer_public_key=keys["citer"]["publicKey"],
         citer_private_key=keys["citer"]["privateKey"],
-        cited_principal="principal:cited",
+        cited_principal=to_did_key(keys["principal"]["publicKey"]),
         cited_principal_public_key=keys["principal"]["publicKey"],
         citation_content="X said Y about Z",
         binding_context="charter:abc",
@@ -243,14 +247,42 @@ def _load_ts_fixture():
         return json.load(f)
 
 
+DIDKEY_FIXTURE_PATH = os.path.join(
+    os.path.dirname(__file__), "fixtures", "attribution_receipt_didkey_from_ts.json")
+
+
+def _load_ts_didkey_fixture():
+    with open(DIDKEY_FIXTURE_PATH) as f:
+        return json.load(f)
+
+
 def test_ts_fixture_verify_attribution_receipt():
-    fx = _load_ts_fixture()
+    """The did:key fixture, produced by the frozen TypeScript SDK at 2f9aeeb
+    and verified there before being written, still verifies here."""
+    fx = _load_ts_didkey_fixture()
     res = verify_attribution_consent(fx)
     assert res["valid"] is True, f"TS fixture failed Python verify: {res.get('reason')}"
 
 
+def test_ts_fixture_with_opaque_identifiers_no_longer_verifies():
+    """The original cross-language fixture names its parties `agent:...` and
+    `principal:...`, which commit to no key. It verified before the binding
+    rule and is kept as the pinned negative: an identifier that cannot be
+    bound is refused rather than assumed, and this is the compatibility break
+    the release note has to carry."""
+    fx = _load_ts_fixture()
+    res = verify_attribution_consent(fx)
+    assert res["valid"] is False
+    assert "binding" in (res.get("reason") or "")
+
+
 def test_ts_fixture_id_matches_python_core_hash():
+    """Canonicalization parity is unaffected by the binding rule: the id of
+    BOTH fixtures is still the SHA-256 of the Python canonical core, so the
+    signed preimage did not move."""
     import hashlib
+    for fx in (_load_ts_fixture(), _load_ts_didkey_fixture()):
+        assert hashlib.sha256(receipt_core(fx).encode()).hexdigest() == fx["id"]
     fx = _load_ts_fixture()
     expected = hashlib.sha256(receipt_core(fx).encode()).hexdigest()
     assert expected == fx["id"]
