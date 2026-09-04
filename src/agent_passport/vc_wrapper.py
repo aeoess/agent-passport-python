@@ -8,6 +8,7 @@ as VC evidence. Cross-language compatible with the TypeScript SDK.
 
 import base64
 from datetime import datetime, timezone
+from typing import Any, Optional
 
 from ._time import now_ms, now_rfc3339, parse_rfc3339
 from ._vc_proof import (
@@ -143,7 +144,7 @@ def verify_verifiable_credential(vc: dict) -> dict:
     binding = bind_verification_method(vc.get("issuer"), proof.get("verificationMethod"))
     issuer_did = ""
     proof_of_possession = False
-    if binding.key_authority != "verified":
+    if binding.public_key is None:
         checks.append(f"FAIL: issuer binding {binding.key_authority} - {binding.reason}")
         valid = False
     else:
@@ -234,10 +235,10 @@ def create_verifiable_presentation(
 
 
 def verify_verifiable_presentation(
-    vp: dict,
-    expected_challenge: str = None,
-    expected_domain: str = None,
-) -> dict:
+    vp: dict[str, Any],
+    expected_challenge: Optional[str] = None,
+    expected_domain: Optional[str] = None,
+) -> dict[str, Any]:
     """Verify a Verifiable Presentation and each contained credential.
 
     Args:
@@ -310,7 +311,7 @@ def verify_verifiable_presentation(
     binding = bind_verification_method(vp.get("holder"), proof.get("verificationMethod"))
     holder_did = ""
     proof_of_possession = False
-    if binding.key_authority != "verified":
+    if binding.public_key is None:
         checks.append(f"FAIL: holder binding {binding.key_authority} - {binding.reason}")
         valid = False
     else:
@@ -370,7 +371,7 @@ def _create_proof(data: dict, private_key: str, did: str, purpose: str, options:
     preimage those are different bytes for the same instant, and a proof made
     by one SDK would not verify in the other.
     """
-    proof_config = {
+    proof_config: dict[str, object] = {
         "type": "Ed25519Signature2020",
         "created": now_rfc3339(),
         "verificationMethod": f"{did}#key-1",

@@ -214,7 +214,7 @@ def verify_credential_response(
     # about itself, so it is bound to the holder the presentation names.
     binding = bind_verification_method(vp.get("holder"), proof.get("verificationMethod"))
     holder_did = ""
-    if binding.key_authority != "verified":
+    if binding.public_key is None:
         checks.append(f"FAIL: holder binding {binding.key_authority} - {binding.reason}")
         valid = False
     else:
@@ -241,7 +241,7 @@ def verify_credential_response(
         vc_binding = bind_verification_method(
             vc.get("issuer"), vc_proof.get("verificationMethod")
         )
-        if vc_binding.key_authority != "verified":
+        if vc_binding.public_key is None:
             checks.append(
                 f"FAIL: credential[{i}] issuer binding "
                 f"{vc_binding.key_authority} - {vc_binding.reason}"

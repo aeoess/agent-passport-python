@@ -50,6 +50,12 @@ class ProofBinding(NamedTuple):
       - ``"unresolved"`` the DID method is not self-certifying, so the binding
                          cannot be established without fetching a DID
                          document. NOT an acceptance.
+
+    ``public_key`` is set exactly when ``key_authority`` is ``"verified"``, so
+    ``public_key is None`` is the failure test and it is the one a type checker
+    narrows on. Branching on it rather than on the string means a verifier
+    cannot reach the signature check without a key the binding actually
+    produced.
     """
 
     key_authority: str
