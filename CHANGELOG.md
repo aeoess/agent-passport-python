@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.1 (2026-09-04)
+
+Documentation only. The README published with 3.0.0 still described the package as 2.11.0 and omitted the Rust SDK; the package page now states the current family. No code change.
+
 ## 3.0.0 (2026-09-04)
 
 Security release. The full cross-SDK account, including the affected version
