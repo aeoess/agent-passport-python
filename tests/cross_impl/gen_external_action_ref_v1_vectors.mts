@@ -3,19 +3,18 @@
 // (tests/cross_impl/external-action-ref-v1-vectors.json).
 //
 // Every case, its expected result (accept/reject), its failure code, and its
-// expected_provenance are FIXED by a written vector specification (job 2,
-// batch 4, not shipped in this repo, kept by the orchestrator). This script
-// only fills in digests, and records what the TypeScript SDK actually does
-// on every case, by calling the TS reference implementation directly; it
-// does not decide any expected result itself. If the TS reference disagrees
-// with a fixed expected result on an ACCEPT case, or if the two anchored
-// no-normalization cases collide, the script exits nonzero and names the
-// offending case instead of silently recording whatever TS produced. Reject
-// cases carry no such requirement: the TypeScript SDK is known to diverge
-// from the section 4.2 requirement text on several of them (see the module
-// header of src/agent_passport/external_action_ref.py), and this script
-// only records what TS actually does there ("ts_behaviour"), it never
-// enforces the spec's answer against it.
+// expected_provenance are fixed by a written vector specification. This
+// script only fills in digests, and records what the TypeScript SDK actually
+// does on every case, by calling the TS reference implementation directly;
+// it does not decide any expected result itself. If the TS reference
+// disagrees with a fixed expected result on an ACCEPT case, or if the two
+// anchored no-normalization cases collide, the script exits nonzero and
+// names the offending case instead of silently recording whatever TS
+// produced. Reject cases carry no such requirement: the TypeScript SDK is
+// known to diverge from the section 4.2 requirement text on several of them
+// (see the module header of src/agent_passport/external_action_ref.py), and
+// this script only records what TS actually does there ("ts_behaviour"), it
+// never enforces the spec's answer against it.
 //
 // This file must never claim the TypeScript SDK is "verified": recording
 // its behaviour is not a conformance claim, only a data point next to the
@@ -52,7 +51,7 @@ function fail(message: string): never {
   process.exit(1)
 }
 
-// Re-verify the precondition the orchestrator already checked once: the TS
+// Re-verify the precondition already checked once: the TS
 // reference must be sitting exactly on the pinned commit with a clean tree.
 // This does not embed any path literal: both values are read from the
 // environment at run time.
@@ -82,7 +81,7 @@ const FAILURE_CODES = [
     code: 'bad_timestamp',
     meaning:
       'timestamp not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid RFC 3339 date and time (month 01-12, ' +
-      'day existing in the month, hour 00-23, minute 00-59, second 00-59)',
+      'day existing in the month, hour 00-23, minute 00-59, second 00-59; second 60 is withheld)',
     draft_lines: '866-871',
   },
   {
@@ -113,13 +112,15 @@ const EXPECTED_PROVENANCE_VALUES = {
     'accept case. It holds independent of whether the TypeScript reference implementation is marked conformant ' +
     'for this construction.',
   'ts-conformant-regression':
-    'The expected value is the digest produced by the TypeScript reference implementation ' +
-    '(computeExternalActionRefV1) at the pinned commit, for every accept case. Three of these (EX-P01..EX-P03) ' +
-    'are additionally pinned as byte matches against independent ecosystem implementations outside this ' +
-    'project (see provenance_note on each); the rest are the TS reference\'s own output, recorded as a ' +
-    'cross-implementation regression value and independently cross-checked against an rfc8785-based ' +
-    'recomputation (see tests/cross_impl/crosscheck_external_action_ref_v1_vectors.py) rather than trusted ' +
-    'outright.',
+    'This label covers the digest construction on valid inputs only: for every accept case, the expected ' +
+    'value is the digest produced by the TypeScript reference implementation (computeExternalActionRefV1) at ' +
+    'the pinned commit. Three of these (EX-P01..EX-P03) are additionally pinned as byte matches against ' +
+    'independent ecosystem implementations outside this project (see provenance_note on each); the rest are ' +
+    'the TS reference\'s own output, recorded as a cross-implementation regression value and independently ' +
+    'cross-checked against an rfc8785-based recomputation (see ' +
+    'tests/cross_impl/crosscheck_external_action_ref_v1_vectors.py) rather than trusted outright. Reject ' +
+    'cases are never labeled ts-conformant-regression; their ts_behaviour records show where the TypeScript ' +
+    'SDK at the pinned commit departs from the section 4.2 text.',
 }
 
 const TS_BEHAVIOUR_NOTE =
@@ -217,7 +218,7 @@ const acceptCases: AcceptCase[] = [
   { id: 'EX-P04', input: base({}) },
   { id: 'EX-P05', input: base({ scope: 'café:read' }), provenance_note: NO_NORMALIZATION_NOTE },
   { id: 'EX-P06', input: base({ scope: 'café:read' }), provenance_note: NO_NORMALIZATION_NOTE },
-  { id: 'EX-P07', input: base({ agent_id: 'did:example:\u{1F600}', action_type: 'quote" backslash\\ ctrl' }) },
+  { id: 'EX-P07', input: base({ agent_id: 'did:example:\u{1F600}', action_type: 'quote" backslash\\ ctrl\u0007' }) },
   { id: 'EX-P08', input: base({ timestamp: '2028-02-29T23:59:59.999Z' }) },
   { id: 'EX-P09', input: base({ timestamp: '0000-01-01T00:00:00.000Z' }) },
 ]
@@ -264,6 +265,7 @@ interface RejectCase {
   id: string
   input: Record<string, unknown>
   failure: string
+  draft_lines?: string
 }
 
 const rejectCases: RejectCase[] = [
@@ -279,6 +281,12 @@ const rejectCases: RejectCase[] = [
   { id: 'EX-N10', input: base({ agent_id: 123 }), failure: 'not_string' },
   { id: 'EX-N11', input: base({ timestamp: 1747568431000 }), failure: 'not_string' },
   { id: 'EX-N12', input: base({ scope: '\uD800' }), failure: 'lone_surrogate' },
+  {
+    id: 'EX-N13',
+    input: base({ timestamp: ['2026-04-08T12:00:00.000Z'] }),
+    failure: 'not_string',
+    draft_lines: '866-871',
+  },
 ]
 
 for (const c of rejectCases) {
@@ -288,7 +296,7 @@ for (const c of rejectCases) {
     tsBehaviour = {
       behaviour: 'accepts',
       external_action_ref: digest,
-      note: 'differs from the draft text; TS not changed in this job',
+      note: 'TypeScript SDK behaviour at the pinned commit differs from the draft text',
     }
   } catch (e) {
     tsBehaviour = { behaviour: 'rejects', message: (e as Error).message }
@@ -302,7 +310,7 @@ for (const c of rejectCases) {
     input: c.input,
     expected: { result: 'reject', failure: c.failure },
     expected_provenance: provenance,
-    draft_lines: draftLinesForFailure(c.failure),
+    draft_lines: c.draft_lines ?? draftLinesForFailure(c.failure),
     ts_behaviour: tsBehaviour,
   })
 }

@@ -8,8 +8,8 @@
     "generator": "tests/cross_impl/gen_action_ref_v2_vectors.mts"
   },
   "expected_provenance_values": {
-    "draft-derived": "The expected value follows directly from the requirement text: the failure-code table for every reject case that carries no provenance_note, case, the payload_ref formula (draft lines 804-805) computed independently with the rfc8785 Python package for every payload_ref digest (the job 1 conformance matrix does not mark payload_ref conformant for TS, because the aps-mcp-1 profile uses a different domain tag), and the NFC-normalize/sort/dedupe rule (draft lines 794-796, 819-824) for the canonical scope_required form recorded on every create-entry case. It holds independent of whether the TS reference implementation is marked conformant.",
-    "ts-conformant-regression": "The expected value is the result produced by the corrected TS reference implementation (a digest, or for the two payload cases that carry a provenance_note a rejection under the SDK I-JSON integer boundary) (computeActionRefV2 / computeActionRefV2FromJson / createActionReferenceInputV2). The job 1 conformance matrix marks the section 4.1 action_ref construction conformant for TS, so this file pins that implementation's own output as a cross-implementation regression value, independently cross-checked against an rfc8785-based recomputation (see cross_checks) rather than trusted outright."
+    "draft-derived": "The expected result follows from the section 4.1 text alone: every reject case without a provenance_note, and every payload_ref digest (computed from the draft's formula with the rfc8785 package).",
+    "ts-conformant-regression": "A result from the corrected TypeScript SDK at the pinned commit, for a construction whose TypeScript implementation was reviewed against the draft text and found to follow it: every action_ref digest (including the create cases, whose canonical_input separately follows the draft's NFC and UTF-8 ordering rule), and the reject cases that carry a provenance_note explaining why the draft text alone does not fix the result."
   },
   "failure_codes": [
     {
@@ -76,6 +76,18 @@
       "code": "non_i_json",
       "meaning": "a value that is not I-JSON (unsafe integer, non-finite number, invalid JSON text)",
       "draft_lines": "814, 804-805"
+    },
+    {
+      "code": "empty_scope_required",
+      "meaning": "scope_required is an empty array",
+      "draft_lines": "798-800",
+      "note": "no case uses it: the draft leaves the default open, see withheld"
+    },
+    {
+      "code": "nesting_limit",
+      "meaning": "a value nested too deeply for an implementation",
+      "draft_lines": "none",
+      "note": "an implementation limit, not a draft rule; no case uses it"
     }
   ],
   "withheld": [
@@ -97,12 +109,12 @@
       "create": 4
     },
     "by_expected_provenance": {
-      "draft-derived": 53,
-      "ts-conformant-regression": 22
+      "draft-derived": 52,
+      "ts-conformant-regression": 23
     }
   },
   "cross_checks": {
-    "description": "Every payload_ref value and every accepted action_ref value in this file is independently recomputed in Python by tests/cross_impl/crosscheck_action_ref_v2_vectors.py, using the rfc8785 package (an RFC 8785 JSON Canonicalization Scheme implementation outside this project, not this project's own canonicalizer): payload_ref as sha256(b\"APS-ACTION-PAYLOAD-V1\\x00\" + rfc8785.dumps(payload)) and an accepted action_ref as sha256(b\"APS-ACTION-REF-V2\\x00\" + rfc8785.dumps(canonical_input)), both lowercase hex, compared byte for byte against the value recorded in this file. The script does not import agent_passport and does not depend on the TS SDK, so a mismatch means the value recorded in this file is wrong, not that the TS SDK is non-conformant.",
+    "description": "Every payload_ref value and every accepted action_ref value in this file is independently recomputed in Python by tests/cross_impl/crosscheck_action_ref_v2_vectors.py, using the rfc8785 package (an RFC 8785 JSON Canonicalization Scheme implementation outside this project, not this project's own canonicalizer): payload_ref as sha256(b\"APS-ACTION-PAYLOAD-V1\\x00\" + rfc8785.dumps(payload)) and an accepted action_ref as sha256(b\"APS-ACTION-REF-V2\\x00\" + rfc8785.dumps(canonical_input)), both lowercase hex, compared byte for byte against the value recorded in this file. The script does not import agent_passport and does not depend on the TS SDK. A mismatch means the recorded value, the rfc8785 package or the script disagree and must be investigated; agreement shows that two canonicalizers agree on these inputs.",
     "command": "python tests/cross_impl/crosscheck_action_ref_v2_vectors.py"
   },
   "ts_error_messages_note": "ts_error_message values are the TypeScript SDK's own messages, recorded for reference. They are SDK vocabulary, not protocol vocabulary; the normative failure is the failure code.",
@@ -176,7 +188,8 @@
         "payload_ref": "dec103f84232d687a5dde9f5c68f2db41ca242f24725e66fbbe00addb32cd4b3"
       },
       "expected_provenance": "draft-derived",
-      "draft_lines": "804-805"
+      "draft_lines": "804-805",
+      "provenance_note": "An earlier version of this case also contained the number 1e21, which is integer-valued above 2**53-1 and rejected by both SDKs; it is now the reject case PR-N03. The value -0 appears as 0 in this file because JSON serializers write -0 as 0; RFC 8785 also serializes -0 as 0."
     },
     {
       "id": "PR-P06",
@@ -266,7 +279,7 @@
       },
       "expected_provenance": "ts-conformant-regression",
       "draft_lines": "814, 804-805",
-      "provenance_note": "Rejection rests on the I-JSON integer boundary both SDKs apply (an integer-valued number above 2**53-1 in magnitude is not accepted). RFC 7493 section 2.2 states that boundary as interoperability advice, so the expected result is the SDK policy for a row the job 1 matrix marks conformant, not a value the draft text fixes on its own."
+      "provenance_note": "Rejection rests on the I-JSON integer boundary both SDKs apply (an integer-valued number above 2**53-1 in magnitude is not accepted). RFC 7493 section 2.2 states that boundary as interoperability advice, so the expected result is the SDK policy for a construction whose TypeScript implementation was reviewed against the draft text and found to follow it, not a value the draft text fixes on its own."
     },
     {
       "id": "PR-N03",
@@ -281,7 +294,7 @@
       },
       "expected_provenance": "ts-conformant-regression",
       "draft_lines": "814, 804-805",
-      "provenance_note": "Rejection rests on the I-JSON integer boundary both SDKs apply (an integer-valued number above 2**53-1 in magnitude is not accepted). RFC 7493 section 2.2 states that boundary as interoperability advice, so the expected result is the SDK policy for a row the job 1 matrix marks conformant, not a value the draft text fixes on its own."
+      "provenance_note": "Rejection rests on the I-JSON integer boundary both SDKs apply (an integer-valued number above 2**53-1 in magnitude is not accepted). RFC 7493 section 2.2 states that boundary as interoperability advice, so the expected result is the SDK policy for a construction whose TypeScript implementation was reviewed against the draft text and found to follow it, not a value the draft text fixes on its own."
     },
     {
       "id": "PR-N02",
@@ -1621,8 +1634,9 @@
         "failure": "non_i_json",
         "ts_error_message": "$: non-finite number"
       },
-      "expected_provenance": "draft-derived",
-      "draft_lines": "814, 804-805"
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "814, 804-805",
+      "provenance_note": "The draft text rejects this document but admits two failure classes here (a non-I-JSON value, or an unknown member). The TypeScript SDK reports non_i_json, and this case pins that class."
     },
     {
       "id": "AC-P01",
@@ -1634,7 +1648,7 @@
         "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
         "scope_required": [
           "repo:write",
-          "café:read"
+          "café:read"
         ],
         "issued_at": "2026-04-08T12:00:00.000Z",
         "nonce": "00112233445566778899aabbccddeeff"

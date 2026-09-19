@@ -12,9 +12,9 @@ canonicalizer:
     action_ref   = sha256(b"APS-ACTION-REF-V2\\x00"     + rfc8785.dumps(canonical_input))
 
 Both lowercase hex. Only ACCEPTED cases carry a digest to check; reject cases
-are reported as skipped. A mismatch means the value recorded in the vector
-file is wrong (or rfc8785's behaviour has drifted) — it is not a statement
-about the TS SDK, which this script never touches.
+are reported as skipped. A mismatch means the recorded value, the rfc8785
+package or the script disagree and must be investigated; agreement shows
+that two canonicalizers agree on these inputs.
 
 Exit code is 1 if any case mismatches or errors, 0 otherwise.
 """
