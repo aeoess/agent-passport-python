@@ -6,7 +6,7 @@
     "commit": "14a2157b2dfe3ddeb06c5f2e2c5c79100240141c"
   },
   "provenance_definitions": {
-    "draft-derived": "the expected state, outcome or rejection follows from the draft text (with RFC 3339 or RFC 7493 where cited); TypeScript output was not consulted to decide it.",
+    "draft-derived": "the expected state, outcome or rejection follows from the draft text, directly or by an analogy the case's derivation note states, with RFC 3339 or RFC 7493 where cited; TypeScript output was not consulted to decide it.",
     "ts-conformant-regression": "the expected bytes were computed by the TypeScript reference for a construction whose TypeScript implementation was found to follow the draft (delegation_id and signature, draft section 3.1), and are recomputed independently by the cross-check script."
   },
   "keys": [
@@ -10016,8 +10016,8 @@
       "title": "Unsupported scope profile with a trailing noncharacter (U+FFFF)",
       "expected_provenance": "draft-derived",
       "derivation": {
-        "lines": "L204 with RFC 7493 section 2.1",
-        "note": "The record is not I-JSON, so it cannot be valid whatever its profile; the SDK also reports the unknown profile."
+        "lines": "L204 with RFC 7493 section 2.1, L580-581",
+        "note": "The record is not I-JSON (L204, RFC 7493 section 2.1), which the first step of the section 3.3 order, closed schema and canonical values (L580-581), rejects before any profile is considered; the SDK also reports the unknown profile."
       },
       "chain": [
         {
@@ -10629,6 +10629,120 @@
           "UNSUPPORTED_PROFILE"
         ],
         "index": 1
+      }
+    },
+    {
+      "id": "AD-N-U09",
+      "kind": "chain",
+      "title": "Unsupported reversibility profile, otherwise valid content",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L590, L512-514",
+        "note": "The content is valid under v1, so the case is a single fault; withholding AD-N-U07 had left no vector with an unsupported reversibility profile."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v2",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:e01fdf08c1c76e66671364190bb17c9b3ec33da4345e586ae8432a04e8c872a5",
+          "signature": "81eca179545661718542892179a0a82e9aa61889088b6d7014b9c6581b92510dffb9f6ce128d5588621173d96ba876d2148dec496b4cc4fd99f1c581abaf3502"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:e01fdf08c1c76e66671364190bb17c9b3ec33da4345e586ae8432a04e8c872a5"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "unsupported",
+        "sdk_codes": [
+          "UNSUPPORTED_PROFILE"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "unsupported",
+        "codes": [
+          "UNSUPPORTED_PROFILE"
+        ],
+        "index": 0
       }
     },
     {
@@ -22690,7 +22804,7 @@
   "withheld": [
     {
       "topic": "Multi-fault chains",
-      "reason": "The draft does not say which failure decides when several steps fail. Only single-fault chains are included; AD-N-H01, AD-N-H02 and AD-N-H10 carry an unavoidable later fault and each case explains why the order does not matter for it."
+      "reason": "The draft does not say which failure decides when several steps fail. Only single-fault chains are included; AD-N-H01, AD-N-H02, AD-N-H10 and AD-N-S62 carry an unavoidable later fault and each case explains why the order does not matter for it. For AD-N-S62, the I-JSON failure belongs to the first step of the section 3.3 order (closed schema and canonical values), so it is decided before the unsupported profile it also carries."
     },
     {
       "topic": "A root whose time.not_before predates its issued_at",
@@ -22738,16 +22852,16 @@
     }
   ],
   "counts": {
-    "total": 162,
+    "total": 163,
     "by_kind": {
-      "chain": 123,
+      "chain": 124,
       "wire": 9,
       "issue_root": 1,
       "issue_child": 15,
       "budget": 14
     },
     "by_provenance": {
-      "draft-derived": 159,
+      "draft-derived": 160,
       "ts-conformant-regression": 3
     }
   }
