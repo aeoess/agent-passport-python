@@ -9,7 +9,7 @@
   },
   "expected_provenance_values": {
     "draft-derived": "The expected value follows directly from the requirement text: the failure-code table for every reject case, and the section 4.2 construction formula (external_action_ref = lowercase-hex(SHA-256(canonicalize(input_object)))), computed with strict RFC 8785 JCS and no domain-separation tag, for the digest on every accept case. It holds independent of whether the TypeScript reference implementation is marked conformant for this construction.",
-    "ts-conformant-regression": "The expected value is the digest produced by the TypeScript reference implementation (computeExternalActionRefV1) at the pinned commit, for every accept case. Three of these (EX-P01..EX-P03) are additionally pinned as byte matches against independent ecosystem implementations outside this project (see provenance_note on each); the rest are the TS reference's own output, recorded as a cross-implementation regression value and independently cross-checked against an rfc8785-based recomputation (see tests/cross_impl/crosscheck_external_action_ref_v1_vectors.py) rather than trusted outright."
+    "ts-conformant-regression": "This label covers the digest construction on valid inputs only: for every accept case, the expected value is the digest produced by the TypeScript reference implementation (computeExternalActionRefV1) at the pinned commit. Three of these (EX-P01..EX-P03) are additionally pinned as byte matches against independent ecosystem implementations outside this project (see provenance_note on each); the rest are the TS reference's own output, recorded as a cross-implementation regression value and independently cross-checked against an rfc8785-based recomputation (see tests/cross_impl/crosscheck_external_action_ref_v1_vectors.py) rather than trusted outright. Reject cases are never labeled ts-conformant-regression; their ts_behaviour records show where the TypeScript SDK at the pinned commit departs from the section 4.2 text."
   },
   "failure_codes": [
     {
@@ -19,7 +19,7 @@
     },
     {
       "code": "bad_timestamp",
-      "meaning": "timestamp not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid RFC 3339 date and time (month 01-12, day existing in the month, hour 00-23, minute 00-59, second 00-59)",
+      "meaning": "timestamp not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid RFC 3339 date and time (month 01-12, day existing in the month, hour 00-23, minute 00-59, second 00-59; second 60 is withheld)",
       "draft_lines": "866-871"
     },
     {
@@ -36,11 +36,11 @@
   ],
   "ts_behaviour_note": "ts_behaviour on a reject case records what the TypeScript reference implementation actually does on that input, observed by calling it directly at the pinned commit. It is not a conformance claim: this file does not assert the TypeScript SDK is verified against section 4.2, only reports its behaviour next to the spec's own answer. \"accepts\" means TS returned a digest where the spec requires a rejection; \"rejects\" means TS threw, and the accompanying message is the TypeScript SDK's own error text (SDK vocabulary, not protocol vocabulary).",
   "counts": {
-    "total": 21,
+    "total": 22,
     "accept": 9,
-    "reject": 12,
+    "reject": 13,
     "by_expected_provenance": {
-      "draft-derived": 12,
+      "draft-derived": 13,
       "ts-conformant-regression": 9
     }
   },
@@ -143,14 +143,14 @@
     {
       "id": "EX-P07",
       "input": {
-        "action_type": "quote\" backslash\\ ctrl",
+        "action_type": "quote\" backslash\\ ctrl\u0007",
         "agent_id": "did:example:😀",
         "scope": "commerce:write",
         "timestamp": "2026-04-08T12:00:00.000Z"
       },
       "expected": {
         "result": "accept",
-        "external_action_ref": "f10298980622adf5517a53e7c933d0ce1e6d384ee52366046218be44c730e136"
+        "external_action_ref": "4f5f213b658bb13257a08ac55c53b589c5cee329310df7f0579608a44ef8d480"
       },
       "expected_provenance": "ts-conformant-regression",
       "draft_lines": "852-857"
@@ -278,7 +278,7 @@
       "ts_behaviour": {
         "behaviour": "accepts",
         "external_action_ref": "51c52abf72bc70066a037bc00606571aa712cca75551ae8f605049f60f403bda",
-        "note": "differs from the draft text; TS not changed in this job"
+        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
       }
     },
     {
@@ -298,7 +298,7 @@
       "ts_behaviour": {
         "behaviour": "accepts",
         "external_action_ref": "426a3a10990f2ed4e391d405255846b0e58a8452bf36a80322d8614ee13bfbdf",
-        "note": "differs from the draft text; TS not changed in this job"
+        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
       }
     },
     {
@@ -318,7 +318,7 @@
       "ts_behaviour": {
         "behaviour": "accepts",
         "external_action_ref": "75b93ad591463b88a71fd6a746bc131c72f99af907440a095f7f6ae11d5d4955",
-        "note": "differs from the draft text; TS not changed in this job"
+        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
       }
     },
     {
@@ -338,7 +338,7 @@
       "ts_behaviour": {
         "behaviour": "accepts",
         "external_action_ref": "8d51ae00a74a3ed70b2eef60807110d05ed7bfad3901b91f81ba3365a648dfc0",
-        "note": "differs from the draft text; TS not changed in this job"
+        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
       }
     },
     {
@@ -360,7 +360,7 @@
       "ts_behaviour": {
         "behaviour": "accepts",
         "external_action_ref": "dfd898a4623d23961e70b9435abd67c45045940196856d55c43781bfa93b6f20",
-        "note": "differs from the draft text; TS not changed in this job"
+        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
       }
     },
     {
@@ -380,7 +380,7 @@
       "ts_behaviour": {
         "behaviour": "accepts",
         "external_action_ref": "01a704307c135da40603bdc61b2157a7e30a77f6982141cf5eb9ffc3dd812b21",
-        "note": "differs from the draft text; TS not changed in this job"
+        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
       }
     },
     {
@@ -419,6 +419,28 @@
       "ts_behaviour": {
         "behaviour": "rejects",
         "message": "canonicalizeJCS: string contains an unpaired UTF-16 high surrogate; a lone surrogate has no valid UTF-8 encoding and RFC 8785 requires rejection"
+      }
+    },
+    {
+      "id": "EX-N13",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": [
+          "2026-04-08T12:00:00.000Z"
+        ]
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "not_string"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "866-871",
+      "ts_behaviour": {
+        "behaviour": "accepts",
+        "external_action_ref": "b00f1c16cb2f2cefdcb62cce1d9f33d930bdf141778bf56fee2b058f17404631",
+        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
       }
     }
   ]

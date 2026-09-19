@@ -2,11 +2,10 @@
 // vector file (tests/cross_impl/action-ref-v2-vectors.json).
 //
 // Every case, its expected result (accept/reject), its failure code, and its
-// expected_provenance are FIXED by a written vector specification (job 2,
-// batch 1 , not shipped in this repo, kept by the orchestrator). This script
-// only fills in digests and the TypeScript SDK's own error messages by
-// calling the TS reference implementation directly; it does not decide any
-// expected result itself. If the TS reference disagrees with a fixed
+// expected_provenance are fixed by a written vector specification. This
+// script only fills in digests and the TypeScript SDK's own error messages
+// by calling the TS reference implementation directly; it does not decide
+// any expected result itself. If the TS reference disagrees with a fixed
 // expected result, the script exits nonzero and names the offending case
 // instead of silently recording whatever TS produced.
 //
@@ -41,7 +40,7 @@ function fail(message: string): never {
   process.exit(1)
 }
 
-// Re-verify the precondition the orchestrator already checked once: the TS
+// Re-verify the precondition already checked once: the TS
 // reference must be sitting exactly on the pinned commit with a clean tree.
 // This does not embed any path literal , both values are read from the
 // environment at run time.
@@ -95,6 +94,8 @@ const FAILURE_CODES = [
   { code: 'scope_not_canonical', meaning: 'scope array not NFC, not sorted by UTF-8 bytes, or not duplicate-free', draft_lines: '794-796, 814, 822-824' },
   { code: 'lone_surrogate', meaning: 'a string contains an unpaired UTF-16 surrogate', draft_lines: '819-821' },
   { code: 'non_i_json', meaning: 'a value that is not I-JSON (unsafe integer, non-finite number, invalid JSON text)', draft_lines: '814, 804-805' },
+  { code: 'empty_scope_required', meaning: 'scope_required is an empty array', draft_lines: '798-800', note: 'no case uses it: the draft leaves the default open, see withheld' },
+  { code: 'nesting_limit', meaning: 'a value nested too deeply for an implementation', draft_lines: 'none', note: 'an implementation limit, not a draft rule; no case uses it' },
 ] as const
 
 const FAILURE_DRAFT_LINES: Record<string, string> = Object.fromEntries(
@@ -118,20 +119,15 @@ const WITHHELD = [
 
 const EXPECTED_PROVENANCE_VALUES = {
   'draft-derived':
-    'The expected value follows directly from the requirement text: the failure-code table for every reject ' +
-    'case that carries no provenance_note, ' +
-    'case, the payload_ref formula (draft lines 804-805) computed independently with the rfc8785 Python ' +
-    'package for every payload_ref digest (the job 1 conformance matrix does not mark payload_ref conformant ' +
-    'for TS, because the aps-mcp-1 profile uses a different domain tag), and the NFC-normalize/sort/dedupe ' +
-    'rule (draft lines 794-796, 819-824) for the canonical scope_required form recorded on every create-entry ' +
-    'case. It holds independent of whether the TS reference implementation is marked conformant.',
+    "The expected result follows from the section 4.1 text alone: every reject case without a " +
+    "provenance_note, and every payload_ref digest (computed from the draft's formula with the rfc8785 " +
+    "package).",
   'ts-conformant-regression':
-    'The expected value is the result produced by the corrected TS reference implementation (a digest, or for ' +
-    'the two payload cases that carry a provenance_note a rejection under the SDK I-JSON integer boundary) ' +
-    '(computeActionRefV2 / computeActionRefV2FromJson / createActionReferenceInputV2). The job 1 conformance ' +
-    'matrix marks the section 4.1 action_ref construction conformant for TS, so this file pins that ' +
-    'implementation\'s own output as a cross-implementation regression value, independently cross-checked ' +
-    'against an rfc8785-based recomputation (see cross_checks) rather than trusted outright.',
+    "A result from the corrected TypeScript SDK at the pinned commit, for a construction whose TypeScript " +
+    "implementation was reviewed against the draft text and found to follow it: every action_ref digest " +
+    "(including the create cases, whose canonical_input separately follows the draft's NFC and UTF-8 " +
+    "ordering rule), and the reject cases that carry a provenance_note explaining why the draft text alone " +
+    "does not fix the result.",
 }
 
 const CROSS_CHECKS = {
@@ -142,8 +138,8 @@ const CROSS_CHECKS = {
     'payload_ref as sha256(b"APS-ACTION-PAYLOAD-V1\\x00" + rfc8785.dumps(payload)) and an accepted action_ref ' +
     'as sha256(b"APS-ACTION-REF-V2\\x00" + rfc8785.dumps(canonical_input)), both lowercase hex, compared byte ' +
     'for byte against the value recorded in this file. The script does not import agent_passport and does not ' +
-    'depend on the TS SDK, so a mismatch means the value recorded in this file is wrong, not that the TS SDK ' +
-    'is non-conformant.',
+    'depend on the TS SDK. A mismatch means the recorded value, the rfc8785 package or the script disagree ' +
+    'and must be investigated; agreement shows that two canonicalizers agree on these inputs.',
   command: 'python tests/cross_impl/crosscheck_action_ref_v2_vectors.py',
 }
 
@@ -197,14 +193,23 @@ interface PayloadCase {
 const INTEGER_BOUNDARY_NOTE =
   'Rejection rests on the I-JSON integer boundary both SDKs apply (an integer-valued number above 2**53-1 in magnitude is ' +
   'not accepted). RFC 7493 section 2.2 states that boundary as interoperability advice, so the expected result is the ' +
-  'SDK policy for a row the job 1 matrix marks conformant, not a value the draft text fixes on its own.'
+  'SDK policy for a construction whose TypeScript implementation was reviewed against the draft text and found to ' +
+  'follow it, not a value the draft text fixes on its own.'
 
 const payloadCases: PayloadCase[] = [
   { id: 'PR-P01', payload: { amount: '5000', currency: 'USD', merchant: 'example' }, expected: { result: 'accept' } },
   { id: 'PR-P02', payload: {}, expected: { result: 'accept' } },
   { id: 'PR-P03', payload: [], expected: { result: 'accept' } },
   { id: 'PR-P04', payload: { cart: ['sku-1'] }, expected: { result: 'accept' } },
-  { id: 'PR-P05', payload: { a: 1, b: 1.5, c: -0, d: 1.2345e-20, e: 1e-7, f: 0.1, g: -1.25e-10 }, expected: { result: 'accept' } },
+  {
+    id: 'PR-P05',
+    payload: { a: 1, b: 1.5, c: -0, d: 1.2345e-20, e: 1e-7, f: 0.1, g: -1.25e-10 },
+    expected: { result: 'accept' },
+    provenance_note:
+      'An earlier version of this case also contained the number 1e21, which is integer-valued above ' +
+      '2**53-1 and rejected by both SDKs; it is now the reject case PR-N03. The value -0 appears as 0 in ' +
+      'this file because JSON serializers write -0 as 0; RFC 8785 also serializes -0 as 0.',
+  },
   {
     id: 'PR-P06',
     payload: { '\u20ac': 1, '\r': 2, '\ufb33': 3, '1': 4, '\u{1F600}': 5, '\u0080': 6, '\u00f6': 7 },
@@ -449,7 +454,13 @@ interface JsonCase {
   raw: string
   expected: { result: 'accept' } | { result: 'reject'; failure?: string }
   equalsActionRefOf?: string
+  provenance?: Provenance
+  provenance_note?: string
 }
+
+const AJ_N05_PROVENANCE_NOTE =
+  'The draft text rejects this document but admits two failure classes here (a non-I-JSON value, or an ' +
+  'unknown member). The TypeScript SDK reports non_i_json, and this case pins that class.'
 
 const jsonCases: JsonCase[] = [
   { id: 'AJ-P01', raw: AJ_P01_RAW, expected: { result: 'accept' }, equalsActionRefOf: 'AR-P01' },
@@ -457,7 +468,13 @@ const jsonCases: JsonCase[] = [
   { id: 'AJ-N02', raw: AJ_N02_RAW, expected: { result: 'reject', failure: 'duplicate_member' } },
   { id: 'AJ-N03', raw: AJ_N03_RAW, expected: { result: 'reject', failure: 'lone_surrogate' } },
   { id: 'AJ-N04', raw: AJ_N04_RAW, expected: { result: 'reject', failure: 'non_i_json' } },
-  { id: 'AJ-N05', raw: AJ_N05_RAW, expected: { result: 'reject' } }, // failure class recorded from actual TS behavior
+  {
+    id: 'AJ-N05',
+    raw: AJ_N05_RAW,
+    expected: { result: 'reject' }, // failure class recorded from actual TS behavior
+    provenance: 'ts-conformant-regression',
+    provenance_note: AJ_N05_PROVENANCE_NOTE,
+  },
 ]
 
 for (const c of jsonCases) {
@@ -494,7 +511,7 @@ for (const c of jsonCases) {
     }
     expectedOut = { result: 'reject', failure, ts_error_message: message }
   }
-  const provenance: Provenance = c.expected.result === 'accept' ? 'ts-conformant-regression' : 'draft-derived'
+  const provenance: Provenance = c.provenance ?? (c.expected.result === 'accept' ? 'ts-conformant-regression' : 'draft-derived')
   const draft_lines = c.expected.result === 'accept' ? '807-808' : draftLinesForFailure(failure as string)
   record('json', provenance)
   cases.push({
@@ -504,6 +521,7 @@ for (const c of jsonCases) {
     expected: expectedOut,
     expected_provenance: provenance,
     draft_lines,
+    ...(c.provenance_note ? { provenance_note: c.provenance_note } : {}),
   })
 }
 
@@ -519,7 +537,7 @@ interface CreateCase {
 }
 
 const createCases: CreateCase[] = [
-  { id: 'AC-P01', scopeInput: ['repo:write', 'café:read'], expected: { result: 'accept' }, equalsActionRefOf: 'AR-P07' },
+  { id: 'AC-P01', scopeInput: ['repo:write', 'cafe\u0301:read'], expected: { result: 'accept' }, equalsActionRefOf: 'AR-P07' },
   { id: 'AC-P02', scopeInput: ['commerce:write', 'commerce:read'], expected: { result: 'accept' }, equalsActionRefOf: 'AR-P01' },
   { id: 'AC-P03', scopeInput: ['😀:y', '｡:x'], expected: { result: 'accept' }, equalsActionRefOf: 'AR-P08' },
   { id: 'AC-N01', scopeInput: ['caf\u00e9:read', 'cafe\u0301:read'], expected: { result: 'reject', failure: 'scope_not_canonical' } },
