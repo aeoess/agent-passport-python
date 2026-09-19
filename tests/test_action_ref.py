@@ -69,7 +69,7 @@ def test_subsecond_timestamps_truncate_to_same_ref():
     assert a == b
 
 
-# --- spec 4.1 duplicate-free scope_required -------------------------------
+# --- duplicate-free scope_required -----------------------------------------
 # A duplicated array has no canonical form, so it is rejected rather than
 # deduplicated: a silent dedupe would map ["a","a"] and ["a"] onto one
 # identity with no error, and would change the identity previously computed

@@ -107,6 +107,18 @@ from .v2.action_reference import (
     compute_action_ref_v2_from_json,
 )
 
+# External correlation key (draft-pidlisnyi-aps-03 section 4.2, label
+# action-ref-v1-jcs-sha256). Legacy cross-ecosystem correlation form,
+# DISTINCT from both compute_action_ref above (pre-draft-03 compatibility
+# digest) and compute_action_ref_v2 above (section 4.1 native action_ref).
+# See the module docstring for what a matching value is and is not evidence
+# of.
+from .external_action_ref import (
+    EXTERNAL_ACTION_REF_V1_LABEL,
+    ExternalActionRefError,
+    compute_external_action_ref_v1,
+)
+
 # Agora (Layer 4 — Communication)
 from .agora import (
     create_agora_message,
