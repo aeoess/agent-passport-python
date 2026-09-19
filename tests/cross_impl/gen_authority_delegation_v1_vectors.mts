@@ -759,6 +759,32 @@ pushChainCase({
 })
 rootOnlyInvalid('AD-N-S53', 'Empty half-open validity window', 'L535, L584', 'not_before equal to not_after makes the half-open window empty, so the record is never currently valid.', 'SCHEMA_INVALID', (b) => { b.authority.time = { not_before: '2026-07-18T22:00:00.000Z', not_after: '2026-07-18T22:00:00.000Z' } })
 
+rootOnlyInvalid('AD-N-S54', 'nonce with a trailing line feed', 'L462, L481', 'nonce must be exactly 32 lowercase hex characters, with nothing appended.', 'NONCANONICAL_VALUE', (b) => { b.nonce = b.nonce + '\n' })
+
+{
+  const body = clone(BODY_R)
+  const correctId = AD.computeAuthorityDelegationId(body)
+  const idWithLineFeed = correctId + '\n'
+  pushChainCase({
+    id: 'AD-N-S55', title: 'delegation_id with a trailing line feed', chain: [forceSignWithId(body, idWithLineFeed, 'principal')],
+    expectedState: 'invalid', expectedCode: 'SCHEMA_INVALID', expectedIndex: 0,
+    lines: 'L456, L484', note: 'delegation_id must be exactly sha256: followed by 64 lowercase hex characters; the signature is computed over the record as written, with the trailing line feed.',
+  })
+}
+
+{
+  const rec = forceSign(clone(BODY_R), 'principal')
+  pushChainCase({
+    id: 'AD-N-S56', title: 'signature with a trailing line feed', chain: [{ ...rec, signature: rec.signature + '\n' }],
+    expectedState: 'invalid', expectedCode: 'SCHEMA_INVALID', expectedIndex: 0,
+    lines: 'L477', note: 'signature must be exactly 128 lowercase hex characters, with nothing appended.',
+  })
+}
+
+rootOnlyInvalid('AD-N-S57', 'issued_at with a trailing line feed', 'L198-199, L480-481', 'issued_at must be exactly the canonical UTC-millisecond form, with nothing appended.', 'NONCANONICAL_VALUE', (b) => { b.issued_at = b.issued_at + '\n' })
+rootOnlyInvalid('AD-N-S58', 'time.not_before with a trailing line feed', 'L480-481', 'time bounds must be exactly the canonical UTC-millisecond form, with nothing appended.', 'NONCANONICAL_VALUE', (b) => { b.authority.time.not_before = b.authority.time.not_before + '\n' })
+rootOnlyInvalid('AD-N-S59', 'spend per_action with a trailing line feed', 'L524-525', 'A canonical unsigned decimal integer has nothing appended to it.', 'NONCANONICAL_VALUE', (b) => { b.authority.spend.per_action = b.authority.spend.per_action + '\n' })
+
 // -------------------------------------------------------------------------
 // Chain cases, negative: unsupported facet profiles (spec section 6)
 // -------------------------------------------------------------------------
@@ -1511,6 +1537,13 @@ runBudgetCase('AD-B13', 'Operations on an unknown action_ref', { main: [R, C1, C
   { op: 'commit', action_ref: ACTION_REF_D, expectedOk: false, expectedCode: 'NOT_FOUND', countersAfter: {} },
   { op: 'cancel', action_ref: ACTION_REF_D, expectedOk: false, expectedCode: 'NOT_FOUND', countersAfter: {} },
 ], 'section 3.4', 'There was never a reservation under this actionRef.')
+
+runBudgetCase('AD-B14', 'action_ref with a trailing line feed is rejected, the clean one is not', { main: [R, C1, C2] }, [
+  { op: 'reserve', chain: 'main', action_ref: ACTION_REF_A + '\n', unit: USD, amount: '1', expectedOk: false, expectedCode: 'CONFLICT',
+    countersAfter: { R: { reserved: '0', committed: '0' }, C1: { reserved: '0', committed: '0' }, C2: { reserved: '0', committed: '0' } } },
+  { op: 'reserve', chain: 'main', action_ref: ACTION_REF_A, unit: USD, amount: '1', expectedOk: true, expectedCode: 'RESERVED', expectedState: 'reserved',
+    countersAfter: { R: { reserved: '1', committed: '0' }, C1: { reserved: '1', committed: '0' }, C2: { reserved: '1', committed: '0' } } },
+], 'L807-808', 'action_ref must be exactly 64 lowercase hex characters, with nothing appended; the two actionRefs are distinct reservation keys, so the second reserve is unaffected by the first.')
 
 // -------------------------------------------------------------------------
 // Assemble and write (spec section 1)

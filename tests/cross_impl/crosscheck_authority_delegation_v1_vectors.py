@@ -22,14 +22,14 @@ seed (SHA-256 of the ASCII string "aps-authority-delegation-v1-vectors:"
 plus the label) and public key (PyNaCl SigningKey(seed).verify_key).
 
 A handful of records are deliberately corrupted by the case that builds them
-(AD-N-C01 to AD-N-C04, AD-N-S08, AD-N-S09, AD-I08): for those, a mismatch on
-the specific corrupted aspect (delegation_id or signature) is the correct,
-expected outcome and is reported as such, not as an error. AD-N-S22
-(signature hex uppercased) is included in the same list in the vector
-specification but needs no inversion here: hex-decoding is case-insensitive,
-so its signature verifies as bytes regardless of letter case, and the
-uppercase-only fault it demonstrates is a schema-format rule this script
-does not model.
+(AD-N-C01 to AD-N-C04, AD-N-S08, AD-N-S09, AD-N-S55, AD-I08): for those, a
+mismatch on the specific corrupted aspect (delegation_id or signature) is
+the correct, expected outcome and is reported as such, not as an error.
+AD-N-S22 (signature hex uppercased) is included in the same list in the
+vector specification but needs no inversion here: hex-decoding is
+case-insensitive, so its signature verifies as bytes regardless of letter
+case, and the uppercase-only fault it demonstrates is a schema-format rule
+this script does not model.
 
 Exit code is 1 if any record other than a deliberately corrupted aspect
 fails to recompute or verify, or if any `keys` entry fails to re-derive;
@@ -66,6 +66,7 @@ _SPECIAL: dict[tuple[str, str, int | None], tuple[bool, bool]] = {
     ("AD-N-S08", "chain", 0): (False, True),
     ("AD-N-S09", "chain", 0): (False, True),
     ("AD-N-S22", "chain", 0): (True, True),
+    ("AD-N-S55", "chain", 0): (False, True),
     ("AD-I08", "parent", None): (True, False),
 }
 
