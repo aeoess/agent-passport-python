@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6",
   "generated_from": {
     "repository": "agent-passport-system",
-    "commit": "9ba9acbb4eafc567644b0a4cc681d043cd60985d"
+    "commit": "02472e0aff190a6a83b15653a0cb6bc8a4cdd932"
   },
   "provenance_definitions": {
     "draft-derived": "the expected state, outcome or rejection follows from the draft text, directly or by an analogy the case's derivation note states, with RFC 3339 or RFC 7493 where cited; TypeScript output was not consulted to decide it.",
@@ -51,7 +51,7 @@
     "trust": "context.trust of {\"mode\":\"table\",\"trusted_root_ids\":[...]} accepts the chain head exactly when its delegation_id is listed; {\"mode\":\"unavailable\"} means the trust policy raises.",
     "revocation": "context.revocation of {\"default\":..., \"by_index\":{\"<i>\":...}} means the revocation resolver returns the value for the chain member at index i when by_index names it, else the default; \"unavailable\" means the resolver raises.",
     "default_context": "Unless a case overrides an item: now is 2026-07-18T23:00:00.000Z; keys carries all five labels; trust is {\"mode\":\"table\",\"trusted_root_ids\":[<the chain's first record's delegation_id as written, even when a case corrupts it>]}; revocation default is \"active\".",
-    "issue_child_now": "Every issue_child case carries context.now, default 2026-07-18T23:00:00.000Z. The Python issuer takes an explicit now and requires the parent to be valid at it (draft section 3.6, L696-701); the TypeScript issuer takes no now, so context.now is descriptive only against the TypeScript reference."
+    "issue_child_now": "Every issue_child case carries context.now, default 2026-07-18T23:00:00.000Z. The Python issuer takes an explicit now and requires the parent to be valid at it (draft section 3.6, L696-701); so does the TypeScript issuer, which the generator calls with the case's now, key resolver and parent revocation status."
   },
   "cases": [
     {
@@ -17806,7 +17806,7 @@
       },
       "ts_behaviour": {
         "result": "refuse",
-        "error": "authority delegation does not narrow: SCOPE_WIDENING"
+        "error": "authority delegation does not narrow (SCOPE_WIDENING)"
       }
     },
     {
@@ -17953,7 +17953,7 @@
       },
       "ts_behaviour": {
         "result": "refuse",
-        "error": "authority delegation issued_at is outside parent validity"
+        "error": "authority delegation issued_at is outside parent validity (ISSUED_AT_OUTSIDE_PARENT)"
       }
     },
     {
@@ -18100,7 +18100,7 @@
       },
       "ts_behaviour": {
         "result": "refuse",
-        "error": "authority delegation issued_at is outside parent validity"
+        "error": "authority delegation issued_at is outside parent validity (ISSUED_AT_OUTSIDE_PARENT)"
       }
     },
     {
@@ -18110,7 +18110,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L698-699",
-        "note": "issueSubAuthorityDelegation takes no revocation input, so TypeScript cannot refuse on this ground; its actual behaviour is recorded without changing the draft-derived expectation."
+        "note": "The issuer MUST refuse to issue under a revoked parent; both SDKs resolve the parent revocation status before signing."
       },
       "parent": {
         "record_type": "aps:authority-delegation:v1",
@@ -18246,8 +18246,8 @@
         "result": "refuse"
       },
       "ts_behaviour": {
-        "result": "issue",
-        "delegation_id": "sha256:59c7179591b4d82fe7a63c097b3f79719494cdd7a9e39cd0036e36ed1c88e76d"
+        "result": "refuse",
+        "error": "authority delegation parent is revoked (REVOKED)"
       }
     },
     {
@@ -18257,7 +18257,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L696-698",
-        "note": "The issuer MUST verify the parent signature; issueSubAuthorityDelegation does not, so TypeScript actually issues. The draft-derived expectation is left as refuse."
+        "note": "The issuer MUST verify the parent signature before signing the child; a corrupted parent signature refuses."
       },
       "parent": {
         "record_type": "aps:authority-delegation:v1",
@@ -18393,8 +18393,8 @@
         "result": "refuse"
       },
       "ts_behaviour": {
-        "result": "issue",
-        "delegation_id": "sha256:59c7179591b4d82fe7a63c097b3f79719494cdd7a9e39cd0036e36ed1c88e76d"
+        "result": "refuse",
+        "error": "authority delegation parent Ed25519 signature is invalid (SIGNATURE_INVALID)"
       }
     },
     {
@@ -18404,7 +18404,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L589-592",
-        "note": "An unknown revocation result MUST NOT be collapsed into valid; issueSubAuthorityDelegation takes no revocation input, so TypeScript actually issues."
+        "note": "An unknown revocation result MUST NOT be collapsed into valid, so the issuer refuses rather than treating the parent as active."
       },
       "parent": {
         "record_type": "aps:authority-delegation:v1",
@@ -18540,8 +18540,8 @@
         "result": "refuse"
       },
       "ts_behaviour": {
-        "result": "issue",
-        "delegation_id": "sha256:59c7179591b4d82fe7a63c097b3f79719494cdd7a9e39cd0036e36ed1c88e76d"
+        "result": "refuse",
+        "error": "authority delegation parent revocation status is unknown (REVOCATION_UNKNOWN)"
       }
     },
     {
@@ -18551,7 +18551,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L696-698",
-        "note": "The issuer MUST verify the parent's signature, which requires resolving its key; issueSubAuthorityDelegation takes no key resolver, so TypeScript actually issues."
+        "note": "The issuer MUST verify the parent's signature, which requires resolving its key; a key that cannot be resolved refuses."
       },
       "parent": {
         "record_type": "aps:authority-delegation:v1",
@@ -18682,8 +18682,8 @@
         "result": "refuse"
       },
       "ts_behaviour": {
-        "result": "issue",
-        "delegation_id": "sha256:59c7179591b4d82fe7a63c097b3f79719494cdd7a9e39cd0036e36ed1c88e76d"
+        "result": "refuse",
+        "error": "authority delegation parent issuer verification key could not be resolved (KEY_RESOLUTION_FAILED)"
       }
     },
     {
@@ -18830,7 +18830,7 @@
       },
       "ts_behaviour": {
         "result": "refuse",
-        "error": "authority delegation does not narrow: DEPTH_EXHAUSTED"
+        "error": "authority delegation does not narrow (DEPTH_EXHAUSTED)"
       }
     },
     {
@@ -18977,7 +18977,7 @@
       },
       "ts_behaviour": {
         "result": "refuse",
-        "error": "authority delegation parent mismatch"
+        "error": "authority delegation parent mismatch (PARENT_MISMATCH)"
       }
     },
     {
@@ -19124,7 +19124,7 @@
       },
       "ts_behaviour": {
         "result": "refuse",
-        "error": "authority delegation chain continuity failure"
+        "error": "authority delegation chain continuity failure (CHAIN_CONTINUITY)"
       }
     },
     {
@@ -19281,7 +19281,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L697-701",
-        "note": "now is R's not_after, so the parent has expired at issuance while the child's own issued_at is still inside its window; TypeScript's issuer takes no now, so TypeScript actually issues."
+        "note": "now is R's not_after, so the parent has expired at issuance while the child's own issued_at is still inside its window; the issuer refuses."
       },
       "parent": {
         "record_type": "aps:authority-delegation:v1",
@@ -19417,8 +19417,8 @@
         "result": "refuse"
       },
       "ts_behaviour": {
-        "result": "issue",
-        "delegation_id": "sha256:59c7179591b4d82fe7a63c097b3f79719494cdd7a9e39cd0036e36ed1c88e76d"
+        "result": "refuse",
+        "error": "authority delegation parent has expired at now (EXPIRED)"
       }
     },
     {
@@ -19428,7 +19428,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L696-699",
-        "note": "now is before R's not_before, so the parent is not yet valid at issuance; TypeScript's issuer takes no now, so TypeScript actually issues."
+        "note": "now is before R's not_before, so the parent is not yet valid at issuance; the issuer refuses."
       },
       "parent": {
         "record_type": "aps:authority-delegation:v1",
@@ -19564,8 +19564,8 @@
         "result": "refuse"
       },
       "ts_behaviour": {
-        "result": "issue",
-        "delegation_id": "sha256:59c7179591b4d82fe7a63c097b3f79719494cdd7a9e39cd0036e36ed1c88e76d"
+        "result": "refuse",
+        "error": "authority delegation parent is not yet valid at now (NOT_YET_VALID)"
       }
     },
     {

@@ -13,11 +13,7 @@
 // disagrees with a fixed expectation, the script prints
 // "STOP: <case id>: expected ... got ..." and exits 1 without writing the
 // output file, instead of silently recording whatever TS produced or
-// changing the expectation to match TypeScript. The STOP rule has
-// exceptions: AD-I07 to AD-I10 and AD-I15 to AD-I16 carry inputs the
-// TypeScript issuer cannot take (no revocation input, no key resolver, no
-// now); for those, TypeScript's actual behaviour is recorded without
-// stopping and the fixed expectation is left unchanged.
+// changing the expectation to match TypeScript.
 //
 // The TS repository is located purely through the APS_TS_REPO environment
 // variable (a file:// URL is built from it) and the pinned commit purely
@@ -67,7 +63,16 @@ const keysUrl = new URL('src/crypto/keys.ts', `file://${tsRepo}/`).href
 
 const AD = (await import(adUrl)) as {
   issueAuthorityDelegation: (body: any, key: string) => any
-  issueSubAuthorityDelegation: (parent: any, body: any, key: string) => any
+  issueSubAuthorityDelegation: (
+    parent: any,
+    body: any,
+    key: string,
+    options: {
+      now: string
+      resolveVerificationKey: (issuer: string, verificationMethod: string, issuedAt: string) => string | null
+      resolveRevocation: (delegation: any) => string
+    },
+  ) => any
   verifyAuthorityDelegationChain: (chain: readonly unknown[], options: any) => any
   parseAuthorityDelegationJson: (source: string) => any
   computeAuthorityDelegationId: (body: any) => string
@@ -1274,25 +1279,35 @@ const ISSUE_CHILD_DEFAULT_NOW = '2026-07-18T23:00:00.000Z'
 function pushIssueChildCase(
   id: string, title: string, parent: any, body: any, signingKey: Label, context: IssueChildContext,
   expectIssue: boolean, provenance: 'draft-derived' | 'ts-conformant-regression', lines: string, note: string,
-  opts?: { stopOnMismatch?: boolean },
 ): any {
-  const stopOnMismatch = opts?.stopOnMismatch ?? true
+  const contextOut = {
+    keys: context.keys === 'default' ? ALL_KEY_ENTRIES : keysWithout('principal'),
+    revocation: { parent: context.revocation_parent },
+    now: context.now ?? ISSUE_CHILD_DEFAULT_NOW,
+  }
+  const resolveVerificationKey = (issuer: string, verificationMethod: string): string | null => {
+    const hit = contextOut.keys.find((k) => k.issuer === issuer && k.verification_method === verificationMethod)
+    return hit ? hit.public_key_hex : null
+  }
+  const resolveRevocation = (_delegation: any): RevocationValue => {
+    if (contextOut.revocation.parent === 'unavailable') {
+      throw new Error('revocation resolver unavailable')
+    }
+    return contextOut.revocation.parent
+  }
+  const options = { now: contextOut.now, resolveVerificationKey, resolveRevocation }
+
   let outcome: { result: 'issue' | 'refuse'; delegation?: any; error?: string }
   let delegation: any = null
   try {
-    delegation = AD.issueSubAuthorityDelegation(parent, body, seedHex(signingKey))
+    delegation = AD.issueSubAuthorityDelegation(parent, body, seedHex(signingKey), options)
     outcome = { result: 'issue', delegation }
   } catch (e) {
     outcome = { result: 'refuse', error: (e as Error).message }
   }
   const expectedResult = expectIssue ? 'issue' : 'refuse'
-  if (stopOnMismatch && outcome.result !== expectedResult) {
+  if (outcome.result !== expectedResult) {
     fail(`${id}: expected ${expectedResult}, TS returned ${outcome.result} (${outcome.error ?? ''})`)
-  }
-  const contextOut = {
-    keys: context.keys === 'default' ? ALL_KEY_ENTRIES : keysWithout('principal'),
-    revocation: { parent: context.revocation_parent },
-    now: context.now ?? ISSUE_CHILD_DEFAULT_NOW,
   }
   record('issue_child', provenance)
   cases.push({
@@ -1340,23 +1355,19 @@ pushIssueChildCase('AD-I06', 'issue_child: parent R, body C1 issued before the p
 
 pushIssueChildCase('AD-I07', 'issue_child: parent R revoked', R, clone(BODY_C1), 'agent-a',
   { keys: 'default', revocation_parent: 'revoked' }, false, 'draft-derived',
-  'L698-699', 'issueSubAuthorityDelegation takes no revocation input, so TypeScript cannot refuse on this ground; its actual behaviour is recorded without changing the draft-derived expectation.',
-  { stopOnMismatch: false })
+  'L698-699', 'The issuer MUST refuse to issue under a revoked parent; both SDKs resolve the parent revocation status before signing.')
 
 pushIssueChildCase('AD-I08', "issue_child: parent R with its signature corrupted", { ...R, signature: flipLastHexChar(R.signature) }, clone(BODY_C1), 'agent-a',
   { keys: 'default', revocation_parent: 'active' }, false, 'draft-derived',
-  'L696-698', 'The issuer MUST verify the parent signature; issueSubAuthorityDelegation does not, so TypeScript actually issues. The draft-derived expectation is left as refuse.',
-  { stopOnMismatch: false })
+  'L696-698', 'The issuer MUST verify the parent signature before signing the child; a corrupted parent signature refuses.')
 
 pushIssueChildCase('AD-I09', 'issue_child: parent R, revocation unknown', R, clone(BODY_C1), 'agent-a',
   { keys: 'default', revocation_parent: 'unknown' }, false, 'draft-derived',
-  'L589-592', 'An unknown revocation result MUST NOT be collapsed into valid; issueSubAuthorityDelegation takes no revocation input, so TypeScript actually issues.',
-  { stopOnMismatch: false })
+  'L589-592', 'An unknown revocation result MUST NOT be collapsed into valid, so the issuer refuses rather than treating the parent as active.')
 
 pushIssueChildCase('AD-I10', 'issue_child: parent R, key resolver missing the principal entry', R, clone(BODY_C1), 'agent-a',
   { keys: 'without_principal', revocation_parent: 'active' }, false, 'draft-derived',
-  'L696-698', "The issuer MUST verify the parent's signature, which requires resolving its key; issueSubAuthorityDelegation takes no key resolver, so TypeScript actually issues.",
-  { stopOnMismatch: false })
+  'L696-698', "The issuer MUST verify the parent's signature, which requires resolving its key; a key that cannot be resolved refuses.")
 
 {
   const parentDepth0 = issue(mutate(BODY_R, (b) => { b.authority.depth = { remaining: 0 } }), 'principal')
@@ -1383,13 +1394,11 @@ pushIssueChildCase('AD-I14', 'issue_child: body nonce uppercased', R,
 
 pushIssueChildCase('AD-I15', "issue_child: parent R, body C1 unchanged, now at the parent's expiry", R, clone(BODY_C1), 'agent-a',
   { keys: 'default', revocation_parent: 'active', now: '2026-07-19T22:00:00.000Z' }, false, 'draft-derived',
-  'L697-701', "now is R's not_after, so the parent has expired at issuance while the child's own issued_at is still inside its window; TypeScript's issuer takes no now, so TypeScript actually issues.",
-  { stopOnMismatch: false })
+  'L697-701', "now is R's not_after, so the parent has expired at issuance while the child's own issued_at is still inside its window; the issuer refuses.")
 
 pushIssueChildCase('AD-I16', 'issue_child: parent R, body C1 unchanged, now before the parent starts', R, clone(BODY_C1), 'agent-a',
   { keys: 'default', revocation_parent: 'active', now: '2026-07-18T21:00:00.000Z' }, false, 'draft-derived',
-  'L696-699', "now is before R's not_before, so the parent is not yet valid at issuance; TypeScript's issuer takes no now, so TypeScript actually issues.",
-  { stopOnMismatch: false })
+  'L696-699', "now is before R's not_before, so the parent is not yet valid at issuance; the issuer refuses.")
 
 // -------------------------------------------------------------------------
 // Budget cases: InMemoryAuthorityBudgetLedger reserve/dispatch/commit/cancel
@@ -1676,8 +1685,8 @@ const conventions = {
     'case corrupts it>]}; revocation default is "active".',
   issue_child_now:
     'Every issue_child case carries context.now, default 2026-07-18T23:00:00.000Z. The Python issuer takes an ' +
-    'explicit now and requires the parent to be valid at it (draft section 3.6, L696-701); the TypeScript issuer ' +
-    'takes no now, so context.now is descriptive only against the TypeScript reference.',
+    'explicit now and requires the parent to be valid at it (draft section 3.6, L696-701); so does the TypeScript ' +
+    'issuer, which the generator calls with the case\'s now, key resolver and parent revocation status.',
 }
 
 const withheld = [
