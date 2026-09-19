@@ -119,6 +119,34 @@ from .external_action_ref import (
     compute_external_action_ref_v1,
 )
 
+# AuthorityDelegationV1, the draft-pidlisnyi-aps-03 delegated authority record
+# (sections 3.1 to 3.4 and 3.6). DISTINCT from the legacy delegation functions
+# above (create_delegation, sub_delegate, verify_delegation), which are a
+# pre-draft compatibility surface and are not the draft-03 record.
+from .v2.authority_delegation import (
+    AUTHORITY_DELEGATION_RECORD_TYPE,
+    AUTHORITY_DELEGATION_VERSION,
+    SCOPE_PROFILE_V1,
+    REPUTATION_PROFILE_V1,
+    VALUES_PROFILE_V1,
+    REVERSIBILITY_PROFILE_V1,
+    AuthorityDelegationError,
+    AuthorityFailure,
+    AuthorityValidationResult,
+    BudgetOperationResult,
+    InMemoryAuthorityBudgetLedger,
+    authority_delegation_body,
+    compute_authority_delegation_id,
+    validate_authority_delegation_shape,
+    compare_authority,
+    issue_authority_delegation,
+    issue_sub_authority_delegation,
+    parse_authority_delegation_json,
+    verify_authority_delegation,
+    verify_authority_delegation_chain,
+    verify_authority_delegation_signature,
+)
+
 # Agora (Layer 4 — Communication)
 from .agora import (
     create_agora_message,

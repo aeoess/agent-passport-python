@@ -72,6 +72,7 @@ assert verify_merkle_proof(hashes[0], proof, root)
 | `canonical` | base | Deterministic JSON serialization (cross-language compatible) |
 | `passport` | 1 | Agent identity creation, signing, verification, expiry |
 | `delegation` | 1 | Scoped delegation chains, sub-delegation, revocation |
+| `v2.authority_delegation` | 1 | AuthorityDelegationV1, the draft-03 delegated authority record: closed schema, seven-facet narrowing, chain verification with an explicit `now` and caller-supplied key, trust and revocation resolvers, and an in-memory spend ledger |
 | `values` | 2 | Human Values Floor: load YAML/JSON, attestation, compliance, graduated enforcement |
 | `attribution` | 3 | Merkle proofs, beneficiary tracing, contribution tracking |
 | `agora` | 4 | Signed message feeds, topics, threading, agent registry |
