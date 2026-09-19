@@ -243,9 +243,32 @@ def _failure(code: str, message: str) -> AuthorityFailure:
 
 def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
     """Closed-schema and canonical-value validation for an in-memory decoded record."""
-    failures: list[AuthorityFailure] = []
     top = _record(value)
-    if top is None or not _exact_keys(top, (
+    if top is None:
+        return [_failure("SCHEMA_INVALID", "delegation must be an exact closed v1 object")]
+
+    # A record whose record_type names the v1 type and whose version is some
+    # other string is unsupported outright: it is not judged by the v1 body
+    # schema at all, so neither the exact-keys check below nor any facet or
+    # value check runs for it. The record-wide I-JSON check still runs first,
+    # because I-JSON belongs to canonical serialization, not to this body
+    # schema: if the record fails it, the failures are SCHEMA_INVALID followed
+    # by UNSUPPORTED_VERSION, and otherwise UNSUPPORTED_VERSION alone.
+    record_type_value = top.get("record_type")
+    version_value = top.get("version")
+    if record_type_value == AUTHORITY_DELEGATION_RECORD_TYPE and type(version_value) is str and (
+        version_value != AUTHORITY_DELEGATION_VERSION
+    ):
+        unsupported: list[AuthorityFailure] = []
+        if _has_non_i_json_value(top):
+            unsupported.append(_failure(
+                "SCHEMA_INVALID", "record must be I-JSON: no unpaired surrogates, noncharacters, or non-JSON values",
+            ))
+        unsupported.append(_failure("UNSUPPORTED_VERSION", "unsupported authority-delegation record_type or version"))
+        return unsupported
+
+    failures: list[AuthorityFailure] = []
+    if not _exact_keys(top, (
         "record_type", "version", "delegation_id", "parent_delegation_id", "issuer",
         "subject", "verification_method", "issued_at", "nonce", "authority", "signature",
     )):
@@ -256,13 +279,15 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
             "SCHEMA_INVALID", "record must be I-JSON: no unpaired surrogates, noncharacters, or non-JSON values",
         ))
 
-    # Provisional: a record_type or version that is not a string at all (an
-    # int, a list, and so on) is reported the same way as a string that names
-    # some other version, namely UNSUPPORTED_VERSION rather than SCHEMA_INVALID.
-    # The draft does not say which of the two a wrongly typed field should be;
-    # this is kept identical to the TypeScript SDK, which also compares the
-    # raw value against the expected string without checking its type first.
-    if top["record_type"] != AUTHORITY_DELEGATION_RECORD_TYPE or top["version"] != AUTHORITY_DELEGATION_VERSION:
+    # A record_type or version that is not a string at all (an int, a list,
+    # and so on) is malformed input, reported the same way regardless of
+    # which of the two fields is wrongly typed. Otherwise, a record_type
+    # other than the v1 type, or a version other than "1.0", is unsupported;
+    # an unrecognised record_type string is still judged by the checks below,
+    # exactly like a recognised one.
+    if type(top["record_type"]) is not str or type(top["version"]) is not str:
+        failures.append(_failure("SCHEMA_INVALID", "record_type and version must be strings"))
+    elif top["record_type"] != AUTHORITY_DELEGATION_RECORD_TYPE or top["version"] != AUTHORITY_DELEGATION_VERSION:
         failures.append(_failure("UNSUPPORTED_VERSION", "unsupported authority-delegation record_type or version"))
     if type(top["delegation_id"]) is not str or not _ID.fullmatch(top["delegation_id"]):
         failures.append(_failure("SCHEMA_INVALID", "delegation_id must be sha256:<64 lowercase hex>"))

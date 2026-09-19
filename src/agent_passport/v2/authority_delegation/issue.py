@@ -2,9 +2,10 @@
 """Issuance of a root delegation and of a child under an immediate parent.
 
 Python port of the TypeScript SDK's src/v2/authority-delegation/issue.ts, with
-three deliberate differences from it: nonce generation (see _with_nonce
-below), a bare-body check (see _assert_bare_body below), and a stricter
-issue_sub_authority_delegation (see its docstring).
+two deliberate differences from it: nonce generation (see _with_nonce
+below) and a bare-body check (see _assert_bare_body below). Both SDKs'
+child issuers verify the parent before signing (see
+issue_sub_authority_delegation).
 
 Deliberate addition over the TypeScript SDK: _assert_bare_body below rejects
 a body that is not an object, or that already carries "delegation_id" or
@@ -103,15 +104,12 @@ def issue_sub_authority_delegation(
 ) -> dict:
     """Issue a child after verifying the parent and the immediate-parent attenuation checks.
 
-    Deliberate difference from the TypeScript SDK: draft section 3.6 says an
-    issuer minting a child MUST verify the parent delegation's signature and
-    temporal validity before signing the child, and MUST refuse to issue
-    under an expired, not-yet-valid or revoked parent. The TypeScript SDK's
-    issueSubAuthorityDelegation checks neither the parent's signature, nor
-    its revocation, nor its temporal validity against a clock (only the
-    shape, id-derived continuity fields and attenuation below, which this
-    function also checks); this Python port adds the parent signature,
-    revocation and `now` checks the draft requires.
+    Draft section 3.6 says an issuer minting a child MUST verify the parent
+    delegation's signature and temporal validity before signing the child,
+    and MUST refuse to issue under an expired, not-yet-valid or revoked
+    parent. This function does so, in the same order as the TypeScript SDK's
+    issueSubAuthorityDelegation, which takes the same now, key resolver and
+    revocation resolver.
 
     Two different timestamps are checked against the parent's validity
     window, for two different things. `now` is when the issuer is acting: it
