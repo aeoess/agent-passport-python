@@ -6,6 +6,13 @@ one deliberate difference from it: nonce generation (see _with_nonce below).
 Both SDKs' child issuers verify the parent before signing (see
 issue_sub_authority_delegation).
 
+issue_authority_delegation issues roots only (draft section 3.1 line 428:
+parent_delegation_id is null only for a root selected by verifier trust
+policy). A child is minted only through issue_sub_authority_delegation,
+which performs the section 3.6 (lines 695-704) parent checks before signing
+it; issue_authority_delegation refuses a body whose parent_delegation_id is
+not null with PARENT_MISMATCH.
+
 _assert_bare_body below rejects a body that is not a dict, before either
 issuing function does anything else with it; that check is a property of
 this Python implementation, not a claim about what the TypeScript SDK does
@@ -86,15 +93,45 @@ def _assert_body(body: dict) -> None:
         raise AuthorityDelegationError(failures[0].code, tuple(failures))
 
 
-def issue_authority_delegation(body: dict, private_key: str) -> dict:
-    """Create a deterministic v1 record from explicit body fields and an Ed25519 key."""
-    _assert_bare_body(body)
-    body = _with_nonce(body)
-    _assert_body(body)
+def _finish_issuance(body: dict, private_key: str) -> dict:
+    """Compute the delegation_id and sign, for a body both issuers have already checked.
+
+    Module-private helper shared by issue_authority_delegation and
+    issue_sub_authority_delegation, so the id computation and signing happen
+    in exactly one place. Neither issuer's own checks live here; each calls
+    this only after it has completed them.
+    """
     delegation_id = compute_authority_delegation_id_for_write(body)
     unsigned = {**body, "delegation_id": delegation_id}
     signature = sign_authority_delegation(unsigned, private_key)
     return {**unsigned, "signature": signature}
+
+
+def issue_authority_delegation(body: dict, private_key: str) -> dict:
+    """Create a deterministic v1 root record from explicit body fields and an Ed25519 key.
+
+    Issues roots only. After the bare-body check and the body-shape check,
+    and before computing anything, this refuses a body whose
+    parent_delegation_id is not null with PARENT_MISMATCH: draft section 3.1
+    line 428 says parent_delegation_id is null only for a root selected by
+    verifier trust policy. A body with a malformed parent_delegation_id
+    still fails the shape check first, with its existing SCHEMA_INVALID
+    code. A child is minted only through issue_sub_authority_delegation,
+    which performs the section 3.6 (lines 695-704) parent checks before
+    signing it.
+    """
+    _assert_bare_body(body)
+    body = _with_nonce(body)
+    _assert_body(body)
+    if body["parent_delegation_id"] is not None:
+        raise AuthorityDelegationError(
+            "PARENT_MISMATCH",
+            (AuthorityFailure(
+                code="PARENT_MISMATCH",
+                message="root delegation body must have a null parent_delegation_id",
+            ),),
+        )
+    return _finish_issuance(body, private_key)
 
 
 def issue_sub_authority_delegation(
@@ -232,4 +269,4 @@ def issue_sub_authority_delegation(
     if attenuation_failures:
         raise AuthorityDelegationError(attenuation_failures[0].code, tuple(attenuation_failures))
 
-    return issue_authority_delegation(body, private_key)
+    return _finish_issuance(body, private_key)
