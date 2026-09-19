@@ -370,7 +370,7 @@ def test_2000_02_29_is_accepted_leap_year_divisible_by_400():
     validate_action_reference_input_v2(doc)  # does not raise
 
 
-# Create-path input shape (orchestrator review, job 2 batch 2)
+# Create-path input shape
 
 
 def _create_kwargs() -> dict:
@@ -394,3 +394,49 @@ def test_create_rejects_a_lone_surrogate_scope_with_the_module_error():
 def test_create_accepts_a_tuple_of_scopes():
     value = create_action_reference_input_v2(scope_required=("repo:write", "commerce:read"), **_create_kwargs())
     assert value["scope_required"] == ["commerce:read", "repo:write"]
+
+
+# -- Exact-message classification, nesting limit, empty scope elements ------
+
+
+def test_payload_key_named_surrogate_is_not_misclassified():
+    # The underlying jcs message embeds the offending member's own path, so
+    # a payload key literally named "surrogate" produces a message that
+    # contains the substring "surrogate" even though the failure is a
+    # non-finite number, not an unpaired UTF-16 surrogate. Classification
+    # must key off the exact message suffix, not that substring.
+    with pytest.raises(ActionReferenceError) as exc_info:
+        compute_payload_ref_v1({"surrogate": float("inf")})
+    assert exc_info.value.code == "non_i_json"
+
+
+def test_json_path_extra_member_named_duplicate_object_member_is_not_misclassified():
+    # An extra member whose NAME is "duplicate object member" produces a
+    # jcs message that contains that exact text, even though the actual
+    # failure is the member's non-finite value, not a real duplicate member.
+    doc = _base()
+    clean = json.dumps(doc)
+    extra_key = clean.replace(
+        '"profile":', '"duplicate object member": 1e400, "profile":', 1
+    )
+    with pytest.raises(ActionReferenceError) as exc_info:
+        compute_action_ref_v2_from_json(extra_key)
+    assert exc_info.value.code == "non_i_json"
+
+
+def test_deeply_nested_payload_raises_nesting_limit_not_recursionerror():
+    value: object = 0
+    for _ in range(5000):
+        value = {"n": value}
+    with pytest.raises(ActionReferenceError) as exc_info:
+        compute_payload_ref_v1(value)
+    assert exc_info.value.code == "nesting_limit"
+
+
+def test_create_rejects_empty_string_scope_before_the_duplicate_check():
+    # ["", ""] must be reported as empty_string, matching the validator,
+    # not as scope_not_canonical from the duplicate check that would
+    # otherwise trip first.
+    with pytest.raises(ActionReferenceError) as exc_info:
+        create_action_reference_input_v2(scope_required=["", ""], **_create_kwargs())
+    assert exc_info.value.code == "empty_string"

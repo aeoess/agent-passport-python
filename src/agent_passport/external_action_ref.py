@@ -3,9 +3,10 @@
 
 This is the legacy cross-ecosystem correlation key defined by
 draft-pidlisnyi-aps-03 section 4.2, published text lines 845-892. It is a
-correlation key only: matching this value against a record produced outside
-an APS deployment is evidence that the two records refer to the same
-underlying action, and NOTHING ELSE. Per section 9 (published text lines
+correlation key only: a matching value shows only that two records carry the
+same action_type, agent_id, scope and timestamp strings; the form omits the
+target, payload digest and nonce, so two different actions can share one
+value. Per section 9 (published text lines
 1616-1620), a match is not evidence of the authenticity, authority, or
 integrity of either record, and MUST NOT be treated as an authority claim.
 This value must not be presented, logged, or relied upon as identifying an
@@ -36,14 +37,15 @@ string, let alone from a section 4.1 ``action_ref``.
 Byte parity with the TypeScript reference (``computeExternalActionRefV1``,
 agent-passport-system ``src/core/external-action-ref.ts``) on every valid
 input in the vector set is checked by
-tests/cross_impl/external-action-ref-v1-vectors.json. The TypeScript
-reference additionally accepts a ``Date`` object in place of a timestamp
-string; this Python port takes strings only. The TypeScript reference
-also accepts a lexically shaped but calendar-invalid timestamp (month 13,
-day 30 of February, hour 24, minute 60) and hashes non-string field values
-without complaint; this port rejects both, per the section 4.2 requirement
-text, and the vector file records where the TypeScript reference diverges
-rather than silently reproducing it.
+tests/cross_impl/external-action-ref-v1-vectors.json.
+
+Known divergences: the TypeScript SDK accepts calendar-invalid timestamps
+(month 13, day 30 of February, hour 24, minute 60), accepts a leap second
+(second 60), accepts an array-wrapped timestamp because its format check
+tests ``String(value)``, and hashes non-string ``action_type``, ``agent_id``
+and ``scope`` values; it rejects a numeric timestamp. This helper rejects
+all of these. Its leap-second rejection is provisional because the draft
+does not say whether leap seconds are admissible.
 """
 
 from __future__ import annotations
@@ -59,9 +61,12 @@ EXTERNAL_ACTION_REF_V1_LABEL = "action-ref-v1-jcs-sha256"
 
 # Exactly RFC 3339 UTC at millisecond precision: four-digit year, calendar
 # month 01-12, calendar day 01-31, hour 00-23, minute 00-59, second 00-59,
-# exactly three fractional-second digits, literal uppercase Z. Anchored by
-# re.fullmatch, so no leading/trailing anchors are needed in the pattern
-# itself. This still admits a day that does not exist in a given month (for
+# exactly three fractional-second digits, literal uppercase Z. RFC 3339 also
+# allows second 60 (a leap second); this pattern rejects it, and that
+# rejection is provisional because the draft does not say whether leap
+# seconds are admissible. Anchored by re.fullmatch, so no leading/trailing
+# anchors are needed in the pattern itself. This still admits a day that
+# does not exist in a given month (for
 # example day 30 of February); that is caught separately by
 # _is_valid_calendar_day, because a fixed-width regex alone cannot encode
 # "day <= 28, 29, 30, or 31 depending on month and leap year".
@@ -148,10 +153,9 @@ def compute_external_action_ref_v1(
     so the canonicalized JSON cannot be hashed.
 
     Field values are hashed exactly as supplied: no Unicode normalization,
-    no coercion, and no non-empty-string requirement (draft lines 873-876;
-    the section 4.2 text imposes no such rule, unlike the section 4.1 form).
-    The returned value is the bare digest: it carries no embedded label, so
-    a caller that serializes it anywhere must carry
+    no coercion, and no non-empty-string requirement (the section 4.2 text
+    states none). The returned value is the bare digest: it carries no
+    embedded label, so a caller that serializes it anywhere must carry
     ``EXTERNAL_ACTION_REF_V1_LABEL`` alongside it. See the module docstring.
 
     The TypeScript reference additionally accepts a ``Date`` object as

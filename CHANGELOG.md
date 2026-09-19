@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **`compute_action_ref_v2`, `compute_payload_ref_v1` and the other entry points in `src/agent_passport/v2/action_reference/v2.py`** (profile `aps-action-ref-v2`): the draft-pidlisnyi-aps-03 section 4.1 native action reference.
+- **`compute_external_action_ref_v1`** (`src/agent_passport/external_action_ref.py`, label `action-ref-v1-jcs-sha256`): the section 4.2 external correlation form.
+
+### Corrected
+- The 2.8.0 entry below described `compute_action_ref` as the native APS `action_ref` of draft-pidlisnyi-aps-03 section 4.1. That was wrong: `compute_action_ref` is a pre-draft-03 compatibility digest, unchanged by this release, and must not be presented as an `action_ref` or as `action-ref-v1-jcs-sha256`.
+
 ## 3.0.1 (2026-09-04)
 
 Documentation only. The README published with 3.0.0 still described the package as 2.11.0 and omitted the Rust SDK; the package page now states the current family. No code change.
