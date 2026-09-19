@@ -347,13 +347,15 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
         failures.append(_failure("NONCANONICAL_VALUE", "time bounds must be canonical UTC milliseconds"))
     elif time_facet["not_before"] >= time_facet["not_after"]:
         failures.append(_failure("SCHEMA_INVALID", "time window must be non-empty"))
-    elif is_canonical_timestamp(top.get("issued_at")) and time_facet["not_before"] < top["issued_at"]:
-        # Provisional: this check runs for every record, including a root. The
-        # draft states the not_before-cannot-predate-issued_at rule for a
-        # child only; whether it also binds a root is not settled. This is
-        # kept identical to the TypeScript SDK, which applies the same
-        # per-record shape check regardless of the record's position in a
-        # chain, rather than special-casing the root.
+    elif (
+        top["parent_delegation_id"] is not None
+        and is_canonical_timestamp(top.get("issued_at"))
+        and time_facet["not_before"] < top["issued_at"]
+    ):
+        # The rule binds a delegated child only (draft section 3.2 lines
+        # 536-537): "A child's not_before MUST NOT predate its issued_at". A
+        # record with a null parent_delegation_id is a root, which the draft
+        # does not constrain this way, so it is exempt.
         failures.append(_failure("SCHEMA_INVALID", "time.not_before cannot predate issued_at"))
 
     reputation = _record(authority["reputation"])
