@@ -3,20 +3,25 @@
 
 The vector file tests/cross_impl/authority-delegation-v1-vectors.json (run through
 the separate oracle runner) already exercises the schema, scope, compare, canonical,
-verify and budget rules against the TypeScript SDK's own expectations. This file only
-covers the Python-specific and cross-cutting behaviours the vectors do not: nonce
+verify and budget rules. Its expected states come from the draft; its failure codes
+are the TypeScript SDK's vocabulary, not protocol vocabulary. This file only covers
+the Python-specific and cross-cutting behaviours the vectors do not: nonce
 generation, float/bool rejection, the phase order of chain verification, resolver
-edge cases, budget ledger thread-safety, the no-wall-clock rule, and the parse-level
-size and number-token rules.
+edge cases, budget ledger thread-safety, the no-wall-clock rule, the parse-level
+size and number-token rules, canonical-pattern anchoring, non-string dict keys,
+fixed-width hex checks, the bare-body refusal, revocation type-exactness, scope
+grant redundancy performance, and the child issuer's `now` checks.
 """
 
 from __future__ import annotations
 
 import copy
 import json
+import random
 import re
 import secrets
 import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -25,14 +30,20 @@ from nacl.signing import SigningKey
 from agent_passport.v2.authority_delegation import (
     AuthorityDelegationError,
     InMemoryAuthorityBudgetLedger,
+    grants_are_canonical,
+    is_valid_scope_grant,
     issue_authority_delegation,
     issue_sub_authority_delegation,
     parse_authority_delegation_json,
+    scope_grant_covers,
     validate_authority_delegation_shape,
     verify_authority_delegation_chain,
 )
 
 _PACKAGE_DIR = Path(__file__).parent.parent.parent / "src" / "agent_passport" / "v2" / "authority_delegation"
+_VECTORS_PATH = (
+    Path(__file__).parent.parent / "cross_impl" / "authority-delegation-v1-vectors.json"
+)
 
 
 def _keypair() -> tuple[str, str]:
@@ -72,8 +83,9 @@ def _root_body(**overrides) -> dict:
 
 def _rich_authority(**overrides) -> dict:
     """An authority vector with a concrete (non-wildcard) grant, bounded spend
-    and a non-empty required-values list, so every field the F1 regression
-    tests corrupt is actually present with a corruptible non-empty value."""
+    and a non-empty required-values list, so every field the trailing-newline
+    tests below corrupt is actually present with a corruptible non-empty
+    value."""
     return _authority(
         scope={"profile": "aps-hierarchical-v1", "grants": ["commerce:checkout"]},
         spend={"mode": "bounded", "unit": "iso4217:USD:minor", "per_action": "500", "cumulative": "1000"},
@@ -172,6 +184,7 @@ class _Chain:
             self.root,
             child_body,
             self.agent_a_seed,
+            now=child_body["issued_at"],
             resolve_verification_key=resolve_key_for_issuance,
             resolve_revocation=lambda delegation: "active",
         )
@@ -289,6 +302,13 @@ class TestResolverEdgeCases:
 
 
 class TestBudgetLedgerConcurrency:
+    """A smoke test: it exercises the ledger under concurrent reservations
+    and checks the final counts are exact, but on its own it does not prove
+    the lock is necessary. It would very likely still pass, at least most of
+    the time, with a lock that did nothing, because CPython's GIL already
+    serializes the individual dict and attribute operations inside each
+    critical section; this test does not control for that."""
+
     def test_eight_threads_reserving_against_a_cumulative_of_100(self):
         seed, _ = _keypair()
         leaf = issue_authority_delegation(
@@ -408,8 +428,8 @@ _TRAILING_NEWLINE_MUTATIONS = [
 
 
 class TestTrailingNewlineRejected:
-    """F1 regression: Python's `$` also matches just before a trailing "\\n",
-    unlike JavaScript's, so every anchored pattern in the package must use
+    """Python's `$` also matches just before a trailing "\\n", unlike
+    JavaScript's, so every anchored pattern in the package must use
     fullmatch. Each case here appends "\\n" to one canonical-looking field of
     an otherwise valid, properly signed root record and checks that
     verification now reports it invalid, rather than silently accepting a
@@ -443,9 +463,8 @@ class TestTrailingNewlineRejected:
 
 
 class TestNonStringDictKey:
-    """F2 regression: a dict with a non-string key must yield a defined
-    SCHEMA_INVALID result rather than raising out of _exact_keys' old
-    sorted() comparison."""
+    """A dict with a non-string key must yield a defined SCHEMA_INVALID
+    result rather than raising."""
 
     def test_depth_with_a_non_string_key_is_invalid_schema_invalid_no_exception(self):
         seed, public_key = _keypair()
@@ -460,9 +479,9 @@ class TestNonStringDictKey:
 
 
 class TestSpacedHexKeyRejected:
-    """F3 regression: bytes.fromhex tolerates whitespace between byte pairs,
-    so a resolved key written with a space after every two hex digits must
-    not verify even though it decodes to the right bytes."""
+    """bytes.fromhex tolerates whitespace between byte pairs, so a resolved
+    key written with a space after every two hex digits must not verify even
+    though it decodes to the right bytes."""
 
     def test_key_resolver_returning_spaced_hex_gives_invalid_signature_invalid(self):
         chain = _Chain()
@@ -487,10 +506,9 @@ class TestSpacedHexKeyRejected:
 
 
 class TestIssueBareBodyRequired:
-    """F4 regression: an issuer must refuse a body that already carries
-    delegation_id or signature, or that is not an object at all, rather than
-    silently hashing the stray member into a record whose id can never
-    recompute."""
+    """An issuer must refuse a body that already carries delegation_id or
+    signature, or that is not an object at all, rather than silently hashing
+    the stray member into a record whose id can never recompute."""
 
     def test_body_with_delegation_id_raises_schema_invalid(self):
         seed, _ = _keypair()
@@ -518,8 +536,8 @@ class _ActiveLookalike(str):
 
 
 class TestRevocationStrSubclassIsUnknown:
-    """F5 regression: a str subclass instance that merely compares equal to
-    "active" must not be treated as active, in either verify.py or issue.py."""
+    """A str subclass instance that merely compares equal to "active" must
+    not be treated as active, in either verify.py or issue.py."""
 
     def test_verify_treats_str_subclass_as_revocation_unknown(self):
         chain = _Chain()
@@ -556,6 +574,7 @@ class TestRevocationStrSubclassIsUnknown:
                 chain.root,
                 child_body,
                 chain.agent_a_seed,
+                now=child_body["issued_at"],
                 resolve_verification_key=chain.resolve_verification_key,
                 resolve_revocation=lambda delegation: _ActiveLookalike("active"),
             )
@@ -563,8 +582,8 @@ class TestRevocationStrSubclassIsUnknown:
 
 
 class TestReserveChainTypeChecked:
-    """F6 regression: a verified_chain that is not a list or tuple must
-    return CONFLICT rather than raising out of len()/indexing."""
+    """A verified_chain that is not a list or tuple must return CONFLICT
+    rather than raising out of len()/indexing."""
 
     def test_reserve_with_none_chain_returns_conflict(self):
         ledger = InMemoryAuthorityBudgetLedger()
@@ -573,3 +592,280 @@ class TestReserveChainTypeChecked:
 
         assert result.ok is False
         assert result.code == "CONFLICT"
+
+
+class TestLedgerNonStringKeysReturnDefined:
+    """mark_dispatched, commit and cancel with an action_ref that is not a
+    str must return NOT_FOUND rather than raising out of an unhashable dict
+    key; counter with a non-str id must return zeroed counters the same way
+    it does for an id it has never seen."""
+
+    def test_mark_dispatched_with_list_action_ref_returns_not_found(self):
+        ledger = InMemoryAuthorityBudgetLedger()
+        result = ledger.mark_dispatched(["not", "a", "string"])
+        assert result.ok is False
+        assert result.code == "NOT_FOUND"
+
+    def test_commit_with_list_action_ref_returns_not_found(self):
+        ledger = InMemoryAuthorityBudgetLedger()
+        result = ledger.commit(["not", "a", "string"])
+        assert result.ok is False
+        assert result.code == "NOT_FOUND"
+
+    def test_cancel_with_list_action_ref_returns_not_found(self):
+        ledger = InMemoryAuthorityBudgetLedger()
+        result = ledger.cancel(["not", "a", "string"])
+        assert result.ok is False
+        assert result.code == "NOT_FOUND"
+
+    def test_counter_with_list_id_returns_zeroed_counters(self):
+        ledger = InMemoryAuthorityBudgetLedger()
+        assert ledger.counter(["not", "a", "string"]) == {"reserved": "0", "committed": "0"}
+
+
+def _pairwise_reference_grants_are_canonical(grants) -> bool:
+    """The straightforward O(n^2) pairwise definition, kept only in this
+    test as the oracle grants_are_canonical is checked against: every grant
+    must be valid and strictly sorted, and no grant may be covered by any
+    other grant in the list."""
+    if type(grants) is not list:
+        return False
+    for i, grant in enumerate(grants):
+        if not is_valid_scope_grant(grant):
+            return False
+        if i > 0 and grants[i - 1] >= grant:
+            return False
+        for j in range(len(grants)):
+            if i != j and scope_grant_covers(grants[j], grant):
+                return False
+    return True
+
+
+_GRANT_SEGMENT_POOL = (
+    "a", "b", "c", "commerce", "travel", "checkout", "book", "x1", "y-2", "AA", "z_9",
+)
+_INVALID_GRANT_POOL = (
+    "", "a" * 300, ":", "a::b", "a:*:b", "*:a", "-bad", "*" + "*", "a:" + "!" * 3,
+)
+
+
+def _random_valid_grant(rng: random.Random) -> str:
+    if rng.random() < 0.08:
+        return "*"
+    depth = rng.randint(1, 4)
+    segments = [rng.choice(_GRANT_SEGMENT_POOL) for _ in range(depth)]
+    if rng.random() < 0.4:
+        segments.append("*")
+    return ":".join(segments)
+
+
+def _generate_grant_list(rng: random.Random) -> list:
+    size = rng.randint(0, 14)
+    grants = []
+    for _ in range(size):
+        if rng.random() < 0.12:
+            grants.append(rng.choice(_INVALID_GRANT_POOL))
+        else:
+            grants.append(_random_valid_grant(rng))
+    if grants and rng.random() < 0.25:
+        grants.append(rng.choice(grants))  # inject a duplicate
+    if rng.random() < 0.5:
+        rng.shuffle(grants)
+    return grants
+
+
+class TestGrantsAreCanonicalMatchesPairwiseReference:
+    """grants_are_canonical was rewritten to check redundancy in
+    O(n * segments) instead of the O(n^2) pairwise scan the definition
+    suggests (8000 grants used to take about 31 seconds). This checks the
+    rewrite against a straightforward pairwise reference implementation
+    over many deterministically generated lists mixing exact grants,
+    wildcards, the bare "*", unsorted order, duplicates and invalid
+    entries."""
+
+    def test_matches_reference_over_2000_generated_lists(self):
+        rng = random.Random(20260919)
+        for case_index in range(2000):
+            grants = _generate_grant_list(rng)
+            fast = grants_are_canonical(list(grants))
+            reference = _pairwise_reference_grants_are_canonical(list(grants))
+            assert fast == reference, f"case {case_index}: {grants!r} -> fast={fast} reference={reference}"
+
+
+class TestGrantsAreCanonicalPerformance:
+    def test_20000_sorted_exact_grants_checked_under_one_second(self):
+        grants = [f"seg{i:06d}" for i in range(20000)]
+        assert grants == sorted(grants)  # already strictly sorted, no wildcards to redund against
+
+        start = time.perf_counter()
+        result = grants_are_canonical(grants)
+        elapsed = time.perf_counter() - start
+
+        assert result is True
+        assert elapsed < 1.0, f"took {elapsed:.3f}s"
+
+
+class TestIssueSubAuthorityDelegationNow:
+    """issue_sub_authority_delegation requires the parent to be currently
+    valid at the issuer-supplied `now`, independently of the child's own
+    issued_at."""
+
+    def test_parent_valid_at_issued_at_but_expired_at_now_raises_expired(self):
+        chain = _Chain()
+        child_body = {
+            "record_type": "aps:authority-delegation:v1",
+            "version": "1.0",
+            "parent_delegation_id": chain.root["delegation_id"],
+            "issuer": "did:example:agent-a",
+            "subject": "did:example:agent-b",
+            "verification_method": "did:example:agent-a#key-1",
+            "issued_at": "2026-01-01T00:05:00.000Z",  # inside the parent's window
+            "authority": _authority(
+                depth={"remaining": 1},
+                time={"not_before": "2026-01-01T00:10:00.000Z", "not_after": "2026-01-01T00:20:00.000Z"},
+            ),
+        }
+
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            issue_sub_authority_delegation(
+                chain.root,
+                child_body,
+                chain.agent_a_seed,
+                now="2026-01-02T00:00:00.000Z",  # exactly the parent's not_after: expired
+                resolve_verification_key=chain.resolve_verification_key,
+                resolve_revocation=lambda delegation: "active",
+            )
+        assert exc_info.value.code == "EXPIRED"
+
+    def test_now_before_the_parents_not_before_raises_not_yet_valid(self):
+        chain = _Chain()
+        child_body = {
+            "record_type": "aps:authority-delegation:v1",
+            "version": "1.0",
+            "parent_delegation_id": chain.root["delegation_id"],
+            "issuer": "did:example:agent-a",
+            "subject": "did:example:agent-b",
+            "verification_method": "did:example:agent-a#key-1",
+            "issued_at": "2026-01-01T00:05:00.000Z",
+            "authority": _authority(
+                depth={"remaining": 1},
+                time={"not_before": "2026-01-01T00:10:00.000Z", "not_after": "2026-01-01T00:20:00.000Z"},
+            ),
+        }
+
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            issue_sub_authority_delegation(
+                chain.root,
+                child_body,
+                chain.agent_a_seed,
+                now="2025-12-31T23:59:59.999Z",  # before the parent's not_before
+                resolve_verification_key=chain.resolve_verification_key,
+                resolve_revocation=lambda delegation: "active",
+            )
+        assert exc_info.value.code == "NOT_YET_VALID"
+
+    def test_malformed_now_raises_noncanonical_value(self):
+        chain = _Chain()
+        child_body = {
+            "record_type": "aps:authority-delegation:v1",
+            "version": "1.0",
+            "parent_delegation_id": chain.root["delegation_id"],
+            "issuer": "did:example:agent-a",
+            "subject": "did:example:agent-b",
+            "verification_method": "did:example:agent-a#key-1",
+            "issued_at": "2026-01-01T00:05:00.000Z",
+            "authority": _authority(
+                depth={"remaining": 1},
+                time={"not_before": "2026-01-01T00:10:00.000Z", "not_after": "2026-01-01T00:20:00.000Z"},
+            ),
+        }
+
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            issue_sub_authority_delegation(
+                chain.root,
+                child_body,
+                chain.agent_a_seed,
+                now="not-a-timestamp",
+                resolve_verification_key=chain.resolve_verification_key,
+                resolve_revocation=lambda delegation: "active",
+            )
+        assert exc_info.value.code == "NONCANONICAL_VALUE"
+
+
+def _load_vectors() -> dict:
+    return json.loads(_VECTORS_PATH.read_text(encoding="utf-8"))
+
+
+def _vector_key_resolver(entries):
+    table = {(entry["issuer"], entry["verification_method"]): entry["public_key_hex"] for entry in entries}
+
+    def resolve(issuer, verification_method, issued_at):
+        return table.get((issuer, verification_method))
+
+    return resolve
+
+
+_ISSUE_CHILD_REFUSE_EXPECTED_CODES = {
+    "AD-I04": "SCOPE_WIDENING",
+    "AD-I05": "ISSUED_AT_OUTSIDE_PARENT",
+    "AD-I06": "ISSUED_AT_OUTSIDE_PARENT",
+    "AD-I07": "REVOKED",
+    "AD-I08": "SIGNATURE_INVALID",
+    "AD-I09": "REVOCATION_UNKNOWN",
+    "AD-I10": "KEY_RESOLUTION_FAILED",
+    "AD-I11": "DEPTH_EXHAUSTED",
+    "AD-I12": "PARENT_MISMATCH",
+    "AD-I13": "CHAIN_CONTINUITY",
+    "AD-I14": "NONCANONICAL_VALUE",
+}
+
+
+def _issue_child_refuse_cases() -> list:
+    vectors = _load_vectors()
+    seeds = {entry["label"]: entry["seed_hex"] for entry in vectors["keys"]}
+    cases = []
+    for case in vectors["cases"]:
+        if case["kind"] != "issue_child" or case["expected"]["result"] != "refuse":
+            continue
+        if case["id"] not in _ISSUE_CHILD_REFUSE_EXPECTED_CODES:
+            continue
+        cases.append((case, seeds[case["signing_key"]]))
+    return cases
+
+
+_ISSUE_CHILD_REFUSE_CASES = _issue_child_refuse_cases()
+
+
+class TestIssueChildRefuseVectorsRaiseExpectedCode:
+    """For every issue_child vector whose expected result is "refuse", check
+    that issue_sub_authority_delegation raises AuthorityDelegationError with
+    the specific code the case is about, not just that it raises. Only the
+    ids in _ISSUE_CHILD_REFUSE_EXPECTED_CODES are checked, since new cases
+    may be added to the vector file later without a code assigned here yet."""
+
+    @pytest.mark.parametrize(
+        "case, seed", _ISSUE_CHILD_REFUSE_CASES, ids=[c["id"] for c, _ in _ISSUE_CHILD_REFUSE_CASES],
+    )
+    def test_refuse_case_raises_expected_code(self, case, seed):
+        expected_code = _ISSUE_CHILD_REFUSE_EXPECTED_CODES[case["id"]]
+        status = case["context"]["revocation"]["parent"]
+
+        def resolve_revocation(delegation):
+            if status == "unavailable":
+                raise RuntimeError("revocation source unavailable")
+            return status
+
+        now = case["context"]["now"]
+
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            issue_sub_authority_delegation(
+                case["parent"],
+                case["body"],
+                seed,
+                now=now,
+                resolve_verification_key=_vector_key_resolver(case["context"]["keys"]),
+                resolve_revocation=resolve_revocation,
+            )
+        assert exc_info.value.code == expected_code, (
+            f"{case['id']}: expected {expected_code}, got {exc_info.value.code}"
+        )

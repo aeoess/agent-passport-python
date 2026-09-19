@@ -43,8 +43,9 @@ _MAX_QUANTITY = 9223372036854775807
 
 # RFC 3339 exact UTC-millisecond form. Group 1 = year, 2 = month, 3 = day,
 # 4 = hour, 5 = second (minute is not captured; the pattern alone bounds it
-# to 00-59). Second 60 is accepted lexically at any hour and minute, because
-# a validator cannot consult the leap-second table.
+# to 00-59). Second 60 is accepted wherever the RFC 3339 section 5.6 grammar
+# allows it. The section 5.7 restriction of a leap second to the last minute
+# of a month is not checked.
 _CANONICAL_TIMESTAMP = re.compile(
     r"^([0-9]{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T"
     r"([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)\.[0-9]{3}Z$"
@@ -75,17 +76,77 @@ def _exact_keys(value: dict, expected) -> bool:
     return set(value) == set(expected)
 
 
-def _well_formed_unicode(value: str) -> bool:
-    """Reject a string containing an unpaired UTF-16 surrogate.
+def _is_surrogate_or_noncharacter(code_point: int) -> bool:
+    """True for a UTF-16 surrogate or an RFC 7493 section 2.1 noncharacter.
 
-    The TypeScript original walks UTF-16 code units because JavaScript
-    strings are UTF-16 sequences. Python strings are sequences of Unicode
-    scalar values instead: a valid ``\\uD800\\uDC00`` escape pair is already
-    combined into one non-BMP code point by the JSON decoder, so any
-    remaining code point in the surrogate range is necessarily unpaired, and
-    a plain per-character scan is equivalent to the TypeScript pair-walk.
+    Noncharacters are U+FDD0 through U+FDEF, plus every code point whose low
+    16 bits are FFFE or FFFF (one pair per plane, 17 planes: U+FFFE, U+FFFF,
+    U+1FFFE, U+1FFFF, ... U+10FFFE, U+10FFFF), 66 code points in total.
+
+    This is a per-code-point predicate, not a per-string one: it replaces the
+    old well-formed-Unicode check (which walked UTF-16 code units, because
+    JavaScript strings are UTF-16 sequences) with the building block the
+    whole-record walk in validate_authority_delegation_shape uses instead. A
+    surrogate code point can never legitimately occur in a value json.loads
+    produced (a well-formed \\uD800\\uDC00 escape pair is combined into its
+    single astral code point before this ever runs, and a lone \\uD800 has no
+    other source there), but a plain Python str can still be built outside a
+    JSON decoder by, for instance, concatenating chr(0xD800) and chr(0xDC00)
+    as two separate code points rather than the one combined code point a
+    decoder would have produced from the same pair. This code-point-by-code-point
+    scan cannot tell that apart from a genuinely unpaired surrogate the way the
+    TypeScript SDK's UTF-16 pair walk can, so it fails closed: such a string is
+    rejected here even where the TypeScript SDK, walking UTF-16 code units,
+    would see a valid pair and accept it.
     """
-    return all(not (0xD800 <= ord(ch) <= 0xDFFF) for ch in value)
+    return (
+        0xD800 <= code_point <= 0xDFFF
+        or 0xFDD0 <= code_point <= 0xFDEF
+        or (code_point & 0xFFFE) == 0xFFFE
+    )
+
+
+def _has_ill_formed_string(value) -> bool:
+    """True if any dict key or str value anywhere inside value is not I-JSON.
+
+    RFC 7493 section 2.1 (I-JSON) forbids a surrogate or a noncharacter code
+    point in a string. This walks the whole value looking for one, in every
+    dict key and every str found at any depth, including inside a nested
+    object whose own "profile" field names a profile this package does not
+    support (an unsupported profile does not stop this walk from covering
+    the rest of that object). The walk is iterative, using an explicit stack
+    rather than recursion, and tracks the id() of every dict and list it
+    has already queued so a value holding a reference cycle terminates
+    instead of looping forever. It never raises: any value that is not a
+    str, dict or list is simply not walked into.
+    """
+
+    def is_ill_formed(text: str) -> bool:
+        return any(_is_surrogate_or_noncharacter(ord(ch)) for ch in text)
+
+    stack = [value]
+    seen_container_ids: set[int] = set()
+    while stack:
+        current = stack.pop()
+        if type(current) is str:
+            if is_ill_formed(current):
+                return True
+        elif type(current) is dict:
+            identity = id(current)
+            if identity in seen_container_ids:
+                continue
+            seen_container_ids.add(identity)
+            for key, item in current.items():
+                if type(key) is str and is_ill_formed(key):
+                    return True
+                stack.append(item)
+        elif type(current) is list:
+            identity = id(current)
+            if identity in seen_container_ids:
+                continue
+            seen_container_ids.add(identity)
+            stack.extend(current)
+    return False
 
 
 def _utf8_len(value: str) -> int:
@@ -144,6 +205,11 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
     )):
         return [_failure("SCHEMA_INVALID", "delegation must be an exact closed v1 object")]
 
+    if _has_ill_formed_string(top):
+        failures.append(_failure(
+            "SCHEMA_INVALID", "record strings must be I-JSON: no unpaired surrogates or noncharacters",
+        ))
+
     # Provisional: a record_type or version that is not a string at all (an
     # int, a list, and so on) is reported the same way as a string that names
     # some other version, namely UNSUPPORTED_VERSION rather than SCHEMA_INVALID.
@@ -160,8 +226,8 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
         failures.append(_failure("SCHEMA_INVALID", "parent_delegation_id must be null or a delegation digest"))
     for key in ("issuer", "subject", "verification_method"):
         item = top[key]
-        if type(item) is not str or len(item) == 0 or _utf8_len(item) > 1024 or not _well_formed_unicode(item):
-            failures.append(_failure("SCHEMA_INVALID", f"{key} must be a non-empty well-formed Unicode string"))
+        if type(item) is not str or len(item) == 0 or _utf8_len(item) > 1024:
+            failures.append(_failure("SCHEMA_INVALID", f"{key} must be a non-empty string of at most 1024 UTF-8 bytes"))
     if not is_canonical_timestamp(top["issued_at"]):
         failures.append(_failure("NONCANONICAL_VALUE", "issued_at must be canonical UTC milliseconds"))
     if type(top["nonce"]) is not str or not _HEX_32.fullmatch(top["nonce"]):

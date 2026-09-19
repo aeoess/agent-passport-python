@@ -31,7 +31,7 @@ from .canonical import (
     verify_authority_delegation_signature,
 )
 from .compare import compare_authority
-from .schema import validate_authority_delegation_shape
+from .schema import is_canonical_timestamp, validate_authority_delegation_shape
 from .types import AuthorityDelegationError, AuthorityFailure
 
 
@@ -97,6 +97,7 @@ def issue_sub_authority_delegation(
     body: dict,
     private_key: str,
     *,
+    now: str,
     resolve_verification_key,
     resolve_revocation,
 ) -> dict:
@@ -106,25 +107,44 @@ def issue_sub_authority_delegation(
     issuer minting a child MUST verify the parent delegation's signature and
     temporal validity before signing the child, and MUST refuse to issue
     under an expired, not-yet-valid or revoked parent. The TypeScript SDK's
-    issueSubAuthorityDelegation checks neither the parent's signature nor its
-    revocation (only the shape, id-derived continuity fields and attenuation
-    below, which this function also checks); this Python port adds the
-    parent signature and revocation checks the draft requires. Parent
-    temporal validity is enforced indirectly: this function requires the
-    child's issued_at to fall inside the parent's validity window (the
-    ISSUED_AT_OUTSIDE_PARENT check below), which is only satisfiable when the
-    parent is currently valid at that instant.
+    issueSubAuthorityDelegation checks neither the parent's signature, nor
+    its revocation, nor its temporal validity against a clock (only the
+    shape, id-derived continuity fields and attenuation below, which this
+    function also checks); this Python port adds the parent signature,
+    revocation and `now` checks the draft requires.
+
+    Two different timestamps are checked against the parent's validity
+    window, for two different things. `now` is when the issuer is acting: it
+    must fall inside the parent's own [not_before, not_after) window, or
+    issuance is refused with NOT_YET_VALID or EXPIRED, exactly the same
+    check verify_authority_delegation_chain makes for a verifier's clock.
+    body["issued_at"] is the timestamp being stamped into the child being
+    minted: it is checked against that same parent window independently
+    (ISSUED_AT_OUTSIDE_PARENT below), so a caller cannot mint a child whose
+    stated issuance time falls outside the parent's window even by acting at
+    a `now` when the parent is still valid. There is still no wall clock
+    here: `now` is a required keyword-only argument supplied by the caller.
 
     Checks run in this order, raising AuthorityDelegationError at the first
-    one that fails: the parent's shape; the parent's delegation_id against
-    its own body; the parent's signing key resolves and its signature
-    verifies; the parent's revocation resolves to exactly "active"; the
-    child body is a bare object carrying neither delegation_id nor signature
-    (see _assert_bare_body); the child body's shape (after nonce generation);
-    the child's parent_delegation_id; the child's issuer against the parent's
-    subject; the child's issued_at against the parent's validity window; and
-    the seven-facet attenuation of the child under the parent.
+    one that fails: `now` is a canonical UTC-millisecond timestamp; the
+    parent's shape; the parent's delegation_id against its own body; the
+    parent's signing key resolves and its signature verifies; the parent is
+    valid at `now`; the parent's revocation resolves to exactly "active";
+    the child body is a bare object carrying neither delegation_id nor
+    signature (see _assert_bare_body); the child body's shape (after nonce
+    generation); the child's parent_delegation_id; the child's issuer
+    against the parent's subject; the child's issued_at against the
+    parent's validity window; and the seven-facet attenuation of the child
+    under the parent.
     """
+    if not is_canonical_timestamp(now):
+        raise AuthorityDelegationError(
+            "NONCANONICAL_VALUE",
+            (AuthorityFailure(
+                code="NONCANONICAL_VALUE", message="now must be a canonical UTC-millisecond timestamp",
+            ),),
+        )
+
     parent_failures = validate_authority_delegation_shape(parent)
     if parent_failures:
         raise AuthorityDelegationError(parent_failures[0].code, tuple(parent_failures))
@@ -151,6 +171,18 @@ def issue_sub_authority_delegation(
         raise AuthorityDelegationError(
             "SIGNATURE_INVALID",
             (AuthorityFailure(code="SIGNATURE_INVALID", message="parent Ed25519 signature is invalid"),),
+        )
+
+    parent_time = parent["authority"]["time"]
+    if now < parent_time["not_before"]:
+        raise AuthorityDelegationError(
+            "NOT_YET_VALID",
+            (AuthorityFailure(code="NOT_YET_VALID", message="parent delegation is not yet valid at now"),),
+        )
+    if now >= parent_time["not_after"]:
+        raise AuthorityDelegationError(
+            "EXPIRED",
+            (AuthorityFailure(code="EXPIRED", message="parent delegation has expired at now"),),
         )
 
     try:
@@ -186,7 +218,6 @@ def issue_sub_authority_delegation(
         )
 
     issued_at = body["issued_at"]
-    parent_time = parent["authority"]["time"]
     if issued_at < parent_time["not_before"] or issued_at >= parent_time["not_after"]:
         raise AuthorityDelegationError(
             "ISSUED_AT_OUTSIDE_PARENT",

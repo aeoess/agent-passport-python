@@ -58,12 +58,18 @@ def verify_authority_delegation_chain(
     single per-record loop (in particular: duplicate-identifier detection
     runs together with delegation_id and signature checking, before this
     phase order's root-trust and parent-linkage phases). For a chain with a
-    single fault, both orders reach the same result. The draft does not say
-    which failure decides when a chain carries several faults at once, so
-    this phase order is a provisional reading of section 3.3, not a
-    conclusion the draft itself states; a chain with more than one fault can
-    therefore get a different failure code from this function than from the
-    TypeScript SDK.
+    single fault, both orders reach the same result, but only when the
+    resolvers themselves answer consistently and that fault is the only one
+    in the chain: a trust or revocation resolver that is unavailable (not
+    callable, raising, or returning something other than the bool or the
+    "active"/"revoked" string it is asked for) is a fault of its own, in the
+    same sense a malformed record is, and can combine with an unrelated
+    fault elsewhere in the chain the same way two record faults can. The
+    draft does not say which failure decides when a chain carries several
+    faults at once, so this phase order is a provisional reading of section
+    3.3, not a conclusion the draft itself states; a chain with more than
+    one fault can therefore get a different failure code from this function
+    than from the TypeScript SDK.
     """
     if type(chain) not in (list, tuple) or not (1 <= len(chain) <= 256):
         return _result(

@@ -1,19 +1,23 @@
 // Generator for the AuthorityDelegationV1 cross-implementation vector file
 // (tests/cross_impl/authority-delegation-v1-vectors.json).
 //
-// Every case, its expected state or result, its expected failure code, its
-// expected index, and its expected_provenance are fixed by a written vector
-// specification (draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6,
-// RFC 3339, RFC 7493, or a recorded ruling). This script does not decide any
-// of those; it builds the exact records and contexts the specification
-// describes, calls the TypeScript reference implementation, and fills in
-// bytes (delegation_id, signature, public keys) and TypeScript's own
-// behaviour (state, failure codes, index, accept/reject, issue/refuse,
-// budget ledger results) by calling that reference directly. If the TS
-// reference disagrees with a fixed expectation, the script prints
+// The expected result of every case is fixed in this script, next to the
+// draft lines (draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6),
+// RFC 3339 or RFC 7493 citation it rests on, which is copied into the
+// case's derivation. This script does not decide any of those; it builds
+// the exact records and contexts each case's fixed expectation describes,
+// calls the TypeScript reference implementation, and fills in bytes
+// (delegation_id, signature, public keys) and TypeScript's own behaviour
+// (state, failure codes, index, accept/reject, issue/refuse, budget ledger
+// results) by calling that reference directly. If the TS reference
+// disagrees with a fixed expectation, the script prints
 // "STOP: <case id>: expected ... got ..." and exits 1 without writing the
 // output file, instead of silently recording whatever TS produced or
-// changing the expectation to match TypeScript.
+// changing the expectation to match TypeScript. The STOP rule has
+// exceptions: AD-I07 to AD-I10 and AD-I15 to AD-I16 carry inputs the
+// TypeScript issuer cannot take (no revocation input, no key resolver, no
+// now); for those, TypeScript's actual behaviour is recorded without
+// stopping and the fixed expectation is left unchanged.
 //
 // The TS repository is located purely through the APS_TS_REPO environment
 // variable (a file:// URL is built from it) and the pinned commit purely
@@ -83,7 +87,7 @@ const { sign, publicKeyFromPrivate } = (await import(keysUrl)) as {
 void sign // imported for parity with the TS API surface; signing goes through AD.signAuthorityDelegation
 
 // -------------------------------------------------------------------------
-// Keys (spec section 2)
+// Keys: the five labels and their seeds, DIDs and verification methods
 // -------------------------------------------------------------------------
 
 const LABELS = ['principal', 'agent-a', 'agent-b', 'agent-c', 'outsider'] as const
@@ -241,7 +245,7 @@ function record(kind: CaseOut['kind'], provenance: CaseOut['expected_provenance'
 }
 
 // -------------------------------------------------------------------------
-// Chain-case context conventions (spec section 3)
+// Chain-case context conventions: the key resolver, trust policy and revocation resolver a chain case carries
 // -------------------------------------------------------------------------
 
 type RevocationValue = 'active' | 'revoked' | 'unknown' | 'unavailable'
@@ -293,7 +297,7 @@ function buildOptions(spec: ContextSpec, chain: any[]) {
 }
 
 // -------------------------------------------------------------------------
-// Base bodies and records (spec section 4)
+// Base bodies and records: R, C1 and C2, and the shared record-construction helpers
 // -------------------------------------------------------------------------
 
 const BODY_R = {
@@ -376,6 +380,9 @@ interface ChainCaseSpec {
   contextOverrides?: Partial<ContextSpec>
   expectedState: 'valid' | 'invalid' | 'indeterminate' | 'unsupported'
   expectedCode?: string
+  /** Exact ordered list of codes, for a case whose one root cause trips more than one check (e.g. a
+   *  non-I-JSON record under an unsupported profile). Takes precedence over expectedCode when given. */
+  expectedCodes?: string[]
   expectedIndex?: number | null
   lines: string
   note: string
@@ -398,7 +405,11 @@ function pushChainCase(spec: ChainCaseSpec): void {
   } else {
     if (result.failures.length === 0) fail(`${spec.id}: expected failures for state ${spec.expectedState}, got none`)
     sdk_codes = result.failures.map((f: any) => f.code)
-    if (!sdk_codes.every((c) => c === spec.expectedCode)) {
+    if (spec.expectedCodes) {
+      if (sdk_codes.length !== spec.expectedCodes.length || sdk_codes.some((c, i) => c !== spec.expectedCodes![i])) {
+        fail(`${spec.id}: expected codes ${JSON.stringify(spec.expectedCodes)}, got ${JSON.stringify(sdk_codes)}`)
+      }
+    } else if (!sdk_codes.every((c) => c === spec.expectedCode)) {
       fail(`${spec.id}: expected code ${spec.expectedCode}, got ${JSON.stringify(sdk_codes)}`)
     }
     const indices = result.failures.map((f: any) => (typeof f.index === 'number' ? f.index : null))
@@ -426,7 +437,7 @@ function pushChainCase(spec: ChainCaseSpec): void {
 }
 
 // -------------------------------------------------------------------------
-// Chain cases, positive (spec section 5)
+// Chain cases, positive
 // -------------------------------------------------------------------------
 
 pushChainCase({
@@ -601,7 +612,7 @@ pushChainCase({
     id: 'AD-P16', title: 'Leap second is lexically admissible', chain: [RL, CL],
     contextOverrides: { now: '2016-12-31T23:59:60.500Z' }, expectedState: 'valid',
     lines: 'L796-797 and L480-481 (RFC 3339 timestamps), RFC 3339 sections 5.1 and 5.6',
-    note: 'RFC 3339 admits second 60 and a validator cannot consult the leap-second table, so second 60 is accepted lexically at any hour and minute; same-format RFC 3339 timestamps sort as strings into time order.',
+    note: '2016-12-31T23:59:60Z was an actual leap second, which RFC 3339 sections 5.6 and 5.7 admit; same-format timestamps sort as strings into time order (RFC 3339 section 5.1).',
   })
 }
 
@@ -643,7 +654,7 @@ pushChainCase({
 }
 
 // -------------------------------------------------------------------------
-// Chain cases, negative: closed schema and canonical values (spec section 6)
+// Chain cases, negative: closed schema and canonical values
 // -------------------------------------------------------------------------
 
 function rootOnlyInvalid(id: string, title: string, lines: string, note: string, code: string, fn: (b: any) => void, state: 'invalid' | 'unsupported' = 'invalid'): void {
@@ -656,8 +667,8 @@ rootOnlyInvalid('AD-N-S02', 'Missing nonce', 'L426-427', 'nonce is a required me
 rootOnlyInvalid('AD-N-S03', 'authority missing the values facet', 'L429-431', 'authority must carry exactly all seven facets.', 'SCHEMA_INVALID', (b) => { delete b.authority.values })
 rootOnlyInvalid('AD-N-S04', 'An eighth authority facet', 'L429-430', 'authority carries exactly seven facets, not eight.', 'SCHEMA_INVALID', (b) => { b.authority.risk = { profile: 'x', ceiling: 1 } })
 rootOnlyInvalid('AD-N-S05', 'depth with an extra member', 'L480', 'depth is a closed object of exactly {remaining}.', 'SCHEMA_INVALID', (b) => { b.authority.depth = { remaining: 2, max: 3 } })
-rootOnlyInvalid('AD-N-S06', 'Unsupported record_type v2', 'L424-426, L590, L1227', 'The record names a record_type this revision does not define; an unimplemented construct is unsupported, not invalid.', 'UNSUPPORTED_VERSION', (b) => { b.record_type = 'aps:authority-delegation:v2' }, 'unsupported')
-rootOnlyInvalid('AD-N-S07', 'Unsupported version 2.0', 'L426', 'Same reasoning as record_type: an unrecognized version is unsupported.', 'UNSUPPORTED_VERSION', (b) => { b.version = '2.0' }, 'unsupported')
+rootOnlyInvalid('AD-N-S06', 'Unsupported record_type v2', 'L424-426, L590, L1227', 'The draft states no rule for an unknown record_type; by analogy with L590 and L1227, an unimplemented construct is unsupported, not invalid.', 'UNSUPPORTED_VERSION', (b) => { b.record_type = 'aps:authority-delegation:v2' }, 'unsupported')
+rootOnlyInvalid('AD-N-S07', 'Unsupported version 2.0', 'L426', 'The draft states no rule for an unknown version; by analogy with L590 and L1227, an unimplemented construct is unsupported, not invalid.', 'UNSUPPORTED_VERSION', (b) => { b.version = '2.0' }, 'unsupported')
 
 {
   const body = clone(BODY_R)
@@ -741,8 +752,7 @@ rootOnlyInvalid('AD-N-S45', 'values.required out of order', 'L547', 'values.requ
 rootOnlyInvalid('AD-N-S46', 'Duplicate values.required entry', 'L547', 'values.required must be unique.', 'NONCANONICAL_VALUE', (b) => { b.authority.values.required = ['F-001', 'F-001'] })
 rootOnlyInvalid('AD-N-S47', 'Reversibility ceiling outside the three classes', 'L553-565', 'Only tentative, compensable and irreversible are defined.', 'SCHEMA_INVALID', (b) => { b.authority.reversibility.ceiling = 'reversible' })
 rootOnlyInvalid('AD-N-S48', 'Reversibility ceiling as an array', 'L553-565, L480', 'reversibility.ceiling must be a string.', 'SCHEMA_INVALID', (b) => { b.authority.reversibility.ceiling = ['compensable'] })
-rootOnlyInvalid('AD-N-S49', 'Scope facet without a profile', 'L512-514, L480', 'Every facet carries a profile.', 'SCHEMA_INVALID', (b) => { b.authority.scope = { grants: ['commerce:*', 'travel:book'] } })
-rootOnlyInvalid('AD-N-S50', 'Reputation facet with a non-string profile', 'L512-514', 'A facet profile must be a string.', 'SCHEMA_INVALID', (b) => { b.authority.reputation = { profile: 5, ceiling: 80 } })
+rootOnlyInvalid('AD-N-S49', 'Scope facet without a profile', 'L512-514, L480', 'The scope facet carries profile and grants (L464-465) in a closed schema (L480); a missing member is invalid.', 'SCHEMA_INVALID', (b) => { b.authority.scope = { grants: ['commerce:*', 'travel:book'] } })
 {
   const c1bad = forceSign(mutate(BODY_C1, (b) => { b.authority.time.not_before = '2026-07-18T22:05:00.000Z' }), 'agent-a')
   pushChainCase({
@@ -785,8 +795,40 @@ rootOnlyInvalid('AD-N-S57', 'issued_at with a trailing line feed', 'L198-199, L4
 rootOnlyInvalid('AD-N-S58', 'time.not_before with a trailing line feed', 'L480-481', 'time bounds must be exactly the canonical UTC-millisecond form, with nothing appended.', 'NONCANONICAL_VALUE', (b) => { b.authority.time.not_before = b.authority.time.not_before + '\n' })
 rootOnlyInvalid('AD-N-S59', 'spend per_action with a trailing line feed', 'L524-525', 'A canonical unsigned decimal integer has nothing appended to it.', 'NONCANONICAL_VALUE', (b) => { b.authority.spend.per_action = b.authority.spend.per_action + '\n' })
 
+{
+  // U+FDD0 is a noncharacter (the start of the U+FDD0..U+FDEF block). Written
+  // as an explicit JavaScript escape so this file carries no literal
+  // noncharacter code point.
+  const body = mutate(BODY_R, (b) => { b.issuer = b.issuer + '\uFDD0' })
+  const principalKey = ALL_KEY_ENTRIES.find((k) => k.issuer === DID.principal)!
+  const extraKey: KeyEntry = { issuer: `${DID.principal}\uFDD0`, verification_method: principalKey.verification_method, public_key_hex: principalKey.public_key_hex }
+  pushChainCase({
+    id: 'AD-N-S60', title: 'issuer with a trailing noncharacter (U+FDD0)', chain: [forceSign(body, 'principal')],
+    contextOverrides: { keys: [...ALL_KEY_ENTRIES, extraKey] },
+    expectedState: 'invalid', expectedCode: 'SCHEMA_INVALID', expectedIndex: 0,
+    lines: 'L204 with RFC 7493 section 2.1',
+    note: 'Every string in the record must be I-JSON; a key entry for the mutated issuer string is added so the key would resolve, proving the fault is the I-JSON check and not an unresolvable key.',
+  })
+}
+
+// U+10FFFF is a noncharacter (the last code point of the last plane), written
+// with the code-point escape as a surrogate pair internally; a valid
+// surrogate pair that decodes to a noncharacter is still rejected.
+rootOnlyInvalid('AD-N-S61', 'subject with a trailing noncharacter (U+10FFFF)', 'L204 with RFC 7493 section 2.1', 'Every string in the record must be I-JSON; a valid surrogate pair decoding to a noncharacter is still rejected.', 'SCHEMA_INVALID', (b) => { b.subject = b.subject + '\u{10FFFF}' })
+
+{
+  // U+FFFF is a noncharacter (the last code point of the BMP).
+  const body = mutate(BODY_R, (b) => { b.authority.scope.profile = 'aps-hierarchical-v2' + '\uFFFF' })
+  pushChainCase({
+    id: 'AD-N-S62', title: 'Unsupported scope profile with a trailing noncharacter (U+FFFF)', chain: [forceSign(body, 'principal')],
+    expectedState: 'invalid', expectedCodes: ['SCHEMA_INVALID', 'UNSUPPORTED_PROFILE'], expectedIndex: 0,
+    lines: 'L204 with RFC 7493 section 2.1',
+    note: 'The record is not I-JSON, so it cannot be valid whatever its profile; the SDK also reports the unknown profile.',
+  })
+}
+
 // -------------------------------------------------------------------------
-// Chain cases, negative: unsupported facet profiles (spec section 6)
+// Chain cases, negative: unsupported facet profiles
 // -------------------------------------------------------------------------
 
 function rootOnlyUnsupported(id: string, title: string, note: string, fn: (b: any) => void): void {
@@ -794,12 +836,8 @@ function rootOnlyUnsupported(id: string, title: string, note: string, fn: (b: an
 }
 
 rootOnlyUnsupported('AD-N-U01', 'Unsupported scope profile', 'An unsupported facet profile is unsupported, not invalid.', (b) => { b.authority.scope.profile = 'aps-hierarchical-v2' })
-rootOnlyUnsupported('AD-N-U02', 'Unsupported scope profile, non-v1 grant syntax', 'Content under an unsupported profile is not judged by v1 rules.', (b) => { b.authority.scope = { profile: 'aps-hierarchical-v2', grants: ['commerce/checkout'] } })
-rootOnlyUnsupported('AD-N-U03', 'Unsupported scope profile with an extra member', 'Content under an unsupported profile is not judged by v1 rules, including its own closed-schema shape.', (b) => { b.authority.scope = { profile: 'aps-hierarchical-v2', grants: ['commerce:*'], exclusions: [] } })
 rootOnlyUnsupported('AD-N-U04', 'Unsupported reputation profile', 'An unsupported facet profile is unsupported, not invalid.', (b) => { b.authority.reputation = { profile: 'aps-score-0-1000-v1', ceiling: 80 } })
-rootOnlyUnsupported('AD-N-U05', 'Unsupported reputation profile, out-of-v1-range ceiling', 'Content under an unsupported profile is not judged by v1 rules.', (b) => { b.authority.reputation = { profile: 'aps-score-0-1000-v1', ceiling: 800 } })
 rootOnlyUnsupported('AD-N-U06', 'Unsupported values profile', 'An unsupported facet profile is unsupported, not invalid.', (b) => { b.authority.values = { profile: 'aps-values-uri-v1', required: ['F-001', 'F-003'] } })
-rootOnlyUnsupported('AD-N-U07', 'Unsupported reversibility profile', 'An unsupported facet profile is unsupported, not invalid.', (b) => { b.authority.reversibility = { profile: 'aps-tci-v2', ceiling: 'reversible' } })
 {
   const c1bad = forceSign(mutate(BODY_C1, (b) => { b.authority.scope.profile = 'aps-hierarchical-v2' }), 'agent-a')
   pushChainCase({
@@ -810,7 +848,7 @@ rootOnlyUnsupported('AD-N-U07', 'Unsupported reversibility profile', 'An unsuppo
 }
 
 // -------------------------------------------------------------------------
-// Chain cases, negative: signature, identifier and key resolution (spec section 6)
+// Chain cases, negative: signature, identifier and key resolution
 // -------------------------------------------------------------------------
 
 {
@@ -855,17 +893,17 @@ pushChainCase({
   id: 'AD-N-C05', title: 'Key resolver missing the root issuer', chain: [R],
   contextOverrides: { keys: keysWithout('principal') },
   expectedState: 'indeterminate', expectedCode: 'KEY_RESOLUTION_FAILED', expectedIndex: 0,
-  lines: 'L492, L321-323, L589-590', note: 'Without key-authority evidence, the result is indeterminate, not invalid; finer resolution-outcome structure (L360-369) is an open question and not tested here.',
+  lines: 'L492, L321-323, L589-590', note: 'By analogy with L321-323 (without key-authority evidence the result is indeterminate) and L589-590, the state is indeterminate, not invalid; finer resolution-outcome structure (L360-369) is an open question and not tested here.',
 })
 pushChainCase({
   id: 'AD-N-C06', title: 'Key resolver missing the child issuer', chain: [R, C1],
   contextOverrides: { keys: keysWithout('agent-a') },
   expectedState: 'indeterminate', expectedCode: 'KEY_RESOLUTION_FAILED', expectedIndex: 1,
-  lines: 'L492, L321-323, L589-590', note: 'Same reasoning as AD-N-C05, one level deeper in the chain.',
+  lines: 'L492, L321-323, L589-590', note: 'By analogy with L321-323 (without key-authority evidence the result is indeterminate) and L589-590, the state is indeterminate, not invalid; same reasoning as AD-N-C05, one level deeper in the chain.',
 })
 
 // -------------------------------------------------------------------------
-// Chain cases, negative: chain structure (spec section 6)
+// Chain cases, negative: chain structure
 // -------------------------------------------------------------------------
 
 pushChainCase({
@@ -888,7 +926,7 @@ pushChainCase({
   id: 'AD-N-H04', title: 'Trust policy unavailable', chain: [R, C1],
   contextOverrides: { trust: { mode: 'unavailable' } },
   expectedState: 'indeterminate', expectedCode: 'ROOT_UNTRUSTED', expectedIndex: 0,
-  lines: 'L589-590, L1226', note: 'Unavailable information is indeterminate, not a rejection.',
+  lines: 'L589-590, L1226', note: 'By analogy with L589-590 and L1226: an unavailable trust policy is missing information, so the result is indeterminate.',
 })
 pushChainCase({
   id: 'AD-N-H05', title: 'A non-root record used alone', chain: [C1],
@@ -947,7 +985,7 @@ pushChainCase({
 }
 
 // -------------------------------------------------------------------------
-// Chain cases, negative: facet comparisons, [R, C1] with C1 mutated (spec section 6)
+// Chain cases, negative: facet comparisons, [R, C1] with C1 mutated
 // -------------------------------------------------------------------------
 
 function facetCase(id: string, title: string, lines: string, note: string, code: string, chain: any[]): void {
@@ -1016,7 +1054,7 @@ facetCase('AD-N-F13', 'Reversibility ceiling widened', 'L553-566', "Child ceilin
 }
 
 // -------------------------------------------------------------------------
-// Chain cases, negative: current validity and revocation (spec section 6)
+// Chain cases, negative: current validity and revocation
 // -------------------------------------------------------------------------
 
 pushChainCase({
@@ -1069,7 +1107,7 @@ pushChainCase({
 })
 
 // -------------------------------------------------------------------------
-// Wire cases (spec section 7)
+// Wire cases: parseAuthorityDelegationJson over raw JSON text
 // -------------------------------------------------------------------------
 
 function pushWireCase(id: string, title: string, raw: string, expectAccept: boolean, lines: string, note: string): void {
@@ -1163,8 +1201,24 @@ pushWireCase('AD-W06', 'Top-level JSON array', '[]', false,
     'L480', 'The v1 schema is closed.')
 }
 
+{
+  // U+FFFF spelled as a literal six-character JSON \u escape (backslash, u,
+  // f, f, f, f) inserted into the wire text by string surgery, not by
+  // JSON.stringify (which would emit the noncharacter unescaped, since it is
+  // a complete UTF-16 code unit, not a surrogate). This file's own source
+  // never carries the noncharacter itself.
+  const plain = JSON.stringify(R)
+  const marker = `"subject":"${R.subject}"`
+  const idx = plain.indexOf(marker)
+  if (idx === -1) fail('AD-W09: subject marker not found')
+  const insertAt = idx + marker.length - 1 // just before the closing quote
+  const raw = plain.slice(0, insertAt) + '\\uffff' + plain.slice(insertAt)
+  pushWireCase('AD-W09', 'subject with a JSON-escaped noncharacter (U+FFFF)', raw, false,
+    'L204 with RFC 7493 section 2.1', 'A JSON \\u escape can spell a noncharacter, and I-JSON rejects it just the same as a literal one.')
+}
+
 // -------------------------------------------------------------------------
-// Issuance cases (spec section 8)
+// Issuance cases: issueAuthorityDelegation and issueSubAuthorityDelegation
 // -------------------------------------------------------------------------
 
 function pushIssueRootCase(
@@ -1195,7 +1249,9 @@ function pushIssueRootCase(
   return delegation
 }
 
-interface IssueChildContext { keys: 'default' | 'without_principal'; revocation_parent: RevocationValue }
+interface IssueChildContext { keys: 'default' | 'without_principal'; revocation_parent: RevocationValue; now?: string }
+
+const ISSUE_CHILD_DEFAULT_NOW = '2026-07-18T23:00:00.000Z'
 
 function pushIssueChildCase(
   id: string, title: string, parent: any, body: any, signingKey: Label, context: IssueChildContext,
@@ -1218,6 +1274,7 @@ function pushIssueChildCase(
   const contextOut = {
     keys: context.keys === 'default' ? ALL_KEY_ENTRIES : keysWithout('principal'),
     revocation: { parent: context.revocation_parent },
+    now: context.now ?? ISSUE_CHILD_DEFAULT_NOW,
   }
   record('issue_child', provenance)
   cases.push({
@@ -1306,8 +1363,18 @@ pushIssueChildCase('AD-I14', 'issue_child: body nonce uppercased', R,
   { keys: 'default', revocation_parent: 'active' }, false, 'draft-derived',
   'L481, L462', 'nonce must be 32 lowercase hex characters even at issuance time.')
 
+pushIssueChildCase('AD-I15', "issue_child: parent R, body C1 unchanged, now at the parent's expiry", R, clone(BODY_C1), 'agent-a',
+  { keys: 'default', revocation_parent: 'active', now: '2026-07-19T22:00:00.000Z' }, false, 'draft-derived',
+  'L697-701', "now is R's not_after, so the parent has expired at issuance while the child's own issued_at is still inside its window; TypeScript's issuer takes no now, so TypeScript actually issues.",
+  { stopOnMismatch: false })
+
+pushIssueChildCase('AD-I16', 'issue_child: parent R, body C1 unchanged, now before the parent starts', R, clone(BODY_C1), 'agent-a',
+  { keys: 'default', revocation_parent: 'active', now: '2026-07-18T21:00:00.000Z' }, false, 'draft-derived',
+  'L696-699', "now is before R's not_before, so the parent is not yet valid at issuance; TypeScript's issuer takes no now, so TypeScript actually issues.",
+  { stopOnMismatch: false })
+
 // -------------------------------------------------------------------------
-// Budget cases (spec section 9)
+// Budget cases: InMemoryAuthorityBudgetLedger reserve/dispatch/commit/cancel
 // -------------------------------------------------------------------------
 
 const P_BUDGET = issue(mutate(BODY_R, (b) => {
@@ -1546,21 +1613,22 @@ runBudgetCase('AD-B14', 'action_ref with a trailing line feed is rejected, the c
 ], 'L807-808', 'action_ref must be exactly 64 lowercase hex characters, with nothing appended; the two actionRefs are distinct reservation keys, so the second reserve is unaffected by the first.')
 
 // -------------------------------------------------------------------------
-// Assemble and write (spec section 1)
+// Assemble the output document and write it
 // -------------------------------------------------------------------------
 
 const description =
   'Cross-implementation vectors for AuthorityDelegationV1 (draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 ' +
-  'and 3.6). Expected states, results and failure codes come from the draft text (with RFC 3339 or RFC 7493 ' +
-  'where cited) or a recorded ruling, not from TypeScript output; sdk_codes values are TypeScript SDK failure-code ' +
-  'vocabulary (AuthorityFailureCode in src/v2/authority-delegation/types.ts, and BudgetOperationResult.code), not ' +
-  'protocol vocabulary the draft names, and the Python port shares the same strings as SDK parity, not a protocol ' +
-  'claim. Every record\'s delegation_id and signature were computed by the TypeScript reference\'s canonical.ts ' +
-  '(computeAuthorityDelegationId and signAuthorityDelegation, or issueAuthorityDelegation for records the spec ' +
-  'names as valid); tests/cross_impl/crosscheck_authority_delegation_v1_vectors.py recomputes every one of them ' +
-  'independently with the rfc8785 package and PyNaCl. This file is not "TS verified" and no case in it should be ' +
-  'described that way: TypeScript output was consulted only for the bytes and behaviour any implementation must ' +
-  'reproduce, not for what the expected state or result should be.'
+  'and 3.6). Expected states, outcomes and rejections come from the draft text, RFC 3339 and RFC 7493, as cited ' +
+  'per case, not from TypeScript output; sdk_codes are the TypeScript SDK\'s own failure-code vocabulary ' +
+  '(AuthorityFailureCode in src/v2/authority-delegation/types.ts, and BudgetOperationResult.code), which the ' +
+  'draft does not name, and the Python port shares the same strings as SDK parity, not a protocol claim. Every ' +
+  'record\'s delegation_id and signature were computed by the TypeScript reference\'s canonical.ts ' +
+  '(computeAuthorityDelegationId and signAuthorityDelegation, or issueAuthorityDelegation for records this file ' +
+  'names as valid), except the all-zero placeholder in AD-N-S13 (which cannot be canonicalized at all) and the ' +
+  'records a case edits after signing, as its own title says; tests/cross_impl/crosscheck_authority_delegation_v1_vectors.py ' +
+  'recomputes every one of them independently with the rfc8785 package and PyNaCl. This file is not "TS verified" ' +
+  'and no case in it should be described that way: TypeScript output was consulted only for the bytes and ' +
+  'behaviour any implementation must reproduce, not for what the expected state or result should be.'
 
 const provenance_definitions = {
   'draft-derived':
@@ -1588,6 +1656,10 @@ const conventions = {
     "Unless a case overrides an item: now is 2026-07-18T23:00:00.000Z; keys carries all five labels; trust is " +
     "{\"mode\":\"table\",\"trusted_root_ids\":[<the chain's first record's delegation_id as written, even when a " +
     'case corrupts it>]}; revocation default is "active".',
+  issue_child_now:
+    'Every issue_child case carries context.now, default 2026-07-18T23:00:00.000Z. The Python issuer takes an ' +
+    'explicit now and requires the parent to be valid at it (draft section 3.6, L696-701); the TypeScript issuer ' +
+    'takes no now, so context.now is descriptive only against the TypeScript reference.',
 }
 
 const withheld = [
@@ -1595,6 +1667,8 @@ const withheld = [
   { topic: "A root whose time.not_before predates its issued_at", reason: 'L536-537 states the rule for a child; whether it binds a root is an open question.' },
   { topic: 'Values the draft admits that the TypeScript schema rejects by a grammar the draft does not state', reason: 'A spend unit outside ^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$, and JSON number spellings such as 2.0 or 1e2 in wire input; whether the draft admits them is an open question.' },
   { topic: 'A non-string record_type or version', reason: 'Whether that is unsupported or invalid is not determined by the draft.' },
+  { topic: 'A facet profile that is not a string', reason: 'Whether that is invalid or unsupported is not determined by the draft.' },
+  { topic: 'Facet content that breaks a section 3.2 value rule under an unsupported profile', reason: 'The draft does not say whether those rules bind a facet whose profile is not supported, so such a record may be two faults.' },
   { topic: 'Key-resolution outcome structure', reason: 'not found, ambiguous, malformed, unreachable, unsupported scheme (L360-369): an open question.' },
   { topic: 'Runtime reputation and unresolved action reversibility', reason: 'L542-545 and L566 are action-time rules, not chain verification.' },
   { topic: 'Revocation records and cascade completion', reason: 'Sections 3.5 and 3.5.1: no wire format is fixed and no implementation exists.' },

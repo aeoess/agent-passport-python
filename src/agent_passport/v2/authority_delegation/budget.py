@@ -113,6 +113,8 @@ class InMemoryAuthorityBudgetLedger:
 
     def mark_dispatched(self, action_ref: str) -> BudgetOperationResult:
         with self._lock:
+            if type(action_ref) is not str:
+                return BudgetOperationResult(ok=False, code="NOT_FOUND")
             reservation = self._reservations.get(action_ref)
             if reservation is None:
                 return BudgetOperationResult(ok=False, code="NOT_FOUND")
@@ -125,6 +127,8 @@ class InMemoryAuthorityBudgetLedger:
 
     def commit(self, action_ref: str) -> BudgetOperationResult:
         with self._lock:
+            if type(action_ref) is not str:
+                return BudgetOperationResult(ok=False, code="NOT_FOUND")
             reservation = self._reservations.get(action_ref)
             if reservation is None:
                 return BudgetOperationResult(ok=False, code="NOT_FOUND")
@@ -146,6 +150,8 @@ class InMemoryAuthorityBudgetLedger:
     def cancel(self, action_ref: str) -> BudgetOperationResult:
         """Cancellation is allowed only before dispatch."""
         with self._lock:
+            if type(action_ref) is not str:
+                return BudgetOperationResult(ok=False, code="NOT_FOUND")
             reservation = self._reservations.get(action_ref)
             if reservation is None:
                 return BudgetOperationResult(ok=False, code="NOT_FOUND")
@@ -164,5 +170,7 @@ class InMemoryAuthorityBudgetLedger:
 
     def counter(self, delegation_id: str) -> dict:
         with self._lock:
+            if type(delegation_id) is not str:
+                return {"reserved": "0", "committed": "0"}
             counter = self._counters.get(delegation_id, _Counter())
             return {"reserved": str(counter.reserved), "committed": str(counter.committed)}

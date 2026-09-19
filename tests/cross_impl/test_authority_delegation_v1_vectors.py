@@ -131,6 +131,7 @@ def test_issue_child(case):
             case["parent"],
             case["body"],
             _SEEDS[case["signing_key"]],
+            now=case["context"]["now"],
             resolve_verification_key=_key_resolver(case["context"]["keys"]),
             resolve_revocation=revocation,
         )
