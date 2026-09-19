@@ -1,9 +1,9 @@
 {
-  "description": "Cross-implementation vectors for AuthorityDelegationV1 (draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6). Expected states, results and failure codes come from the draft text (with RFC 3339 or RFC 7493 where cited) or a recorded ruling, not from TypeScript output; sdk_codes values are TypeScript SDK failure-code vocabulary (AuthorityFailureCode in src/v2/authority-delegation/types.ts, and BudgetOperationResult.code), not protocol vocabulary the draft names, and the Python port shares the same strings as SDK parity, not a protocol claim. Every record's delegation_id and signature were computed by the TypeScript reference's canonical.ts (computeAuthorityDelegationId and signAuthorityDelegation, or issueAuthorityDelegation for records the spec names as valid); tests/cross_impl/crosscheck_authority_delegation_v1_vectors.py recomputes every one of them independently with the rfc8785 package and PyNaCl. This file is not \"TS verified\" and no case in it should be described that way: TypeScript output was consulted only for the bytes and behaviour any implementation must reproduce, not for what the expected state or result should be.",
+  "description": "Cross-implementation vectors for AuthorityDelegationV1 (draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6). Expected states, outcomes and rejections come from the draft text, RFC 3339 and RFC 7493, as cited per case, not from TypeScript output; sdk_codes are the TypeScript SDK's own failure-code vocabulary (AuthorityFailureCode in src/v2/authority-delegation/types.ts, and BudgetOperationResult.code), which the draft does not name, and the Python port shares the same strings as SDK parity, not a protocol claim. Every record's delegation_id and signature were computed by the TypeScript reference's canonical.ts (computeAuthorityDelegationId and signAuthorityDelegation, or issueAuthorityDelegation for records this file names as valid), except the all-zero placeholder in AD-N-S13 (which cannot be canonicalized at all) and the records a case edits after signing, as its own title says; tests/cross_impl/crosscheck_authority_delegation_v1_vectors.py recomputes every one of them independently with the rfc8785 package and PyNaCl. This file is not \"TS verified\" and no case in it should be described that way: TypeScript output was consulted only for the bytes and behaviour any implementation must reproduce, not for what the expected state or result should be.",
   "draft": "draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6",
   "generated_from": {
     "repository": "agent-passport-system",
-    "commit": "0c1ecdc2689a35fa86a08152c065a346d0b511c5"
+    "commit": "14a2157b2dfe3ddeb06c5f2e2c5c79100240141c"
   },
   "provenance_definitions": {
     "draft-derived": "the expected state, outcome or rejection follows from the draft text (with RFC 3339 or RFC 7493 where cited); TypeScript output was not consulted to decide it.",
@@ -50,7 +50,8 @@
     "key_resolution": "The key resolver in a chain case's context is called with (issuer, verification_method, issued_at) and returns the public_key_hex of the context.keys entry whose issuer and verification_method both match, else no key (TypeScript null, Python None).",
     "trust": "context.trust of {\"mode\":\"table\",\"trusted_root_ids\":[...]} accepts the chain head exactly when its delegation_id is listed; {\"mode\":\"unavailable\"} means the trust policy raises.",
     "revocation": "context.revocation of {\"default\":..., \"by_index\":{\"<i>\":...}} means the revocation resolver returns the value for the chain member at index i when by_index names it, else the default; \"unavailable\" means the resolver raises.",
-    "default_context": "Unless a case overrides an item: now is 2026-07-18T23:00:00.000Z; keys carries all five labels; trust is {\"mode\":\"table\",\"trusted_root_ids\":[<the chain's first record's delegation_id as written, even when a case corrupts it>]}; revocation default is \"active\"."
+    "default_context": "Unless a case overrides an item: now is 2026-07-18T23:00:00.000Z; keys carries all five labels; trust is {\"mode\":\"table\",\"trusted_root_ids\":[<the chain's first record's delegation_id as written, even when a case corrupts it>]}; revocation default is \"active\".",
+    "issue_child_now": "Every issue_child case carries context.now, default 2026-07-18T23:00:00.000Z. The Python issuer takes an explicit now and requires the parent to be valid at it (draft section 3.6, L696-701); the TypeScript issuer takes no now, so context.now is descriptive only against the TypeScript reference."
   },
   "cases": [
     {
@@ -2480,7 +2481,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L796-797 and L480-481 (RFC 3339 timestamps), RFC 3339 sections 5.1 and 5.6",
-        "note": "RFC 3339 admits second 60 and a validator cannot consult the leap-second table, so second 60 is accepted lexically at any hour and minute; same-format RFC 3339 timestamps sort as strings into time order."
+        "note": "2016-12-31T23:59:60Z was an actual leap second, which RFC 3339 sections 5.6 and 5.7 admit; same-format timestamps sort as strings into time order (RFC 3339 section 5.1)."
       },
       "chain": [
         {
@@ -3696,7 +3697,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L424-426, L590, L1227",
-        "note": "The record names a record_type this revision does not define; an unimplemented construct is unsupported, not invalid."
+        "note": "The draft states no rule for an unknown record_type; by analogy with L590 and L1227, an unimplemented construct is unsupported, not invalid."
       },
       "chain": [
         {
@@ -3810,7 +3811,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L426",
-        "note": "Same reasoning as record_type: an unrecognized version is unsupported."
+        "note": "The draft states no rule for an unknown version; by analogy with L590 and L1227, an unimplemented construct is unsupported, not invalid."
       },
       "chain": [
         {
@@ -8647,7 +8648,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L512-514, L480",
-        "note": "Every facet carries a profile."
+        "note": "The scope facet carries profile and grants (L464-465) in a closed schema (L480); a missing member is invalid."
       },
       "chain": [
         {
@@ -8732,120 +8733,6 @@
           "mode": "table",
           "trusted_root_ids": [
             "sha256:02c5fdc49447cfa98484235d95cdddc6b152e94f74523bdae6533cb2f1bca156"
-          ]
-        },
-        "revocation": {
-          "default": "active"
-        }
-      },
-      "expected": {
-        "state": "invalid",
-        "sdk_codes": [
-          "SCHEMA_INVALID"
-        ],
-        "index": 0
-      },
-      "ts_behaviour": {
-        "state": "invalid",
-        "codes": [
-          "SCHEMA_INVALID"
-        ],
-        "index": 0
-      }
-    },
-    {
-      "id": "AD-N-S50",
-      "kind": "chain",
-      "title": "Reputation facet with a non-string profile",
-      "expected_provenance": "draft-derived",
-      "derivation": {
-        "lines": "L512-514",
-        "note": "A facet profile must be a string."
-      },
-      "chain": [
-        {
-          "record_type": "aps:authority-delegation:v1",
-          "version": "1.0",
-          "parent_delegation_id": null,
-          "issuer": "did:example:principal",
-          "subject": "did:example:agent-a",
-          "verification_method": "did:example:principal#key-1",
-          "issued_at": "2026-07-18T22:00:00.000Z",
-          "nonce": "00112233445566778899aabbccddeeff",
-          "authority": {
-            "scope": {
-              "profile": "aps-hierarchical-v1",
-              "grants": [
-                "commerce:*",
-                "travel:book"
-              ]
-            },
-            "spend": {
-              "mode": "bounded",
-              "unit": "iso4217:USD:minor",
-              "per_action": "5000",
-              "cumulative": "10000"
-            },
-            "depth": {
-              "remaining": 2
-            },
-            "time": {
-              "not_before": "2026-07-18T22:00:00.000Z",
-              "not_after": "2026-07-19T22:00:00.000Z"
-            },
-            "reputation": {
-              "profile": 5,
-              "ceiling": 80
-            },
-            "values": {
-              "profile": "aps-values-identifiers-v1",
-              "required": [
-                "F-001",
-                "F-003"
-              ]
-            },
-            "reversibility": {
-              "profile": "aps-tci-v1",
-              "ceiling": "compensable"
-            }
-          },
-          "delegation_id": "sha256:70452c85354d540686e798b5cc493c0e23606823cb9b68efd7351627c35c4f20",
-          "signature": "076e8bcef5c719158a2d8c361bd4d5aeb45223b6e7e419f5bd60cc480f14414dc7f02aad3fede5c92bb0bf191ae0ea53b3396f408d0e55ec26f0cc6ffdaf400e"
-        }
-      ],
-      "context": {
-        "now": "2026-07-18T23:00:00.000Z",
-        "keys": [
-          {
-            "issuer": "did:example:principal",
-            "verification_method": "did:example:principal#key-1",
-            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
-          },
-          {
-            "issuer": "did:example:agent-a",
-            "verification_method": "did:example:agent-a#key-1",
-            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
-          },
-          {
-            "issuer": "did:example:agent-b",
-            "verification_method": "did:example:agent-b#key-1",
-            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
-          },
-          {
-            "issuer": "did:example:agent-c",
-            "verification_method": "did:example:agent-c#key-1",
-            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
-          },
-          {
-            "issuer": "did:example:outsider",
-            "verification_method": "did:example:outsider#key-1",
-            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
-          }
-        ],
-        "trust": {
-          "mode": "table",
-          "trusted_root_ids": [
-            "sha256:70452c85354d540686e798b5cc493c0e23606823cb9b68efd7351627c35c4f20"
           ]
         },
         "revocation": {
@@ -9891,6 +9778,355 @@
       }
     },
     {
+      "id": "AD-N-S60",
+      "kind": "chain",
+      "title": "issuer with a trailing noncharacter (U+FDD0)",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L204 with RFC 7493 section 2.1",
+        "note": "Every string in the record must be I-JSON; a key entry for the mutated issuer string is added so the key would resolve, proving the fault is the I-JSON check and not an unresolvable key."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal﷐",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:4e437a372c663e09e143d2629095a9148eb339626490485b6efc39002e6abae1",
+          "signature": "ec78fdea4c37580d9ca2b513214f7bdbb13adf83d86845a127a4e1a08415bb746106fca6b5fb69f2ed4731689e1fdacb0247b6c91be9145f958a3727f0c55f0e"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          },
+          {
+            "issuer": "did:example:principal﷐",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:4e437a372c663e09e143d2629095a9148eb339626490485b6efc39002e6abae1"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "invalid",
+        "sdk_codes": [
+          "SCHEMA_INVALID"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "invalid",
+        "codes": [
+          "SCHEMA_INVALID"
+        ],
+        "index": 0
+      }
+    },
+    {
+      "id": "AD-N-S61",
+      "kind": "chain",
+      "title": "subject with a trailing noncharacter (U+10FFFF)",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L204 with RFC 7493 section 2.1",
+        "note": "Every string in the record must be I-JSON; a valid surrogate pair decoding to a noncharacter is still rejected."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a􏿿",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:515934d5c18ce8dbc24ee638365c220ac056824d4158f962dc0ff7b0ea265584",
+          "signature": "f8859bca4ea7656eb948bc9a068ccb790285f83f8f082223dbc576ecb239a8a9f7a4eb00fe7fcb7c6b2c1084e2912a2f9b5e738f1ba75d70892822380cbf4904"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:515934d5c18ce8dbc24ee638365c220ac056824d4158f962dc0ff7b0ea265584"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "invalid",
+        "sdk_codes": [
+          "SCHEMA_INVALID"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "invalid",
+        "codes": [
+          "SCHEMA_INVALID"
+        ],
+        "index": 0
+      }
+    },
+    {
+      "id": "AD-N-S62",
+      "kind": "chain",
+      "title": "Unsupported scope profile with a trailing noncharacter (U+FFFF)",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L204 with RFC 7493 section 2.1",
+        "note": "The record is not I-JSON, so it cannot be valid whatever its profile; the SDK also reports the unknown profile."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v2￿",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:dc12a433983a762c37a407a37bf0d8b46fd7cccd5fbe10cd30abd9b716bfea14",
+          "signature": "79c6f8a809cdf51271db016066f2e3fb3f189d721908f8d16d37a8de96ddd6080e99ebab4e7b2511d173a87801c50475aa44d239545078fc60050cc3d7a36c01"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:dc12a433983a762c37a407a37bf0d8b46fd7cccd5fbe10cd30abd9b716bfea14"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "invalid",
+        "sdk_codes": [
+          "SCHEMA_INVALID",
+          "UNSUPPORTED_PROFILE"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "invalid",
+        "codes": [
+          "SCHEMA_INVALID",
+          "UNSUPPORTED_PROFILE"
+        ],
+        "index": 0
+      }
+    },
+    {
       "id": "AD-N-U01",
       "kind": "chain",
       "title": "Unsupported scope profile",
@@ -9983,233 +10219,6 @@
           "mode": "table",
           "trusted_root_ids": [
             "sha256:8826fe44c4d998ebe2e54ac87f1f62b4eb357a562aa1cc636742a987a347d944"
-          ]
-        },
-        "revocation": {
-          "default": "active"
-        }
-      },
-      "expected": {
-        "state": "unsupported",
-        "sdk_codes": [
-          "UNSUPPORTED_PROFILE"
-        ],
-        "index": 0
-      },
-      "ts_behaviour": {
-        "state": "unsupported",
-        "codes": [
-          "UNSUPPORTED_PROFILE"
-        ],
-        "index": 0
-      }
-    },
-    {
-      "id": "AD-N-U02",
-      "kind": "chain",
-      "title": "Unsupported scope profile, non-v1 grant syntax",
-      "expected_provenance": "draft-derived",
-      "derivation": {
-        "lines": "L512-514, L590",
-        "note": "Content under an unsupported profile is not judged by v1 rules."
-      },
-      "chain": [
-        {
-          "record_type": "aps:authority-delegation:v1",
-          "version": "1.0",
-          "parent_delegation_id": null,
-          "issuer": "did:example:principal",
-          "subject": "did:example:agent-a",
-          "verification_method": "did:example:principal#key-1",
-          "issued_at": "2026-07-18T22:00:00.000Z",
-          "nonce": "00112233445566778899aabbccddeeff",
-          "authority": {
-            "scope": {
-              "profile": "aps-hierarchical-v2",
-              "grants": [
-                "commerce/checkout"
-              ]
-            },
-            "spend": {
-              "mode": "bounded",
-              "unit": "iso4217:USD:minor",
-              "per_action": "5000",
-              "cumulative": "10000"
-            },
-            "depth": {
-              "remaining": 2
-            },
-            "time": {
-              "not_before": "2026-07-18T22:00:00.000Z",
-              "not_after": "2026-07-19T22:00:00.000Z"
-            },
-            "reputation": {
-              "profile": "aps-score-0-100-v1",
-              "ceiling": 80
-            },
-            "values": {
-              "profile": "aps-values-identifiers-v1",
-              "required": [
-                "F-001",
-                "F-003"
-              ]
-            },
-            "reversibility": {
-              "profile": "aps-tci-v1",
-              "ceiling": "compensable"
-            }
-          },
-          "delegation_id": "sha256:52aaaee1dd68880dc13cc0d7859f6d4ebd060772ed1348655f812cc7136392e7",
-          "signature": "57f88285dd1981faa8f43211ce7355d67772109315bc52f911f2f8fd3e7373bbf48adb26caa0f66d68d50ba4ef23bfa0df03e4964dc3abe6fcbad482e849860c"
-        }
-      ],
-      "context": {
-        "now": "2026-07-18T23:00:00.000Z",
-        "keys": [
-          {
-            "issuer": "did:example:principal",
-            "verification_method": "did:example:principal#key-1",
-            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
-          },
-          {
-            "issuer": "did:example:agent-a",
-            "verification_method": "did:example:agent-a#key-1",
-            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
-          },
-          {
-            "issuer": "did:example:agent-b",
-            "verification_method": "did:example:agent-b#key-1",
-            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
-          },
-          {
-            "issuer": "did:example:agent-c",
-            "verification_method": "did:example:agent-c#key-1",
-            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
-          },
-          {
-            "issuer": "did:example:outsider",
-            "verification_method": "did:example:outsider#key-1",
-            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
-          }
-        ],
-        "trust": {
-          "mode": "table",
-          "trusted_root_ids": [
-            "sha256:52aaaee1dd68880dc13cc0d7859f6d4ebd060772ed1348655f812cc7136392e7"
-          ]
-        },
-        "revocation": {
-          "default": "active"
-        }
-      },
-      "expected": {
-        "state": "unsupported",
-        "sdk_codes": [
-          "UNSUPPORTED_PROFILE"
-        ],
-        "index": 0
-      },
-      "ts_behaviour": {
-        "state": "unsupported",
-        "codes": [
-          "UNSUPPORTED_PROFILE"
-        ],
-        "index": 0
-      }
-    },
-    {
-      "id": "AD-N-U03",
-      "kind": "chain",
-      "title": "Unsupported scope profile with an extra member",
-      "expected_provenance": "draft-derived",
-      "derivation": {
-        "lines": "L512-514, L590",
-        "note": "Content under an unsupported profile is not judged by v1 rules, including its own closed-schema shape."
-      },
-      "chain": [
-        {
-          "record_type": "aps:authority-delegation:v1",
-          "version": "1.0",
-          "parent_delegation_id": null,
-          "issuer": "did:example:principal",
-          "subject": "did:example:agent-a",
-          "verification_method": "did:example:principal#key-1",
-          "issued_at": "2026-07-18T22:00:00.000Z",
-          "nonce": "00112233445566778899aabbccddeeff",
-          "authority": {
-            "scope": {
-              "profile": "aps-hierarchical-v2",
-              "grants": [
-                "commerce:*"
-              ],
-              "exclusions": []
-            },
-            "spend": {
-              "mode": "bounded",
-              "unit": "iso4217:USD:minor",
-              "per_action": "5000",
-              "cumulative": "10000"
-            },
-            "depth": {
-              "remaining": 2
-            },
-            "time": {
-              "not_before": "2026-07-18T22:00:00.000Z",
-              "not_after": "2026-07-19T22:00:00.000Z"
-            },
-            "reputation": {
-              "profile": "aps-score-0-100-v1",
-              "ceiling": 80
-            },
-            "values": {
-              "profile": "aps-values-identifiers-v1",
-              "required": [
-                "F-001",
-                "F-003"
-              ]
-            },
-            "reversibility": {
-              "profile": "aps-tci-v1",
-              "ceiling": "compensable"
-            }
-          },
-          "delegation_id": "sha256:2a4ca41e531c567200909b18b9621ca3100a30a97dcb3da3c24c56c242c25560",
-          "signature": "31fd42db64d2578159a7ca9121ea6f069813c4835fd04c129ce35b1a1aae38d4a33a5ee5eb494092631ae9710e470a05eefd58d9e1ec88edd8db6bc38f517e0e"
-        }
-      ],
-      "context": {
-        "now": "2026-07-18T23:00:00.000Z",
-        "keys": [
-          {
-            "issuer": "did:example:principal",
-            "verification_method": "did:example:principal#key-1",
-            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
-          },
-          {
-            "issuer": "did:example:agent-a",
-            "verification_method": "did:example:agent-a#key-1",
-            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
-          },
-          {
-            "issuer": "did:example:agent-b",
-            "verification_method": "did:example:agent-b#key-1",
-            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
-          },
-          {
-            "issuer": "did:example:agent-c",
-            "verification_method": "did:example:agent-c#key-1",
-            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
-          },
-          {
-            "issuer": "did:example:outsider",
-            "verification_method": "did:example:outsider#key-1",
-            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
-          }
-        ],
-        "trust": {
-          "mode": "table",
-          "trusted_root_ids": [
-            "sha256:2a4ca41e531c567200909b18b9621ca3100a30a97dcb3da3c24c56c242c25560"
           ]
         },
         "revocation": {
@@ -10346,120 +10355,6 @@
       }
     },
     {
-      "id": "AD-N-U05",
-      "kind": "chain",
-      "title": "Unsupported reputation profile, out-of-v1-range ceiling",
-      "expected_provenance": "draft-derived",
-      "derivation": {
-        "lines": "L512-514, L590",
-        "note": "Content under an unsupported profile is not judged by v1 rules."
-      },
-      "chain": [
-        {
-          "record_type": "aps:authority-delegation:v1",
-          "version": "1.0",
-          "parent_delegation_id": null,
-          "issuer": "did:example:principal",
-          "subject": "did:example:agent-a",
-          "verification_method": "did:example:principal#key-1",
-          "issued_at": "2026-07-18T22:00:00.000Z",
-          "nonce": "00112233445566778899aabbccddeeff",
-          "authority": {
-            "scope": {
-              "profile": "aps-hierarchical-v1",
-              "grants": [
-                "commerce:*",
-                "travel:book"
-              ]
-            },
-            "spend": {
-              "mode": "bounded",
-              "unit": "iso4217:USD:minor",
-              "per_action": "5000",
-              "cumulative": "10000"
-            },
-            "depth": {
-              "remaining": 2
-            },
-            "time": {
-              "not_before": "2026-07-18T22:00:00.000Z",
-              "not_after": "2026-07-19T22:00:00.000Z"
-            },
-            "reputation": {
-              "profile": "aps-score-0-1000-v1",
-              "ceiling": 800
-            },
-            "values": {
-              "profile": "aps-values-identifiers-v1",
-              "required": [
-                "F-001",
-                "F-003"
-              ]
-            },
-            "reversibility": {
-              "profile": "aps-tci-v1",
-              "ceiling": "compensable"
-            }
-          },
-          "delegation_id": "sha256:07cff262dc80612e9e7612b6d9e37f5741e7898c28154a6d8b2635b2ed572322",
-          "signature": "a66a096186f80c2e071ddcdce4c912753d8fa60a31a342613185802a5350ca828328e60ebdfd338fc35f71ca7ac6cc3d7dee88df84e2a2d5158c94f6907cac0e"
-        }
-      ],
-      "context": {
-        "now": "2026-07-18T23:00:00.000Z",
-        "keys": [
-          {
-            "issuer": "did:example:principal",
-            "verification_method": "did:example:principal#key-1",
-            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
-          },
-          {
-            "issuer": "did:example:agent-a",
-            "verification_method": "did:example:agent-a#key-1",
-            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
-          },
-          {
-            "issuer": "did:example:agent-b",
-            "verification_method": "did:example:agent-b#key-1",
-            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
-          },
-          {
-            "issuer": "did:example:agent-c",
-            "verification_method": "did:example:agent-c#key-1",
-            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
-          },
-          {
-            "issuer": "did:example:outsider",
-            "verification_method": "did:example:outsider#key-1",
-            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
-          }
-        ],
-        "trust": {
-          "mode": "table",
-          "trusted_root_ids": [
-            "sha256:07cff262dc80612e9e7612b6d9e37f5741e7898c28154a6d8b2635b2ed572322"
-          ]
-        },
-        "revocation": {
-          "default": "active"
-        }
-      },
-      "expected": {
-        "state": "unsupported",
-        "sdk_codes": [
-          "UNSUPPORTED_PROFILE"
-        ],
-        "index": 0
-      },
-      "ts_behaviour": {
-        "state": "unsupported",
-        "codes": [
-          "UNSUPPORTED_PROFILE"
-        ],
-        "index": 0
-      }
-    },
-    {
       "id": "AD-N-U06",
       "kind": "chain",
       "title": "Unsupported values profile",
@@ -10552,120 +10447,6 @@
           "mode": "table",
           "trusted_root_ids": [
             "sha256:5cce085eead47ea081c928ce14195f6777e10fb6a3cdd5b97d604c3b14d860ec"
-          ]
-        },
-        "revocation": {
-          "default": "active"
-        }
-      },
-      "expected": {
-        "state": "unsupported",
-        "sdk_codes": [
-          "UNSUPPORTED_PROFILE"
-        ],
-        "index": 0
-      },
-      "ts_behaviour": {
-        "state": "unsupported",
-        "codes": [
-          "UNSUPPORTED_PROFILE"
-        ],
-        "index": 0
-      }
-    },
-    {
-      "id": "AD-N-U07",
-      "kind": "chain",
-      "title": "Unsupported reversibility profile",
-      "expected_provenance": "draft-derived",
-      "derivation": {
-        "lines": "L512-514, L590",
-        "note": "An unsupported facet profile is unsupported, not invalid."
-      },
-      "chain": [
-        {
-          "record_type": "aps:authority-delegation:v1",
-          "version": "1.0",
-          "parent_delegation_id": null,
-          "issuer": "did:example:principal",
-          "subject": "did:example:agent-a",
-          "verification_method": "did:example:principal#key-1",
-          "issued_at": "2026-07-18T22:00:00.000Z",
-          "nonce": "00112233445566778899aabbccddeeff",
-          "authority": {
-            "scope": {
-              "profile": "aps-hierarchical-v1",
-              "grants": [
-                "commerce:*",
-                "travel:book"
-              ]
-            },
-            "spend": {
-              "mode": "bounded",
-              "unit": "iso4217:USD:minor",
-              "per_action": "5000",
-              "cumulative": "10000"
-            },
-            "depth": {
-              "remaining": 2
-            },
-            "time": {
-              "not_before": "2026-07-18T22:00:00.000Z",
-              "not_after": "2026-07-19T22:00:00.000Z"
-            },
-            "reputation": {
-              "profile": "aps-score-0-100-v1",
-              "ceiling": 80
-            },
-            "values": {
-              "profile": "aps-values-identifiers-v1",
-              "required": [
-                "F-001",
-                "F-003"
-              ]
-            },
-            "reversibility": {
-              "profile": "aps-tci-v2",
-              "ceiling": "reversible"
-            }
-          },
-          "delegation_id": "sha256:04c8355906e19e488a1569fb1d69ee9733d4c5f11a93f13929f9647e61cc470b",
-          "signature": "de8755c12d595721d037b5036afc3d2bdb1ce01bf489e754412e58efed17a30c759428c89634048eb262478b0f3491519a63aa01d057bfd21e373886acaa6802"
-        }
-      ],
-      "context": {
-        "now": "2026-07-18T23:00:00.000Z",
-        "keys": [
-          {
-            "issuer": "did:example:principal",
-            "verification_method": "did:example:principal#key-1",
-            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
-          },
-          {
-            "issuer": "did:example:agent-a",
-            "verification_method": "did:example:agent-a#key-1",
-            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
-          },
-          {
-            "issuer": "did:example:agent-b",
-            "verification_method": "did:example:agent-b#key-1",
-            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
-          },
-          {
-            "issuer": "did:example:agent-c",
-            "verification_method": "did:example:agent-c#key-1",
-            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
-          },
-          {
-            "issuer": "did:example:outsider",
-            "verification_method": "did:example:outsider#key-1",
-            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
-          }
-        ],
-        "trust": {
-          "mode": "table",
-          "trusted_root_ids": [
-            "sha256:04c8355906e19e488a1569fb1d69ee9733d4c5f11a93f13929f9647e61cc470b"
           ]
         },
         "revocation": {
@@ -11362,7 +11143,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L492, L321-323, L589-590",
-        "note": "Without key-authority evidence, the result is indeterminate, not invalid; finer resolution-outcome structure (L360-369) is an open question and not tested here."
+        "note": "By analogy with L321-323 (without key-authority evidence the result is indeterminate) and L589-590, the state is indeterminate, not invalid; finer resolution-outcome structure (L360-369) is an open question and not tested here."
       },
       "chain": [
         {
@@ -11471,7 +11252,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L492, L321-323, L589-590",
-        "note": "Same reasoning as AD-N-C05, one level deeper in the chain."
+        "note": "By analogy with L321-323 (without key-authority evidence the result is indeterminate) and L589-590, the state is indeterminate, not invalid; same reasoning as AD-N-C05, one level deeper in the chain."
       },
       "chain": [
         {
@@ -12116,7 +11897,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L589-590, L1226",
-        "note": "Unavailable information is indeterminate, not a rejection."
+        "note": "By analogy with L589-590 and L1226: an unavailable trust policy is missing information, so the result is indeterminate."
       },
       "chain": [
         {
@@ -16904,6 +16685,27 @@
       }
     },
     {
+      "id": "AD-W09",
+      "kind": "wire",
+      "title": "subject with a JSON-escaped noncharacter (U+FFFF)",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L204 with RFC 7493 section 2.1",
+        "note": "A JSON \\u escape can spell a noncharacter, and I-JSON rejects it just the same as a literal one."
+      },
+      "input_json": "{\"record_type\":\"aps:authority-delegation:v1\",\"version\":\"1.0\",\"parent_delegation_id\":null,\"issuer\":\"did:example:principal\",\"subject\":\"did:example:agent-a\\uffff\",\"verification_method\":\"did:example:principal#key-1\",\"issued_at\":\"2026-07-18T22:00:00.000Z\",\"nonce\":\"00112233445566778899aabbccddeeff\",\"authority\":{\"scope\":{\"profile\":\"aps-hierarchical-v1\",\"grants\":[\"commerce:*\",\"travel:book\"]},\"spend\":{\"mode\":\"bounded\",\"unit\":\"iso4217:USD:minor\",\"per_action\":\"5000\",\"cumulative\":\"10000\"},\"depth\":{\"remaining\":2},\"time\":{\"not_before\":\"2026-07-18T22:00:00.000Z\",\"not_after\":\"2026-07-19T22:00:00.000Z\"},\"reputation\":{\"profile\":\"aps-score-0-100-v1\",\"ceiling\":80},\"values\":{\"profile\":\"aps-values-identifiers-v1\",\"required\":[\"F-001\",\"F-003\"]},\"reversibility\":{\"profile\":\"aps-tci-v1\",\"ceiling\":\"compensable\"}},\"delegation_id\":\"sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249\",\"signature\":\"a05cee47318a43c2161785335aff5f6daa20abd24dffb86a36fec57971129e946c37092499bf62e458846dff46a1d0879e2d9568d277ef27111b5037b1b48704\"}",
+      "expected": {
+        "result": "reject"
+      },
+      "ts_behaviour": {
+        "result": "reject",
+        "error": {
+          "name": "TypeError",
+          "message": "authority delegation wire invalid: SCHEMA_INVALID"
+        }
+      }
+    },
+    {
       "id": "AD-I01",
       "kind": "issue_root",
       "title": "issue_root: body R, key principal",
@@ -17152,7 +16954,8 @@
         ],
         "revocation": {
           "parent": "active"
-        }
+        },
+        "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
         "result": "issue",
@@ -17347,7 +17150,8 @@
         ],
         "revocation": {
           "parent": "active"
-        }
+        },
+        "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
         "result": "issue",
@@ -17542,7 +17346,8 @@
         ],
         "revocation": {
           "parent": "active"
-        }
+        },
+        "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
         "result": "refuse"
@@ -17688,7 +17493,8 @@
         ],
         "revocation": {
           "parent": "active"
-        }
+        },
+        "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
         "result": "refuse"
@@ -17834,7 +17640,8 @@
         ],
         "revocation": {
           "parent": "active"
-        }
+        },
+        "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
         "result": "refuse"
@@ -17980,7 +17787,8 @@
         ],
         "revocation": {
           "parent": "revoked"
-        }
+        },
+        "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
         "result": "refuse"
@@ -18126,7 +17934,8 @@
         ],
         "revocation": {
           "parent": "active"
-        }
+        },
+        "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
         "result": "refuse"
@@ -18272,7 +18081,8 @@
         ],
         "revocation": {
           "parent": "unknown"
-        }
+        },
+        "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
         "result": "refuse"
@@ -18413,7 +18223,8 @@
         ],
         "revocation": {
           "parent": "active"
-        }
+        },
+        "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
         "result": "refuse"
@@ -18559,7 +18370,8 @@
         ],
         "revocation": {
           "parent": "active"
-        }
+        },
+        "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
         "result": "refuse"
@@ -18705,7 +18517,8 @@
         ],
         "revocation": {
           "parent": "active"
-        }
+        },
+        "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
         "result": "refuse"
@@ -18851,7 +18664,8 @@
         ],
         "revocation": {
           "parent": "active"
-        }
+        },
+        "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
         "result": "refuse"
@@ -18997,7 +18811,8 @@
         ],
         "revocation": {
           "parent": "active"
-        }
+        },
+        "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
         "result": "refuse"
@@ -19005,6 +18820,300 @@
       "ts_behaviour": {
         "result": "refuse",
         "error": "authority delegation body invalid: NONCANONICAL_VALUE: nonce must be 32 lowercase hex characters"
+      }
+    },
+    {
+      "id": "AD-I15",
+      "kind": "issue_child",
+      "title": "issue_child: parent R, body C1 unchanged, now at the parent's expiry",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L697-701",
+        "note": "now is R's not_after, so the parent has expired at issuance while the child's own issued_at is still inside its window; TypeScript's issuer takes no now, so TypeScript actually issues."
+      },
+      "parent": {
+        "record_type": "aps:authority-delegation:v1",
+        "version": "1.0",
+        "parent_delegation_id": null,
+        "issuer": "did:example:principal",
+        "subject": "did:example:agent-a",
+        "verification_method": "did:example:principal#key-1",
+        "issued_at": "2026-07-18T22:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff",
+        "authority": {
+          "scope": {
+            "profile": "aps-hierarchical-v1",
+            "grants": [
+              "commerce:*",
+              "travel:book"
+            ]
+          },
+          "spend": {
+            "mode": "bounded",
+            "unit": "iso4217:USD:minor",
+            "per_action": "5000",
+            "cumulative": "10000"
+          },
+          "depth": {
+            "remaining": 2
+          },
+          "time": {
+            "not_before": "2026-07-18T22:00:00.000Z",
+            "not_after": "2026-07-19T22:00:00.000Z"
+          },
+          "reputation": {
+            "profile": "aps-score-0-100-v1",
+            "ceiling": 80
+          },
+          "values": {
+            "profile": "aps-values-identifiers-v1",
+            "required": [
+              "F-001",
+              "F-003"
+            ]
+          },
+          "reversibility": {
+            "profile": "aps-tci-v1",
+            "ceiling": "compensable"
+          }
+        },
+        "delegation_id": "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249",
+        "signature": "a05cee47318a43c2161785335aff5f6daa20abd24dffb86a36fec57971129e946c37092499bf62e458846dff46a1d0879e2d9568d277ef27111b5037b1b48704"
+      },
+      "body": {
+        "record_type": "aps:authority-delegation:v1",
+        "version": "1.0",
+        "parent_delegation_id": "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249",
+        "issuer": "did:example:agent-a",
+        "subject": "did:example:agent-b",
+        "verification_method": "did:example:agent-a#key-1",
+        "issued_at": "2026-07-18T22:10:00.000Z",
+        "nonce": "102132435465768798a9bacbdcedfe0f",
+        "authority": {
+          "scope": {
+            "profile": "aps-hierarchical-v1",
+            "grants": [
+              "commerce:checkout"
+            ]
+          },
+          "spend": {
+            "mode": "bounded",
+            "unit": "iso4217:USD:minor",
+            "per_action": "2500",
+            "cumulative": "5000"
+          },
+          "depth": {
+            "remaining": 1
+          },
+          "time": {
+            "not_before": "2026-07-18T22:10:00.000Z",
+            "not_after": "2026-07-19T12:00:00.000Z"
+          },
+          "reputation": {
+            "profile": "aps-score-0-100-v1",
+            "ceiling": 70
+          },
+          "values": {
+            "profile": "aps-values-identifiers-v1",
+            "required": [
+              "F-001",
+              "F-003",
+              "F-007"
+            ]
+          },
+          "reversibility": {
+            "profile": "aps-tci-v1",
+            "ceiling": "tentative"
+          }
+        }
+      },
+      "signing_key": "agent-a",
+      "context": {
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "revocation": {
+          "parent": "active"
+        },
+        "now": "2026-07-19T22:00:00.000Z"
+      },
+      "expected": {
+        "result": "refuse"
+      },
+      "ts_behaviour": {
+        "result": "issue",
+        "delegation_id": "sha256:59c7179591b4d82fe7a63c097b3f79719494cdd7a9e39cd0036e36ed1c88e76d"
+      }
+    },
+    {
+      "id": "AD-I16",
+      "kind": "issue_child",
+      "title": "issue_child: parent R, body C1 unchanged, now before the parent starts",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L696-699",
+        "note": "now is before R's not_before, so the parent is not yet valid at issuance; TypeScript's issuer takes no now, so TypeScript actually issues."
+      },
+      "parent": {
+        "record_type": "aps:authority-delegation:v1",
+        "version": "1.0",
+        "parent_delegation_id": null,
+        "issuer": "did:example:principal",
+        "subject": "did:example:agent-a",
+        "verification_method": "did:example:principal#key-1",
+        "issued_at": "2026-07-18T22:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff",
+        "authority": {
+          "scope": {
+            "profile": "aps-hierarchical-v1",
+            "grants": [
+              "commerce:*",
+              "travel:book"
+            ]
+          },
+          "spend": {
+            "mode": "bounded",
+            "unit": "iso4217:USD:minor",
+            "per_action": "5000",
+            "cumulative": "10000"
+          },
+          "depth": {
+            "remaining": 2
+          },
+          "time": {
+            "not_before": "2026-07-18T22:00:00.000Z",
+            "not_after": "2026-07-19T22:00:00.000Z"
+          },
+          "reputation": {
+            "profile": "aps-score-0-100-v1",
+            "ceiling": 80
+          },
+          "values": {
+            "profile": "aps-values-identifiers-v1",
+            "required": [
+              "F-001",
+              "F-003"
+            ]
+          },
+          "reversibility": {
+            "profile": "aps-tci-v1",
+            "ceiling": "compensable"
+          }
+        },
+        "delegation_id": "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249",
+        "signature": "a05cee47318a43c2161785335aff5f6daa20abd24dffb86a36fec57971129e946c37092499bf62e458846dff46a1d0879e2d9568d277ef27111b5037b1b48704"
+      },
+      "body": {
+        "record_type": "aps:authority-delegation:v1",
+        "version": "1.0",
+        "parent_delegation_id": "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249",
+        "issuer": "did:example:agent-a",
+        "subject": "did:example:agent-b",
+        "verification_method": "did:example:agent-a#key-1",
+        "issued_at": "2026-07-18T22:10:00.000Z",
+        "nonce": "102132435465768798a9bacbdcedfe0f",
+        "authority": {
+          "scope": {
+            "profile": "aps-hierarchical-v1",
+            "grants": [
+              "commerce:checkout"
+            ]
+          },
+          "spend": {
+            "mode": "bounded",
+            "unit": "iso4217:USD:minor",
+            "per_action": "2500",
+            "cumulative": "5000"
+          },
+          "depth": {
+            "remaining": 1
+          },
+          "time": {
+            "not_before": "2026-07-18T22:10:00.000Z",
+            "not_after": "2026-07-19T12:00:00.000Z"
+          },
+          "reputation": {
+            "profile": "aps-score-0-100-v1",
+            "ceiling": 70
+          },
+          "values": {
+            "profile": "aps-values-identifiers-v1",
+            "required": [
+              "F-001",
+              "F-003",
+              "F-007"
+            ]
+          },
+          "reversibility": {
+            "profile": "aps-tci-v1",
+            "ceiling": "tentative"
+          }
+        }
+      },
+      "signing_key": "agent-a",
+      "context": {
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "revocation": {
+          "parent": "active"
+        },
+        "now": "2026-07-18T21:00:00.000Z"
+      },
+      "expected": {
+        "result": "refuse"
+      },
+      "ts_behaviour": {
+        "result": "issue",
+        "delegation_id": "sha256:59c7179591b4d82fe7a63c097b3f79719494cdd7a9e39cd0036e36ed1c88e76d"
       }
     },
     {
@@ -22596,6 +22705,14 @@
       "reason": "Whether that is unsupported or invalid is not determined by the draft."
     },
     {
+      "topic": "A facet profile that is not a string",
+      "reason": "Whether that is invalid or unsupported is not determined by the draft."
+    },
+    {
+      "topic": "Facet content that breaks a section 3.2 value rule under an unsupported profile",
+      "reason": "The draft does not say whether those rules bind a facet whose profile is not supported, so such a record may be two faults."
+    },
+    {
       "topic": "Key-resolution outcome structure",
       "reason": "not found, ambiguous, malformed, unreachable, unsupported scheme (L360-369): an open question."
     },
@@ -22621,16 +22738,16 @@
     }
   ],
   "counts": {
-    "total": 161,
+    "total": 162,
     "by_kind": {
-      "chain": 125,
-      "wire": 8,
+      "chain": 123,
+      "wire": 9,
       "issue_root": 1,
-      "issue_child": 13,
+      "issue_child": 15,
       "budget": 14
     },
     "by_provenance": {
-      "draft-derived": 158,
+      "draft-derived": 159,
       "ts-conformant-regression": 3
     }
   }

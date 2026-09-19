@@ -22,14 +22,18 @@ seed (SHA-256 of the ASCII string "aps-authority-delegation-v1-vectors:"
 plus the label) and public key (PyNaCl SigningKey(seed).verify_key).
 
 A handful of records are deliberately corrupted by the case that builds them
-(AD-N-C01 to AD-N-C04, AD-N-S08, AD-N-S09, AD-N-S55, AD-I08): for those, a
-mismatch on the specific corrupted aspect (delegation_id or signature) is
-the correct, expected outcome and is reported as such, not as an error.
-AD-N-S22 (signature hex uppercased) is included in the same list in the
-vector specification but needs no inversion here: hex-decoding is
-case-insensitive, so its signature verifies as bytes regardless of letter
-case, and the uppercase-only fault it demonstrates is a schema-format rule
-this script does not model.
+(AD-N-C01 to AD-N-C04, AD-N-S08, AD-N-S09, AD-N-S22, AD-N-S55, AD-N-S56,
+AD-I08): for those, a mismatch on the specific corrupted aspect
+(delegation_id or signature) is the correct, expected outcome and is
+reported as such, not as an error. A signature is checked for well-formedness
+(exactly 128 lowercase hex characters) before any `bytes.fromhex`, and a
+public key for exactly 64, because `bytes.fromhex` silently ignores
+whitespace and accepts uppercase, which would otherwise let a malformed
+value slip through as if it verified: AD-N-S22 (signature hex uppercased)
+and AD-N-S56 (signature with a trailing line feed) both fail this
+well-formedness check and are caught by it. A record whose signature fails
+that check is reported as a deliberately malformed signature only when its
+case title says so; otherwise it is a mismatch.
 
 Exit code is 1 if any record other than a deliberately corrupted aspect
 fails to recompute or verify, or if any `keys` entry fails to re-derive;
@@ -40,6 +44,7 @@ from __future__ import annotations
 import hashlib
 import json
 import pathlib
+import re
 import sys
 
 import nacl.exceptions
@@ -55,6 +60,9 @@ _PLACEHOLDER_ID = "sha256:" + ("0" * 64)
 
 _RECORD_KEYS = {"record_type", "delegation_id", "signature", "verification_method", "issuer", "subject", "authority"}
 
+_HEX_128 = re.compile(r"[0-9a-f]{128}")
+_HEX_64 = re.compile(r"[0-9a-f]{64}")
+
 # (case_id, field, index) -> (id_expected_to_match, signature_expected_to_verify).
 # Every record not listed here is expected to match and verify normally.
 # field is "chain" (index into case["chain"]) or "parent" (index is None).
@@ -65,10 +73,19 @@ _SPECIAL: dict[tuple[str, str, int | None], tuple[bool, bool]] = {
     ("AD-N-C04", "chain", 0): (True, False),
     ("AD-N-S08", "chain", 0): (False, True),
     ("AD-N-S09", "chain", 0): (False, True),
-    ("AD-N-S22", "chain", 0): (True, True),
+    ("AD-N-S22", "chain", 0): (True, False),
     ("AD-N-S55", "chain", 0): (False, True),
+    ("AD-N-S56", "chain", 0): (True, False),
     ("AD-I08", "parent", None): (True, False),
 }
+
+
+def _title_confirms_malformed_signature(title: str) -> bool:
+    """True when the case's own title documents that its signature is
+    deliberately malformed hex (as opposed to well-formed hex that is
+    cryptographically wrong, which _SPECIAL above already covers)."""
+    lowered = title.lower()
+    return "signature" in lowered and ("uppercased" in lowered or "trailing line feed" in lowered)
 
 
 def _is_record(value: object) -> bool:
@@ -88,15 +105,28 @@ def _find_public_key_hex(document: dict, verification_method: str) -> str | None
     return None
 
 
-def _verify_signature(record: dict, public_key_hex: str) -> bool:
+def _verify_signature(record: dict, public_key_hex: str) -> tuple[bool, bool]:
+    """Returns (verifies, signature_format_valid).
+
+    Neither `bytes.fromhex` call runs unless its input is first confirmed to
+    be a str of exactly the required hex length: `bytes.fromhex` silently
+    skips whitespace and accepts uppercase, so without this check a
+    signature with a trailing line feed or uppercase hex would read back the
+    same bytes as the well-formed original and wrongly appear to verify.
+    """
+    signature = record.get("signature")
+    if not isinstance(signature, str) or not _HEX_128.fullmatch(signature):
+        return False, False
+    if not isinstance(public_key_hex, str) or not _HEX_64.fullmatch(public_key_hex):
+        return False, True
     unsigned = {k: v for k, v in record.items() if k != "signature"}
     message = _SIGNATURE_DOMAIN + rfc8785.dumps(unsigned)
     try:
         verify_key = nacl.signing.VerifyKey(bytes.fromhex(public_key_hex))
-        verify_key.verify(message, bytes.fromhex(record["signature"]))
-        return True
+        verify_key.verify(message, bytes.fromhex(signature))
+        return True, True
     except (nacl.exceptions.BadSignatureError, ValueError, KeyError):
-        return False
+        return False, True
 
 
 def _iter_case_records(case: dict) -> list[tuple[str, int | None, dict]]:
@@ -162,7 +192,15 @@ def _check_records(document: dict) -> tuple[int, int, int, list[str]]:
                 mismatches.append(f"{location}: no keys entry for verification_method {record.get('verification_method')!r}")
                 print(f"{location}: ERROR no keys entry for verification_method {record.get('verification_method')!r}")
                 continue
-            sig_verifies = _verify_signature(record, public_key_hex)
+            sig_verifies, sig_format_valid = _verify_signature(record, public_key_hex)
+
+            if not sig_format_valid and not _title_confirms_malformed_signature(case.get("title", "")):
+                mismatches.append(
+                    f"{location}: signature is not exactly 128 lowercase hex characters, and the case title "
+                    f"does not document that as deliberate"
+                )
+                print(f"{location}: MISMATCH signature is not well-formed hex, and the case title does not document it")
+                continue
 
             checked += 1
             id_ok = id_matches == id_expected_match

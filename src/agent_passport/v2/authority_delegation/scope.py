@@ -39,6 +39,31 @@ def scope_grant_covers(parent: str, child: str) -> bool:
 
 
 def grants_are_canonical(grants) -> bool:
+    """True when grants is a valid, strictly sorted, irredundant scope grant list.
+
+    Validity and strict order are checked exactly as before, in one O(n)
+    pass. Redundancy (no grant is covered by any other grant in the list) is
+    checked without the pairwise O(n^2) scan the definition above suggests.
+
+    Once every grant is known valid and the list strictly sorted (so every
+    grant is distinct), whether some OTHER grant in the list covers a given
+    grant g reduces to two cheap tests: is the bare wildcard "*" present (it
+    covers everything), or is "Q:*" present for a Q that is a whole-segment
+    prefix of g's own prefix? g's own prefix is g with a trailing ":*"
+    removed if it has one, else g itself. scope_grant_covers's own
+    definition is: an exact grant covers only itself, and a grant ending in
+    ":*" with prefix P covers a grant with prefix C exactly when C equals P
+    or C starts with P + ":". Because a colon only ever falls on a segment
+    boundary in a valid grant, "C starts with P + ':'" for a valid P is
+    exactly "P equals the join of some whole number of C's leading segments"
+    (and "C equals P" is that same statement for all of C's segments), so
+    together, some other grant covers g exactly when the string formed by
+    joining the first m segments of g's own prefix, followed by ":*", is a
+    grant in the list (other than g itself) for some m from 1 up to the
+    number of segments in g's prefix. Building those at-most-16 candidate
+    strings and doing a set lookup for each replaces comparing g against
+    every other grant, so this is O(n * segments) instead of O(n^2).
+    """
     if type(grants) is not list:
         return False
     for i, grant in enumerate(grants):
@@ -46,9 +71,18 @@ def grants_are_canonical(grants) -> bool:
             return False
         if i > 0 and grants[i - 1] >= grant:
             return False
-        # A canonical set is an antichain: no entry is redundant under another entry.
-        for j in range(len(grants)):
-            if i != j and scope_grant_covers(grants[j], grant):
+
+    grant_set = set(grants)
+    for grant in grants:
+        if grant == "*":
+            continue
+        if "*" in grant_set:
+            return False
+        prefix = grant[:-2] if grant.endswith(":*") else grant
+        segments = prefix.split(":")
+        for m in range(1, len(segments) + 1):
+            candidate = ":".join(segments[:m]) + ":*"
+            if candidate != grant and candidate in grant_set:
                 return False
     return True
 
