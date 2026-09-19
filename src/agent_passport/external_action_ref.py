@@ -40,10 +40,13 @@ input in the vector set is checked by
 tests/cross_impl/external-action-ref-v1-vectors.json.
 
 Known divergences: since agent-passport-system 221131d0 the TypeScript
-computeExternalActionRefV1 rejects non-string fields, array-wrapped and
-calendar-invalid timestamps, and accepts second 60, as this helper does;
-the remaining difference is that the TypeScript helper also accepts a
-``Date`` object, which this helper does not.
+computeExternalActionRefV1 rejects non-string fields and array-wrapped and
+calendar-invalid timestamps, as this helper does, and both accept a
+timestamp second of 60 only at 23:59 on the last day of its month (RFC 3339
+section 5.7; Appendix D's ``YYYY-MM-DDT23:59:60Z``); this helper rejects
+every other second-60 value with ``bad_timestamp``. The remaining difference
+is that the TypeScript helper also accepts a ``Date`` object, which this
+helper does not.
 """
 
 from __future__ import annotations
@@ -59,15 +62,14 @@ EXTERNAL_ACTION_REF_V1_LABEL = "action-ref-v1-jcs-sha256"
 
 # Exactly RFC 3339 UTC at millisecond precision: four-digit year, calendar
 # month 01-12, calendar day 01-31, hour 00-23, minute 00-59, second 00-60,
-# exactly three fractional-second digits, literal uppercase Z. Second 60 (a
-# leap second) is accepted lexically: RFC 3339 admits it, and a validator
-# cannot consult the leap-second table to know whether one actually
-# occurred at a given UTC instant. Anchored by re.fullmatch, so no
-# leading/trailing anchors are needed in the pattern itself. This still
-# admits a day that does not exist in a given month (for
-# example day 30 of February); that is caught separately by
-# _is_valid_calendar_day, because a fixed-width regex alone cannot encode
-# "day <= 28, 29, 30, or 31 depending on month and leap year".
+# exactly three fractional-second digits, literal uppercase Z. A second of
+# 60 is valid only at 23:59 on the last day of its month (RFC 3339 section
+# 5.7; Appendix D's "YYYY-MM-DDT23:59:60Z"); that restriction, like the
+# calendar-day bound below, is checked separately with integer arithmetic,
+# because a fixed-width regex alone cannot encode "day <= 28, 29, 30, or 31
+# depending on month and leap year" or "only the last day of this
+# particular month". Anchored by re.fullmatch, so no leading/trailing
+# anchors are needed in the pattern itself.
 _TIMESTAMP_RE = re.compile(
     r"[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])"
     r"T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)\.[0-9]{3}Z"
@@ -83,11 +85,12 @@ class ExternalActionRefError(ValueError):
 
     Carries a stable machine-readable ``code``, exactly one of:
     ``not_string`` (a field is not a string), ``bad_timestamp`` (the
-    timestamp is not exactly ``YYYY-MM-DDTHH:MM:SS.sssZ``, or names a day
-    that does not exist in that month under the proleptic Gregorian
-    calendar), ``lone_surrogate`` (a field contains an unpaired UTF-16
-    surrogate, which has no UTF-8 encoding). A caller can branch on the
-    failure without parsing the message.
+    timestamp is not exactly ``YYYY-MM-DDTHH:MM:SS.sssZ``, names a day that
+    does not exist in that month under the proleptic Gregorian calendar, or
+    has a second of 60 outside 23:59 on the last day of its month),
+    ``lone_surrogate`` (a field contains an unpaired UTF-16 surrogate, which
+    has no UTF-8 encoding). A caller can branch on the failure without
+    parsing the message.
 
     Subclasses ``ValueError`` so an existing fail-closed handler that
     catches ``ValueError`` around this construction keeps working.
@@ -104,15 +107,21 @@ def _is_leap_year(year: int) -> bool:
     return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
 
 
+def _days_in_month(year: int, month: int) -> int:
+    """Last day-of-month number for `month` of `year`, proleptic Gregorian
+    calendar. Pure arithmetic, not `datetime`: `datetime` cannot represent
+    year 0000 (MINYEAR=1), and this function must accept it.
+    """
+    if month == 2 and _is_leap_year(year):
+        return 29
+    return _DAYS_IN_MONTH[month - 1]
+
+
 def _is_valid_calendar_day(year: int, month: int, day: int) -> bool:
     """True when `day` exists in `month` of `year` under the proleptic
-    Gregorian calendar. Pure arithmetic, not `datetime`: `datetime` cannot
-    represent year 0000 (MINYEAR=1), and this function must accept it.
+    Gregorian calendar.
     """
-    max_day = _DAYS_IN_MONTH[month - 1]
-    if month == 2 and _is_leap_year(year):
-        max_day = 29
-    return day <= max_day
+    return day <= _days_in_month(year, month)
 
 
 def compute_external_action_ref_v1(
@@ -146,7 +155,10 @@ def compute_external_action_ref_v1(
     exists in that month under the proleptic Gregorian calendar, else code
     ``bad_timestamp`` (draft lines 866-871: an implementation MUST reject a
     non-conforming timestamp and MUST NOT coerce, truncate, extend, or
-    renormalize it). Any field containing an unpaired UTF-16 surrogate
+    renormalize it). A second of 60 is valid only at 23:59 on the last day
+    of its month (RFC 3339 section 5.7; Appendix D's
+    ``YYYY-MM-DDT23:59:60Z``); every other second-60 timestamp is also
+    ``bad_timestamp``. Any field containing an unpaired UTF-16 surrogate
     raises code ``lone_surrogate``: a lone surrogate has no UTF-8 encoding,
     so the canonicalized JSON cannot be hashed.
 
@@ -187,6 +199,17 @@ def compute_external_action_ref_v1(
             f"compute_external_action_ref_v1: timestamp {timestamp!r} names "
             "a day that does not exist in that month under the proleptic "
             "Gregorian calendar",
+            "bad_timestamp",
+        )
+    if timestamp[17:19] == "60" and (
+        day != _days_in_month(year, month)
+        or timestamp[11:13] != "23"
+        or timestamp[14:16] != "59"
+    ):
+        raise ExternalActionRefError(
+            f"compute_external_action_ref_v1: timestamp {timestamp!r} has "
+            "second 60 outside 23:59 on the last day of its month (RFC 3339 "
+            "section 5.7; Appendix D)",
             "bad_timestamp",
         )
 

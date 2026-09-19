@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6",
   "generated_from": {
     "repository": "agent-passport-system",
-    "commit": "14a2157b2dfe3ddeb06c5f2e2c5c79100240141c"
+    "commit": "9ba9acbb4eafc567644b0a4cc681d043cd60985d"
   },
   "provenance_definitions": {
     "draft-derived": "the expected state, outcome or rejection follows from the draft text, directly or by an analogy the case's derivation note states, with RFC 3339 or RFC 7493 where cited; TypeScript output was not consulted to decide it.",
@@ -3105,6 +3105,116 @@
           "mode": "table",
           "trusted_root_ids": [
             "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "valid",
+        "sdk_codes": [],
+        "index": null
+      },
+      "ts_behaviour": {
+        "state": "valid",
+        "codes": [],
+        "index": null
+      }
+    },
+    {
+      "id": "AD-P22",
+      "kind": "chain",
+      "title": "not_after and now both a canonical leap second",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "RFC 3339 section 5.7 and Appendix D, L535",
+        "note": "June 2026 ends on the 30th, so 23:59:60 is a canonical leap second for both not_after and now; now is inside the half-open window, one half-second before not_after."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-06-30T23:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-06-30T23:00:00.000Z",
+              "not_after": "2026-06-30T23:59:60.500Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:cd57d9e95e5b7d455a6a29fc9640f4e9bbdf03020815c1d757fb5845913520a9",
+          "signature": "f085c3da357d8694dc214076b8aa560953205b184a340f0e042d7ff7c0bb713fedff075d0fdb2541781764b8ed04674c5a4cb57e6cdbe17a1ce5ba1a019e7e07"
+        }
+      ],
+      "context": {
+        "now": "2026-06-30T23:59:60.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:cd57d9e95e5b7d455a6a29fc9640f4e9bbdf03020815c1d757fb5845913520a9"
           ]
         },
         "revocation": {
@@ -10122,6 +10232,234 @@
         "codes": [
           "SCHEMA_INVALID",
           "UNSUPPORTED_PROFILE"
+        ],
+        "index": 0
+      }
+    },
+    {
+      "id": "AD-N-S66",
+      "kind": "chain",
+      "title": "issued_at second 60 on a day that is not the last day of its month",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "RFC 3339 section 5.7 and Appendix D",
+        "note": "RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; June 2026 has 30 days, so the 29th is not the last day of that month."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-06-29T23:59:60.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:cda828ef654aab726f6b1962dc68411f84736014229a0659e996e81c184bb020",
+          "signature": "3650a2f77e9881901e9bbcac2e10e3f191769adfed9000758c817d6713290dfd5570ee1bcd7d920681251e639d7f83a7212419a779507fd973823969cf8f4905"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:cda828ef654aab726f6b1962dc68411f84736014229a0659e996e81c184bb020"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "invalid",
+        "sdk_codes": [
+          "NONCANONICAL_VALUE"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "invalid",
+        "codes": [
+          "NONCANONICAL_VALUE"
+        ],
+        "index": 0
+      }
+    },
+    {
+      "id": "AD-N-S67",
+      "kind": "chain",
+      "title": "time.not_after second 60 at minute 58 (not minute 59)",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "RFC 3339 section 5.7 and Appendix D",
+        "note": "RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; minute 58 is not minute 59. issued_at and time.not_before are set to the values root RL (AD-P16) uses, with not_after replaced."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2016-12-31T23:59:59.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2016-12-31T23:59:59.000Z",
+              "not_after": "2016-12-31T23:58:60.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:90a1b594bf5536be82b2be339dac10e3c9a1bb46e1a615f1c86720c3e4bfe5e3",
+          "signature": "ef7a386f87e492015a958bd22d92c698ec85feef7b3d4c2ed765c0a6c7e338ccc1a4dd1a3428428e0e3d246f4ae4f300c8e26adb3601f120204516ffc7b16d05"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:90a1b594bf5536be82b2be339dac10e3c9a1bb46e1a615f1c86720c3e4bfe5e3"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "invalid",
+        "sdk_codes": [
+          "NONCANONICAL_VALUE"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "invalid",
+        "codes": [
+          "NONCANONICAL_VALUE"
         ],
         "index": 0
       }
@@ -22852,16 +23190,16 @@
     }
   ],
   "counts": {
-    "total": 163,
+    "total": 166,
     "by_kind": {
-      "chain": 124,
+      "chain": 127,
       "wire": 9,
       "issue_root": 1,
       "issue_child": 15,
       "budget": 14
     },
     "by_provenance": {
-      "draft-derived": 160,
+      "draft-derived": 163,
       "ts-conformant-regression": 3
     }
   }

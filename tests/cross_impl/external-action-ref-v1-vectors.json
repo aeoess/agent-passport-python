@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 section 4.2 (published text lines 845-892)",
   "generated_from": {
     "repository": "aeoess/agent-passport-system",
-    "commit": "221131d0cc7da9b7f903409439bbf11a8e88caf1",
+    "commit": "9ba9acbb4eafc567644b0a4cc681d043cd60985d",
     "module": "src/core/external-action-ref.ts",
     "generator": "tests/cross_impl/gen_external_action_ref_v1_vectors.mts"
   },
@@ -19,7 +19,7 @@
     },
     {
       "code": "bad_timestamp",
-      "meaning": "timestamp not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid RFC 3339 date and time (month 01-12, day existing in the month, hour 00-23, minute 00-59, second 00-60, 60 accepted lexically per RFC 3339)",
+      "meaning": "timestamp not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid RFC 3339 date and time (month 01-12, day existing in the month, hour 00-23, minute 00-59, second 00-59, or 60 only as 23:59:60 on the last day of its month per RFC 3339 section 5.7 and Appendix D)",
       "draft_lines": "866-871"
     },
     {
@@ -31,11 +31,11 @@
   "withheld": [],
   "ts_behaviour_note": "ts_behaviour on a reject case records what the TypeScript reference implementation actually does on that input, observed by calling it directly at the pinned commit. It is not a conformance claim: this file does not assert the TypeScript SDK is verified against section 4.2, only reports its behaviour next to the spec's own answer. \"accepts\" means TS returned a digest where the spec requires a rejection; \"rejects\" means TS threw, and the accompanying message is the TypeScript SDK's own error text (SDK vocabulary, not protocol vocabulary).",
   "counts": {
-    "total": 24,
+    "total": 27,
     "accept": 11,
-    "reject": 13,
+    "reject": 16,
     "by_expected_provenance": {
-      "draft-derived": 15,
+      "draft-derived": 18,
       "ts-conformant-regression": 9
     }
   },
@@ -194,23 +194,23 @@
       },
       "expected_provenance": "draft-derived",
       "draft_lines": "852-857",
-      "provenance_note": "RFC 3339 admits second 60 and section 4.2 names RFC 3339; accepted lexically. The TypeScript SDK at the pinned commit gives this digest."
+      "provenance_note": "RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; this timestamp meets that rule, so it is valid. The TypeScript SDK at the pinned commit gives this digest."
     },
     {
-      "id": "EX-P11",
+      "id": "EX-P12",
       "input": {
         "action_type": "commerce_preflight",
         "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
         "scope": "commerce:write",
-        "timestamp": "2026-04-08T12:00:60.000Z"
+        "timestamp": "2026-06-30T23:59:60.000Z"
       },
       "expected": {
         "result": "accept",
-        "external_action_ref": "04e4f90b49acbeec71f0f70c986a880adc2f0927095b8b925f45203c1447f0fc"
+        "external_action_ref": "f13a45064eba462ee57d5772461fbb5edace09787aa36b5443805454959f4354"
       },
       "expected_provenance": "draft-derived",
       "draft_lines": "852-857",
-      "provenance_note": "RFC 3339 admits second 60 and section 4.2 names RFC 3339; accepted lexically. The TypeScript SDK at the pinned commit gives this digest."
+      "provenance_note": "RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; this timestamp meets that rule, so it is valid. The TypeScript SDK at the pinned commit gives this digest."
     },
     {
       "id": "EX-N01",
@@ -461,6 +461,66 @@
       "ts_behaviour": {
         "behaviour": "rejects",
         "message": "computeExternalActionRefV1: timestamp must be a string or a Date"
+      }
+    },
+    {
+      "id": "EX-N14",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": "2026-04-08T12:00:60.000Z"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "866-871",
+      "provenance_note": "This case was EX-P11, an accepted leap-second case, before RFC 3339 section 5.7 was applied here: RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month, and 12:00:60 is neither hour 23 nor minute 59, so it is now a rejection.",
+      "ts_behaviour": {
+        "behaviour": "rejects",
+        "message": "computeExternalActionRefV1: timestamp has second 60 outside 23:59 on the last day of its month, got \"2026-04-08T12:00:60.000Z\""
+      }
+    },
+    {
+      "id": "EX-N15",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": "2026-06-29T23:59:60.000Z"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "866-871",
+      "provenance_note": "RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; June 2026 has 30 days, so the 29th is not the last day of that month.",
+      "ts_behaviour": {
+        "behaviour": "rejects",
+        "message": "computeExternalActionRefV1: timestamp has second 60 outside 23:59 on the last day of its month, got \"2026-06-29T23:59:60.000Z\""
+      }
+    },
+    {
+      "id": "EX-N16",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": "2016-12-31T23:58:60.000Z"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "866-871",
+      "provenance_note": "RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; minute 58 is not minute 59.",
+      "ts_behaviour": {
+        "behaviour": "rejects",
+        "message": "computeExternalActionRefV1: timestamp has second 60 outside 23:59 on the last day of its month, got \"2016-12-31T23:58:60.000Z\""
       }
     }
   ]

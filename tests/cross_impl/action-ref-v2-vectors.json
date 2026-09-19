@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 section 4.1 (published text lines 751-832)",
   "generated_from": {
     "repository": "aeoess/agent-passport-system",
-    "commit": "c339b39cb67ff633ea41ea4a62cd14161b365890",
+    "commit": "9ba9acbb4eafc567644b0a4cc681d043cd60985d",
     "module": "src/v2/action-reference/v2.ts",
     "generator": "tests/cross_impl/gen_action_ref_v2_vectors.mts"
   },
@@ -54,7 +54,7 @@
     },
     {
       "code": "bad_timestamp",
-      "meaning": "issued_at not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid calendar instant; second 00-60 is accepted (60 lexically, per RFC 3339)",
+      "meaning": "issued_at not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid calendar instant; second 60 is valid only at 23:59 on the last day of its month (RFC 3339 section 5.7 and Appendix D), every other second-60 value is invalid",
       "draft_lines": "796-797, 815"
     },
     {
@@ -97,15 +97,15 @@
     }
   ],
   "counts": {
-    "total": 77,
+    "total": 81,
     "by_entry": {
       "payload": 12,
-      "object": 55,
+      "object": 59,
       "json": 6,
       "create": 4
     },
     "by_expected_provenance": {
-      "draft-derived": 54,
+      "draft-derived": 58,
       "ts-conformant-regression": 23
     }
   },
@@ -1584,14 +1584,70 @@
       },
       "expected_provenance": "draft-derived",
       "draft_lines": "807-808",
-      "provenance_note": "RFC 3339 admits second 60 for a leap second and section 4.1 names RFC 3339; a validator cannot consult the leap-second table, so second 60 is accepted lexically. The expected digest is computed from the section 4.1 formula (APS-ACTION-REF-V2, one zero byte, JCS of the input object) with canonicalizeJCS, not taken from computeActionRefV2.",
+      "provenance_note": "RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month, in UTC (\"Z\"); this issued_at meets that rule, so it is valid. The expected digest is computed from the section 4.1 formula (APS-ACTION-REF-V2, one zero byte, JCS of the input object) with canonicalizeJCS, not taken from computeActionRefV2.",
       "ts_behaviour": {
         "behaviour": "accepts",
         "action_ref": "970594ab1ede3ececd07231e045f2764fc1b5cefad1017df556f98d41ab5a5eb"
       }
     },
     {
-      "id": "AR-P18",
+      "id": "AR-P19",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-06-30T23:59:60.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "fd44b4ee89020be294f8faa64968566d7a5589e8392e5a23f2bafc24c9fef1d1"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "796-797",
+      "provenance_note": "RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month, in UTC (\"Z\"); this issued_at meets that rule, so it is valid. The expected digest is computed from the section 4.1 formula (APS-ACTION-REF-V2, one zero byte, JCS of the input object) with canonicalizeJCS, not taken from computeActionRefV2.",
+      "ts_behaviour": {
+        "behaviour": "accepts",
+        "action_ref": "fd44b4ee89020be294f8faa64968566d7a5589e8392e5a23f2bafc24c9fef1d1"
+      }
+    },
+    {
+      "id": "AR-P20",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2028-02-29T23:59:60.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "ef4dc5abffef56e46dc797c5ee6b2a4c920cb2e44ae3108d96f1d29e35072bc2"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "796-797",
+      "provenance_note": "RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month, in UTC (\"Z\"); this issued_at meets that rule, so it is valid. The expected digest is computed from the section 4.1 formula (APS-ACTION-REF-V2, one zero byte, JCS of the input object) with canonicalizeJCS, not taken from computeActionRefV2.",
+      "ts_behaviour": {
+        "behaviour": "accepts",
+        "action_ref": "ef4dc5abffef56e46dc797c5ee6b2a4c920cb2e44ae3108d96f1d29e35072bc2"
+      }
+    },
+    {
+      "id": "AR-N38",
       "entry": "object",
       "input": {
         "profile": "aps-action-ref-v2",
@@ -1607,16 +1663,63 @@
         "nonce": "00112233445566778899aabbccddeeff"
       },
       "expected": {
-        "result": "accept",
-        "action_ref": "87b24dc0fb1b8ccd6e4cb71dfcc329169cfa184a9291b0ee8cf48be93a44b2b4"
+        "result": "reject",
+        "failure": "bad_timestamp",
+        "ts_error_message": "issued_at: invalid calendar timestamp"
       },
       "expected_provenance": "draft-derived",
-      "draft_lines": "807-808",
-      "provenance_note": "RFC 3339 admits second 60 for a leap second and section 4.1 names RFC 3339; a validator cannot consult the leap-second table, so second 60 is accepted lexically. The expected digest is computed from the section 4.1 formula (APS-ACTION-REF-V2, one zero byte, JCS of the input object) with canonicalizeJCS, not taken from computeActionRefV2.",
-      "ts_behaviour": {
-        "behaviour": "accepts",
-        "action_ref": "87b24dc0fb1b8ccd6e4cb71dfcc329169cfa184a9291b0ee8cf48be93a44b2b4"
-      }
+      "draft_lines": "796-797",
+      "provenance_note": "This case was AR-P18, an accepted leap-second case, before RFC 3339 section 5.7 was applied here: RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month, and 12:00:60 is neither hour 23 nor minute 59, so it is now a rejection."
+    },
+    {
+      "id": "AR-N39",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-06-29T23:59:60.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp",
+        "ts_error_message": "issued_at: invalid calendar timestamp"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "796-797",
+      "provenance_note": "RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; June 2026 has 30 days, so the 29th is not the last day of that month."
+    },
+    {
+      "id": "AR-N40",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2016-12-31T23:58:60.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp",
+        "ts_error_message": "issued_at: invalid calendar timestamp"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "796-797",
+      "provenance_note": "RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; minute 58 is not minute 59."
     },
     {
       "id": "AJ-P01",

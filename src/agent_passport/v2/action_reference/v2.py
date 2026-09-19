@@ -16,9 +16,7 @@ profile string and domain-separation tags, giving the same digest for every
 input both accept. Known differences: an empty ``scope_required`` array is
 rejected here (``empty_scope_required``, a provisional fail-closed choice
 while the draft's default for an empty array is unresolved) and accepted by
-the TypeScript SDK;
-the TypeScript SDK's ``computeActionRefV2`` rejects an ``issued_at`` with
-second 60 (a leap second), which this port accepts; the order of checks is
+the TypeScript SDK; the order of checks is
 similar but not identical, so an input with several faults can be reported
 under a different code; values nested beyond this implementation's
 recursion limit are rejected with ``nesting_limit``. Canonicalization goes
@@ -63,11 +61,13 @@ _REQUIRED_MEMBERS = (
 )
 _ALLOWED_MEMBERS = frozenset(_REQUIRED_MEMBERS)
 
-# issued_at: RFC 3339 UTC, exactly three fractional digits, literal Z. Second
-# 60 (a leap second) is accepted lexically: RFC 3339 admits it, and a
-# validator cannot consult the leap-second table to know whether one
-# actually occurred at a given UTC instant. Anchored by re.fullmatch, so no
-# leading/trailing anchors are needed in the pattern.
+# issued_at: RFC 3339 UTC, exactly three fractional digits, literal Z. A
+# second of 60 is valid only at 23:59 on the last day of its month (RFC 3339
+# section 5.7; Appendix D's "YYYY-MM-DDT23:59:60Z"); that restriction is
+# checked separately below with integer arithmetic, since a fixed-width
+# regex cannot express "only the last day of this particular month".
+# Anchored by re.fullmatch, so no leading/trailing anchors are needed in the
+# pattern.
 _TIMESTAMP_RE = re.compile(
     r"[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])"
     r"T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)\.[0-9]{3}Z"
@@ -127,15 +127,21 @@ def _is_leap_year(year: int) -> bool:
     return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
 
 
+def _days_in_month(year: int, month: int) -> int:
+    """Last day-of-month number for `month` of `year`, proleptic Gregorian
+    calendar. Pure arithmetic: `datetime` cannot represent year 0000
+    (MINYEAR=1), and this function must accept it.
+    """
+    if month == 2 and _is_leap_year(year):
+        return 29
+    return _DAYS_IN_MONTH[month - 1]
+
+
 def _is_valid_calendar_day(year: int, month: int, day: int) -> bool:
     """True when `day` exists in `month` of `year` under the proleptic Gregorian
-    calendar. Pure arithmetic: `datetime` cannot represent year 0000 (MINYEAR=1),
-    and this function must accept it.
+    calendar.
     """
-    max_day = _DAYS_IN_MONTH[month - 1]
-    if month == 2 and _is_leap_year(year):
-        max_day = 29
-    return day <= max_day
+    return day <= _days_in_month(year, month)
 
 
 def validate_action_reference_input_v2(candidate: object) -> None:
@@ -168,9 +174,9 @@ def validate_action_reference_input_v2(candidate: object) -> None:
     8. ``issued_at`` is a string matching the canonical RFC 3339 UTC
        millisecond form, naming a day that exists in that month under the
        proleptic Gregorian calendar (else ``not_string`` / ``bad_timestamp``).
-       Second 60 is accepted lexically: RFC 3339 admits a leap second, and a
-       validator cannot consult the leap-second table to know whether one
-       actually occurred at a given UTC instant.
+       A second of 60 is valid only at 23:59 on the last day of its month
+       (RFC 3339 section 5.7; Appendix D's ``YYYY-MM-DDT23:59:60Z``); every
+       other second-60 timestamp is ``bad_timestamp``.
     9. ``nonce`` is a string matching 32 lowercase hex characters (else
        ``not_string`` / ``bad_hex``).
     """
@@ -262,6 +268,16 @@ def validate_action_reference_input_v2(candidate: object) -> None:
         raise ActionReferenceError(
             f"issued_at: {issued_at!r} names a day that does not exist in that "
             "month under the proleptic Gregorian calendar",
+            "bad_timestamp",
+        )
+    if issued_at[17:19] == "60" and (
+        day != _days_in_month(year, month)
+        or issued_at[11:13] != "23"
+        or issued_at[14:16] != "59"
+    ):
+        raise ActionReferenceError(
+            f"issued_at: {issued_at!r} has second 60 outside 23:59 on the "
+            "last day of its month (RFC 3339 section 5.7; Appendix D)",
             "bad_timestamp",
         )
 

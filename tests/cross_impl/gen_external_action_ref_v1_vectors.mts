@@ -81,7 +81,8 @@ const FAILURE_CODES = [
     code: 'bad_timestamp',
     meaning:
       'timestamp not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid RFC 3339 date and time (month 01-12, ' +
-      'day existing in the month, hour 00-23, minute 00-59, second 00-60, 60 accepted lexically per RFC 3339)',
+      'day existing in the month, hour 00-23, minute 00-59, second 00-59, or 60 only as 23:59:60 on the ' +
+      'last day of its month per RFC 3339 section 5.7 and Appendix D)',
     draft_lines: '866-871',
   },
   {
@@ -190,8 +191,8 @@ const NO_NORMALIZATION_NOTE =
   'uses the same scope with the é precomposed (U+00E9). Their digests must differ from each other, because ' +
   'the external form applies no Unicode normalization (draft lines 873-876).'
 const LEAP_SECOND_NOTE =
-  'RFC 3339 admits second 60 and section 4.2 names RFC 3339; accepted lexically. The TypeScript SDK at ' +
-  'the pinned commit gives this digest.'
+  'RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; this ' +
+  'timestamp meets that rule, so it is valid. The TypeScript SDK at the pinned commit gives this digest.'
 
 const acceptCases: AcceptCase[] = [
   {
@@ -219,7 +220,7 @@ const acceptCases: AcceptCase[] = [
   { id: 'EX-P08', input: base({ timestamp: '2028-02-29T23:59:59.999Z' }) },
   { id: 'EX-P09', input: base({ timestamp: '0000-01-01T00:00:00.000Z' }) },
   { id: 'EX-P10', input: base({ timestamp: '2016-12-31T23:59:60.000Z' }), provenance: 'draft-derived', provenance_note: LEAP_SECOND_NOTE },
-  { id: 'EX-P11', input: base({ timestamp: '2026-04-08T12:00:60.000Z' }), provenance: 'draft-derived', provenance_note: LEAP_SECOND_NOTE },
+  { id: 'EX-P12', input: base({ timestamp: '2026-06-30T23:59:60.000Z' }), provenance: 'draft-derived', provenance_note: LEAP_SECOND_NOTE },
 ]
 
 const digestById = new Map<string, string>()
@@ -265,6 +266,7 @@ interface RejectCase {
   input: Record<string, unknown>
   failure: string
   draft_lines?: string
+  provenance_note?: string
 }
 
 const rejectCases: RejectCase[] = [
@@ -285,6 +287,31 @@ const rejectCases: RejectCase[] = [
     input: base({ timestamp: ['2026-04-08T12:00:00.000Z'] }),
     failure: 'not_string',
     draft_lines: '866-871',
+  },
+  {
+    id: 'EX-N14',
+    input: base({ timestamp: '2026-04-08T12:00:60.000Z' }),
+    failure: 'bad_timestamp',
+    provenance_note:
+      'This case was EX-P11, an accepted leap-second case, before RFC 3339 section 5.7 was applied here: ' +
+      'RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month, and ' +
+      '12:00:60 is neither hour 23 nor minute 59, so it is now a rejection.',
+  },
+  {
+    id: 'EX-N15',
+    input: base({ timestamp: '2026-06-29T23:59:60.000Z' }),
+    failure: 'bad_timestamp',
+    provenance_note:
+      'RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; ' +
+      'June 2026 has 30 days, so the 29th is not the last day of that month.',
+  },
+  {
+    id: 'EX-N16',
+    input: base({ timestamp: '2016-12-31T23:58:60.000Z' }),
+    failure: 'bad_timestamp',
+    provenance_note:
+      'RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; ' +
+      'minute 58 is not minute 59.',
   },
 ]
 
@@ -310,6 +337,7 @@ for (const c of rejectCases) {
     expected: { result: 'reject', failure: c.failure },
     expected_provenance: provenance,
     draft_lines: c.draft_lines ?? draftLinesForFailure(c.failure),
+    ...(c.provenance_note ? { provenance_note: c.provenance_note } : {}),
     ts_behaviour: tsBehaviour,
   })
 }

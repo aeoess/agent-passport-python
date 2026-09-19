@@ -653,6 +653,19 @@ pushChainCase({
   })
 }
 
+{
+  const R2 = issue(mutate(BODY_R, (b) => {
+    b.issued_at = '2026-06-30T23:00:00.000Z'
+    b.authority.time = { not_before: '2026-06-30T23:00:00.000Z', not_after: '2026-06-30T23:59:60.500Z' }
+  }), 'principal')
+  pushChainCase({
+    id: 'AD-P22', title: 'not_after and now both a canonical leap second', chain: [R2],
+    contextOverrides: { now: '2026-06-30T23:59:60.000Z' }, expectedState: 'valid',
+    lines: 'RFC 3339 section 5.7 and Appendix D, L535',
+    note: "June 2026 ends on the 30th, so 23:59:60 is a canonical leap second for both not_after and now; now is inside the half-open window, one half-second before not_after.",
+  })
+}
+
 // -------------------------------------------------------------------------
 // Chain cases, negative: closed schema and canonical values
 // -------------------------------------------------------------------------
@@ -826,6 +839,10 @@ rootOnlyInvalid('AD-N-S61', 'subject with a trailing noncharacter (U+10FFFF)', '
     note: "The record is not I-JSON (L204, RFC 7493 section 2.1), which the first step of the section 3.3 order, closed schema and canonical values (L580-581), rejects before any profile is considered; the SDK also reports the unknown profile.",
   })
 }
+
+rootOnlyInvalid('AD-N-S66', 'issued_at second 60 on a day that is not the last day of its month', 'RFC 3339 section 5.7 and Appendix D', 'RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; June 2026 has 30 days, so the 29th is not the last day of that month.', 'NONCANONICAL_VALUE', (b) => { b.issued_at = '2026-06-29T23:59:60.000Z' })
+
+rootOnlyInvalid('AD-N-S67', 'time.not_after second 60 at minute 58 (not minute 59)', 'RFC 3339 section 5.7 and Appendix D', 'RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; minute 58 is not minute 59. issued_at and time.not_before are set to the values root RL (AD-P16) uses, with not_after replaced.', 'NONCANONICAL_VALUE', (b) => { b.issued_at = '2016-12-31T23:59:59.000Z'; b.authority.time = { not_before: '2016-12-31T23:59:59.000Z', not_after: '2016-12-31T23:58:60.000Z' } })
 
 // -------------------------------------------------------------------------
 // Chain cases, negative: unsupported facet profiles

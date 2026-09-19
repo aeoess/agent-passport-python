@@ -34,6 +34,7 @@ from agent_passport.v2.authority_delegation import (
     AuthorityDelegationError,
     InMemoryAuthorityBudgetLedger,
     grants_are_canonical,
+    is_canonical_timestamp,
     is_valid_scope_grant,
     issue_authority_delegation,
     issue_sub_authority_delegation,
@@ -1044,3 +1045,50 @@ class TestNonIJsonValuesAnywhereInRecord:
         record = issue_authority_delegation(_root_body(nonce="00" * 16), seed)
         result = _verify_one(record, public_key)
         assert result.state == "valid"
+
+
+class TestSecond60OnlyAtLastMomentOfMonth:
+    """draft-pidlisnyi-aps-03 spec addendum item 2: a canonical timestamp's
+    second field of 60 is valid only when the hour is 23, the minute is 59,
+    and the day is the last day of its month in the proleptic Gregorian
+    calendar (RFC 3339 section 5.7; Appendix D's "YYYY-MM-DDT23:59:60Z").
+    Every other second-60 timestamp is invalid. Exercises the section 3
+    public entry point, is_canonical_timestamp, directly."""
+
+    @pytest.mark.parametrize(
+        "timestamp",
+        [
+            "2016-12-31T23:59:60.000Z",
+            "2026-06-30T23:59:60.000Z",
+            "2028-02-29T23:59:60.999Z",
+            "2027-02-28T23:59:60.000Z",
+            "0000-02-29T23:59:60.000Z",
+        ],
+    )
+    def test_second_60_at_2359_on_the_last_day_of_the_month_is_valid(self, timestamp):
+        assert is_canonical_timestamp(timestamp) is True
+
+    @pytest.mark.parametrize(
+        "timestamp",
+        [
+            "2026-04-08T12:00:60.000Z",  # the former accepted example
+            "2026-06-29T23:59:60.000Z",  # not the last day of the month
+            "2016-12-31T23:58:60.000Z",  # minute 58, not 59
+            "2016-12-31T22:59:60.000Z",  # hour 22, not 23
+            "2028-02-28T23:59:60.000Z",  # not the last day of February in a leap year
+            "2027-02-29T23:59:60.000Z",  # no such day
+        ],
+    )
+    def test_second_60_outside_2359_on_the_last_day_of_the_month_is_invalid(self, timestamp):
+        assert is_canonical_timestamp(timestamp) is False
+
+    @pytest.mark.parametrize(
+        "timestamp",
+        [
+            "2026-01-01T00:00:00.000Z",
+            "2026-01-01T00:00:59.000Z",
+            "2016-12-31T23:59:59.000Z",
+        ],
+    )
+    def test_seconds_00_to_59_are_unchanged(self, timestamp):
+        assert is_canonical_timestamp(timestamp) is True

@@ -49,13 +49,15 @@ _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _MAX_QUANTITY = 9223372036854775807
 
 # RFC 3339 exact UTC-millisecond form. Group 1 = year, 2 = month, 3 = day,
-# 4 = hour, 5 = second (minute is not captured; the pattern alone bounds it
-# to 00-59). Second 60 is accepted wherever the RFC 3339 section 5.6 grammar
-# allows it. The section 5.7 restriction of a leap second to the last minute
-# of a month is not checked.
+# 4 = hour, 5 = minute, 6 = second. A second of 60 is valid only at 23:59 on
+# the last day of its month, in the proleptic Gregorian calendar: RFC 3339
+# section 5.7 admits time-second 60 only for a leap second, and Appendix D
+# writes one as "YYYY-MM-DDT23:59:60Z". That restriction is checked below
+# with integer arithmetic on these captured digits, never datetime; every
+# other second stays 00 through 59, already bounded by this pattern.
 _CANONICAL_TIMESTAMP = re.compile(
     r"^([0-9]{4})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T"
-    r"([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)\.[0-9]{3}Z$"
+    r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9]|60)\.[0-9]{3}Z$"
 )
 _DAYS_IN_MONTH = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
@@ -182,6 +184,15 @@ def _utf8_len(value: str) -> int:
 
 
 def is_canonical_timestamp(value) -> bool:
+    """RFC 3339 canonical UTC milliseconds, with second 60 restricted to a
+    real leap-second position.
+
+    A second of 60 is valid only when the hour is 23, the minute is 59, and
+    the day is the last day of its month in the proleptic Gregorian
+    calendar (RFC 3339 section 5.7; Appendix D's "YYYY-MM-DDT23:59:60Z").
+    Every other second-60 timestamp is invalid. Checked with integer
+    arithmetic on the captured digits, never datetime.
+    """
     if type(value) is not str:
         return False
     match = _CANONICAL_TIMESTAMP.fullmatch(value)
@@ -190,8 +201,15 @@ def is_canonical_timestamp(value) -> bool:
     year = int(match.group(1))
     month = int(match.group(2))
     day = int(match.group(3))
+    hour = match.group(4)
+    minute = match.group(5)
+    second = match.group(6)
     max_day = 29 if (month == 2 and _is_leap_year(year)) else _DAYS_IN_MONTH[month - 1]
-    return day <= max_day
+    if day > max_day:
+        return False
+    if second == "60":
+        return hour == "23" and minute == "59" and day == max_day
+    return True
 
 
 def compare_canonical_timestamps(a: str, b: str) -> int:

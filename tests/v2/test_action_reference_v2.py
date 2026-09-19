@@ -370,23 +370,60 @@ def test_2000_02_29_is_accepted_leap_year_divisible_by_400():
     validate_action_reference_input_v2(doc)  # does not raise
 
 
-# -- Leap second: RFC 3339 admits it lexically, and a validator cannot -----
-# consult the leap-second table
+# -- Item 2: second 60 valid only at 23:59 on the last day of a month ------
+# (RFC 3339 section 5.7; Appendix D's "YYYY-MM-DDT23:59:60Z")
 
 
-def test_leap_second_60_is_accepted_lexically():
-    # RFC 3339 admits second 60 for a leap second, and a validator cannot
-    # consult the leap-second table to know whether one actually occurred
-    # at this UTC instant, so it is accepted lexically.
+def test_second_60_at_2359_on_the_last_day_of_the_year_is_accepted():
+    # 2016-12-31T23:59:60Z is RFC 3339 Appendix D's own leap-second example.
     doc = _base()
     doc["issued_at"] = "2016-12-31T23:59:60.000Z"
-    validate_action_reference_input_v2(doc)  # does not raise
+    ref = compute_action_ref_v2(doc)
+    assert re.fullmatch(r"[0-9a-f]{64}", ref)
 
 
-def test_leap_second_60_is_accepted_lexically_at_an_arbitrary_time():
+def test_second_60_at_an_arbitrary_time_is_now_rejected():
+    # Formerly accepted lexically; item 2 makes this a rejection because
+    # 12:00 on April 8 is not a leap-second position.
     doc = _base()
     doc["issued_at"] = "2026-04-08T12:00:60.000Z"
-    validate_action_reference_input_v2(doc)  # does not raise
+    with pytest.raises(ActionReferenceError) as exc_info:
+        compute_action_ref_v2(doc)
+    assert exc_info.value.code == "bad_timestamp"
+
+
+@pytest.mark.parametrize(
+    "issued_at",
+    [
+        "2026-06-30T23:59:60.000Z",
+        "2028-02-29T23:59:60.999Z",
+        "2027-02-28T23:59:60.000Z",
+        "0000-02-29T23:59:60.000Z",
+    ],
+)
+def test_second_60_at_2359_on_the_last_day_of_the_month_is_accepted(issued_at):
+    doc = _base()
+    doc["issued_at"] = issued_at
+    ref = compute_action_ref_v2(doc)
+    assert re.fullmatch(r"[0-9a-f]{64}", ref)
+
+
+@pytest.mark.parametrize(
+    "issued_at",
+    [
+        "2026-06-29T23:59:60.000Z",  # not the last day of the month
+        "2016-12-31T23:58:60.000Z",  # minute 58, not 59
+        "2016-12-31T22:59:60.000Z",  # hour 22, not 23
+        "2028-02-28T23:59:60.000Z",  # not the last day of February in a leap year
+        "2027-02-29T23:59:60.000Z",  # no such day
+    ],
+)
+def test_second_60_outside_2359_on_the_last_day_of_the_month_is_rejected(issued_at):
+    doc = _base()
+    doc["issued_at"] = issued_at
+    with pytest.raises(ActionReferenceError) as exc_info:
+        compute_action_ref_v2(doc)
+    assert exc_info.value.code == "bad_timestamp"
 
 
 def test_second_61_is_still_rejected():
