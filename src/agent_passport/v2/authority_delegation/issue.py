@@ -2,22 +2,23 @@
 """Issuance of a root delegation and of a child under an immediate parent.
 
 Python port of the TypeScript SDK's src/v2/authority-delegation/issue.ts, with
-two deliberate differences from it: nonce generation (see _with_nonce
-below) and a bare-body check (see _assert_bare_body below). Both SDKs'
-child issuers verify the parent before signing (see
+one deliberate difference from it: nonce generation (see _with_nonce below).
+Both SDKs' child issuers verify the parent before signing (see
 issue_sub_authority_delegation).
 
-Deliberate addition over the TypeScript SDK: _assert_bare_body below rejects
-a body that is not an object, or that already carries "delegation_id" or
-"signature", before either issuing function does anything else with it. The
-TypeScript SDK's AuthorityDelegationBodyV1 type excludes those two members at
-compile time, but nothing checks for them at runtime: a caller that passes an
-object carrying a stray "delegation_id" or "signature" has it hashed and
-signed together with the rest of the body, so the id that comes out never
-recomputes from that same body and the record is invalid from the moment it
-is issued, an outcome draft section 3.6 asks an issuer to avoid rather than
-leave for a later verifier to discover. This Python port refuses to issue
-from such a body instead of producing a self-contradicting record.
+_assert_bare_body below rejects a body that is not a dict, before either
+issuing function does anything else with it; that check is a property of
+this Python implementation, not a claim about what the TypeScript SDK does
+for a non-object body. It also rejects a body that already carries an own
+"delegation_id" or "signature" member, of any value. Draft section 3.1
+(lines 484-490) computes delegation_id and signature from a body without
+those two members, so such a body would yield a record whose delegation_id
+does not recompute from itself; section 3.6 (lines 695-704) enforces
+signature integrity at issuance and says an issuer does not leave an
+invalidity for a later verifier to discover.
+Both this Python port and the TypeScript SDK's issueAuthorityDelegation and
+issueSubAuthorityDelegation refuse such a body with SCHEMA_INVALID before
+issuing anything.
 """
 
 from __future__ import annotations
@@ -37,10 +38,13 @@ from .types import AuthorityDelegationError, AuthorityFailure
 
 
 def _assert_bare_body(body) -> None:
-    """Reject a body that is not an object, or that already carries an id or a signature.
+    """Reject a body that is not a dict, or that already carries an id or a signature.
 
-    See the module docstring: this check has no TypeScript SDK counterpart at
-    runtime.
+    See the module docstring: the not-a-dict check is a property of this
+    Python implementation only. The delegation_id/signature check matches
+    the TypeScript SDK's issueAuthorityDelegation and
+    issueSubAuthorityDelegation, which perform the same check (draft section
+    3.1 lines 484-490; section 3.6 lines 695-704).
     """
     if type(body) is not dict:
         raise AuthorityDelegationError(

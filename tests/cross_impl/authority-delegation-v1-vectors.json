@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6",
   "generated_from": {
     "repository": "agent-passport-system",
-    "commit": "5d596fd7fb0b28fc6431dc101ac6f1ddc48f0e62"
+    "commit": "e454dbf7307f975349449ce9f969fafd252c93d6"
   },
   "provenance_definitions": {
     "draft-derived": "the expected state, outcome or rejection follows from the draft text, directly or by an analogy the case's derivation note states, with RFC 3339 or RFC 7493 where cited; TypeScript output was not consulted to decide it.",
@@ -21067,6 +21067,438 @@
       }
     },
     {
+      "id": "AD-I18",
+      "kind": "issue_root",
+      "title": "issue_root: body R plus a stray delegation_id, key principal",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "section 3.1 lines 484-490; section 3.6 lines 695-704",
+        "note": "The delegation_id and signature preimages (section 3.1) exclude the delegation_id and signature members, so a body that already carries a delegation_id member would produce a record whose delegation_id does not recompute from the record, so it fails verification; section 3.6 enforces signature integrity at issuance and says a conforming issuer does not leave an invalidity for a later verifier to discover, so the issuer refuses the body."
+      },
+      "body": {
+        "record_type": "aps:authority-delegation:v1",
+        "version": "1.0",
+        "parent_delegation_id": null,
+        "issuer": "did:example:principal",
+        "subject": "did:example:agent-a",
+        "verification_method": "did:example:principal#key-1",
+        "issued_at": "2026-07-18T22:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff",
+        "authority": {
+          "scope": {
+            "profile": "aps-hierarchical-v1",
+            "grants": [
+              "commerce:*",
+              "travel:book"
+            ]
+          },
+          "spend": {
+            "mode": "bounded",
+            "unit": "iso4217:USD:minor",
+            "per_action": "5000",
+            "cumulative": "10000"
+          },
+          "depth": {
+            "remaining": 2
+          },
+          "time": {
+            "not_before": "2026-07-18T22:00:00.000Z",
+            "not_after": "2026-07-19T22:00:00.000Z"
+          },
+          "reputation": {
+            "profile": "aps-score-0-100-v1",
+            "ceiling": 80
+          },
+          "values": {
+            "profile": "aps-values-identifiers-v1",
+            "required": [
+              "F-001",
+              "F-003"
+            ]
+          },
+          "reversibility": {
+            "profile": "aps-tci-v1",
+            "ceiling": "compensable"
+          }
+        },
+        "delegation_id": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "signing_key": "principal",
+      "expected": {
+        "result": "refuse",
+        "sdk_code": "SCHEMA_INVALID"
+      },
+      "ts_behaviour": {
+        "result": "refuse",
+        "error": "authority delegation body must carry neither delegation_id nor signature (SCHEMA_INVALID)"
+      }
+    },
+    {
+      "id": "AD-I19",
+      "kind": "issue_root",
+      "title": "issue_root: body R plus a stray signature, key principal",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "section 3.1 lines 484-490; section 3.6 lines 695-704",
+        "note": "The delegation_id and signature preimages (section 3.1) exclude the delegation_id and signature members, so a body that already carries a signature member would produce a record whose delegation_id does not recompute from the record, so it fails verification; section 3.6 enforces signature integrity at issuance and says a conforming issuer does not leave an invalidity for a later verifier to discover, so the issuer refuses the body."
+      },
+      "body": {
+        "record_type": "aps:authority-delegation:v1",
+        "version": "1.0",
+        "parent_delegation_id": null,
+        "issuer": "did:example:principal",
+        "subject": "did:example:agent-a",
+        "verification_method": "did:example:principal#key-1",
+        "issued_at": "2026-07-18T22:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff",
+        "authority": {
+          "scope": {
+            "profile": "aps-hierarchical-v1",
+            "grants": [
+              "commerce:*",
+              "travel:book"
+            ]
+          },
+          "spend": {
+            "mode": "bounded",
+            "unit": "iso4217:USD:minor",
+            "per_action": "5000",
+            "cumulative": "10000"
+          },
+          "depth": {
+            "remaining": 2
+          },
+          "time": {
+            "not_before": "2026-07-18T22:00:00.000Z",
+            "not_after": "2026-07-19T22:00:00.000Z"
+          },
+          "reputation": {
+            "profile": "aps-score-0-100-v1",
+            "ceiling": 80
+          },
+          "values": {
+            "profile": "aps-values-identifiers-v1",
+            "required": [
+              "F-001",
+              "F-003"
+            ]
+          },
+          "reversibility": {
+            "profile": "aps-tci-v1",
+            "ceiling": "compensable"
+          }
+        },
+        "signature": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "signing_key": "principal",
+      "expected": {
+        "result": "refuse",
+        "sdk_code": "SCHEMA_INVALID"
+      },
+      "ts_behaviour": {
+        "result": "refuse",
+        "error": "authority delegation body must carry neither delegation_id nor signature (SCHEMA_INVALID)"
+      }
+    },
+    {
+      "id": "AD-I20",
+      "kind": "issue_child",
+      "title": "issue_child: parent R, body C1 plus a stray delegation_id, key agent-a",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "section 3.1 lines 484-490; section 3.6 lines 695-704",
+        "note": "Same reasoning as AD-I18, one level deeper in the chain."
+      },
+      "parent": {
+        "record_type": "aps:authority-delegation:v1",
+        "version": "1.0",
+        "parent_delegation_id": null,
+        "issuer": "did:example:principal",
+        "subject": "did:example:agent-a",
+        "verification_method": "did:example:principal#key-1",
+        "issued_at": "2026-07-18T22:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff",
+        "authority": {
+          "scope": {
+            "profile": "aps-hierarchical-v1",
+            "grants": [
+              "commerce:*",
+              "travel:book"
+            ]
+          },
+          "spend": {
+            "mode": "bounded",
+            "unit": "iso4217:USD:minor",
+            "per_action": "5000",
+            "cumulative": "10000"
+          },
+          "depth": {
+            "remaining": 2
+          },
+          "time": {
+            "not_before": "2026-07-18T22:00:00.000Z",
+            "not_after": "2026-07-19T22:00:00.000Z"
+          },
+          "reputation": {
+            "profile": "aps-score-0-100-v1",
+            "ceiling": 80
+          },
+          "values": {
+            "profile": "aps-values-identifiers-v1",
+            "required": [
+              "F-001",
+              "F-003"
+            ]
+          },
+          "reversibility": {
+            "profile": "aps-tci-v1",
+            "ceiling": "compensable"
+          }
+        },
+        "delegation_id": "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249",
+        "signature": "a05cee47318a43c2161785335aff5f6daa20abd24dffb86a36fec57971129e946c37092499bf62e458846dff46a1d0879e2d9568d277ef27111b5037b1b48704"
+      },
+      "body": {
+        "record_type": "aps:authority-delegation:v1",
+        "version": "1.0",
+        "parent_delegation_id": "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249",
+        "issuer": "did:example:agent-a",
+        "subject": "did:example:agent-b",
+        "verification_method": "did:example:agent-a#key-1",
+        "issued_at": "2026-07-18T22:10:00.000Z",
+        "nonce": "102132435465768798a9bacbdcedfe0f",
+        "authority": {
+          "scope": {
+            "profile": "aps-hierarchical-v1",
+            "grants": [
+              "commerce:checkout"
+            ]
+          },
+          "spend": {
+            "mode": "bounded",
+            "unit": "iso4217:USD:minor",
+            "per_action": "2500",
+            "cumulative": "5000"
+          },
+          "depth": {
+            "remaining": 1
+          },
+          "time": {
+            "not_before": "2026-07-18T22:10:00.000Z",
+            "not_after": "2026-07-19T12:00:00.000Z"
+          },
+          "reputation": {
+            "profile": "aps-score-0-100-v1",
+            "ceiling": 70
+          },
+          "values": {
+            "profile": "aps-values-identifiers-v1",
+            "required": [
+              "F-001",
+              "F-003",
+              "F-007"
+            ]
+          },
+          "reversibility": {
+            "profile": "aps-tci-v1",
+            "ceiling": "tentative"
+          }
+        },
+        "delegation_id": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "signing_key": "agent-a",
+      "context": {
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "revocation": {
+          "parent": "active"
+        },
+        "now": "2026-07-18T23:00:00.000Z"
+      },
+      "expected": {
+        "result": "refuse",
+        "sdk_code": "SCHEMA_INVALID"
+      },
+      "ts_behaviour": {
+        "result": "refuse",
+        "error": "authority delegation body must carry neither delegation_id nor signature (SCHEMA_INVALID)"
+      }
+    },
+    {
+      "id": "AD-I21",
+      "kind": "issue_child",
+      "title": "issue_child: parent R, body C1 plus a stray signature, key agent-a",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "section 3.1 lines 484-490; section 3.6 lines 695-704",
+        "note": "Same reasoning as AD-I19, one level deeper in the chain."
+      },
+      "parent": {
+        "record_type": "aps:authority-delegation:v1",
+        "version": "1.0",
+        "parent_delegation_id": null,
+        "issuer": "did:example:principal",
+        "subject": "did:example:agent-a",
+        "verification_method": "did:example:principal#key-1",
+        "issued_at": "2026-07-18T22:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff",
+        "authority": {
+          "scope": {
+            "profile": "aps-hierarchical-v1",
+            "grants": [
+              "commerce:*",
+              "travel:book"
+            ]
+          },
+          "spend": {
+            "mode": "bounded",
+            "unit": "iso4217:USD:minor",
+            "per_action": "5000",
+            "cumulative": "10000"
+          },
+          "depth": {
+            "remaining": 2
+          },
+          "time": {
+            "not_before": "2026-07-18T22:00:00.000Z",
+            "not_after": "2026-07-19T22:00:00.000Z"
+          },
+          "reputation": {
+            "profile": "aps-score-0-100-v1",
+            "ceiling": 80
+          },
+          "values": {
+            "profile": "aps-values-identifiers-v1",
+            "required": [
+              "F-001",
+              "F-003"
+            ]
+          },
+          "reversibility": {
+            "profile": "aps-tci-v1",
+            "ceiling": "compensable"
+          }
+        },
+        "delegation_id": "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249",
+        "signature": "a05cee47318a43c2161785335aff5f6daa20abd24dffb86a36fec57971129e946c37092499bf62e458846dff46a1d0879e2d9568d277ef27111b5037b1b48704"
+      },
+      "body": {
+        "record_type": "aps:authority-delegation:v1",
+        "version": "1.0",
+        "parent_delegation_id": "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249",
+        "issuer": "did:example:agent-a",
+        "subject": "did:example:agent-b",
+        "verification_method": "did:example:agent-a#key-1",
+        "issued_at": "2026-07-18T22:10:00.000Z",
+        "nonce": "102132435465768798a9bacbdcedfe0f",
+        "authority": {
+          "scope": {
+            "profile": "aps-hierarchical-v1",
+            "grants": [
+              "commerce:checkout"
+            ]
+          },
+          "spend": {
+            "mode": "bounded",
+            "unit": "iso4217:USD:minor",
+            "per_action": "2500",
+            "cumulative": "5000"
+          },
+          "depth": {
+            "remaining": 1
+          },
+          "time": {
+            "not_before": "2026-07-18T22:10:00.000Z",
+            "not_after": "2026-07-19T12:00:00.000Z"
+          },
+          "reputation": {
+            "profile": "aps-score-0-100-v1",
+            "ceiling": 70
+          },
+          "values": {
+            "profile": "aps-values-identifiers-v1",
+            "required": [
+              "F-001",
+              "F-003",
+              "F-007"
+            ]
+          },
+          "reversibility": {
+            "profile": "aps-tci-v1",
+            "ceiling": "tentative"
+          }
+        },
+        "signature": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "signing_key": "agent-a",
+      "context": {
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "revocation": {
+          "parent": "active"
+        },
+        "now": "2026-07-18T23:00:00.000Z"
+      },
+      "expected": {
+        "result": "refuse",
+        "sdk_code": "SCHEMA_INVALID"
+      },
+      "ts_behaviour": {
+        "result": "refuse",
+        "error": "authority delegation body must carry neither delegation_id nor signature (SCHEMA_INVALID)"
+      }
+    },
+    {
       "id": "AD-B01",
       "kind": "budget",
       "title": "Idempotent reserve, then a conflicting amount",
@@ -24676,16 +25108,16 @@
     }
   ],
   "counts": {
-    "total": 179,
+    "total": 183,
     "by_kind": {
       "chain": 139,
       "wire": 9,
-      "issue_root": 2,
-      "issue_child": 15,
+      "issue_root": 4,
+      "issue_child": 17,
       "budget": 14
     },
     "by_provenance": {
-      "draft-derived": 175,
+      "draft-derived": 179,
       "ts-conformant-regression": 4
     }
   }

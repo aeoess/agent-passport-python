@@ -1367,6 +1367,10 @@ pushWireCase('AD-W06', 'Top-level JSON array', '[]', false,
 function pushIssueRootCase(
   id: string, title: string, body: any, signingKey: Label,
   expectIssue: boolean, provenance: 'draft-derived' | 'ts-conformant-regression', lines: string, note: string,
+  /** Required for a refuse case: the SDK failure code the thrown Error message must name in
+   *  parentheses, e.g. "... (SCHEMA_INVALID)". The generator STOPs if the message does not end with
+   *  "(" + sdkCode + ")", and the recorded expected.sdk_code is this value. Omitted for an issue case. */
+  sdkCode?: string,
 ): any {
   let outcome: { result: 'issue' | 'refuse'; delegation?: any; error?: string }
   let delegation: any = null
@@ -1380,13 +1384,20 @@ function pushIssueRootCase(
   if (outcome.result !== expectedResult) {
     fail(`${id}: expected ${expectedResult}, TS returned ${outcome.result} (${outcome.error ?? ''})`)
   }
+  if (!expectIssue) {
+    if (!sdkCode) fail(`${id}: a refuse case must be given its expected sdk_code`)
+    const suffix = `(${sdkCode})`
+    if (!outcome.error || !outcome.error.endsWith(suffix)) {
+      fail(`${id}: expected the TypeScript error message to end with "${suffix}", got ${JSON.stringify(outcome.error)}`)
+    }
+  }
   record('issue_root', provenance)
   cases.push({
     id, kind: 'issue_root', title,
     expected_provenance: provenance,
     derivation: { lines, note },
     body, signing_key: signingKey,
-    expected: expectIssue ? { result: 'issue', delegation } : { result: 'refuse' },
+    expected: expectIssue ? { result: 'issue', delegation } : { result: 'refuse', sdk_code: sdkCode },
     ts_behaviour: outcome.result === 'issue' ? { result: 'issue' } : { result: 'refuse', error: outcome.error },
   })
   return delegation
@@ -1535,6 +1546,30 @@ pushIssueChildCase('AD-I16', 'issue_child: parent R, body C1 unchanged, now befo
 
 pushIssueRootCase('AD-I17', "issue_root: body R with not_before predating issued_at (AD-P21's body), key principal", clone(BODY_P21), 'principal', true, 'ts-conformant-regression',
   'section 3.1', "Same reasoning as AD-I01; confirms issueAuthorityDelegation also issues a root whose not_before predates its issued_at, since the not-before-must-not-predate-issued_at rule binds only a record directly delegated from a parent (draft section 3.2, lines 511 and 536-537), and a root has no parent.")
+
+pushIssueRootCase('AD-I18', 'issue_root: body R plus a stray delegation_id, key principal',
+  mutate(BODY_R, (b: any) => { b.delegation_id = `sha256:${'0'.repeat(64)}` }), 'principal', false, 'draft-derived',
+  'section 3.1 lines 484-490; section 3.6 lines 695-704',
+  'The delegation_id and signature preimages (section 3.1) exclude the delegation_id and signature members, so a body that already carries a delegation_id member would produce a record whose delegation_id does not recompute from the record, so it fails verification; section 3.6 enforces signature integrity at issuance and says a conforming issuer does not leave an invalidity for a later verifier to discover, so the issuer refuses the body.',
+  'SCHEMA_INVALID')
+
+pushIssueRootCase('AD-I19', 'issue_root: body R plus a stray signature, key principal',
+  mutate(BODY_R, (b: any) => { b.signature = '0'.repeat(128) }), 'principal', false, 'draft-derived',
+  'section 3.1 lines 484-490; section 3.6 lines 695-704',
+  'The delegation_id and signature preimages (section 3.1) exclude the delegation_id and signature members, so a body that already carries a signature member would produce a record whose delegation_id does not recompute from the record, so it fails verification; section 3.6 enforces signature integrity at issuance and says a conforming issuer does not leave an invalidity for a later verifier to discover, so the issuer refuses the body.',
+  'SCHEMA_INVALID')
+
+pushIssueChildCase('AD-I20', 'issue_child: parent R, body C1 plus a stray delegation_id, key agent-a', R,
+  mutate(BODY_C1, (b: any) => { b.delegation_id = `sha256:${'0'.repeat(64)}` }), 'agent-a',
+  { keys: 'default', revocation_parent: 'active' }, false, 'draft-derived',
+  'section 3.1 lines 484-490; section 3.6 lines 695-704',
+  'Same reasoning as AD-I18, one level deeper in the chain.', 'SCHEMA_INVALID')
+
+pushIssueChildCase('AD-I21', 'issue_child: parent R, body C1 plus a stray signature, key agent-a', R,
+  mutate(BODY_C1, (b: any) => { b.signature = '0'.repeat(128) }), 'agent-a',
+  { keys: 'default', revocation_parent: 'active' }, false, 'draft-derived',
+  'section 3.1 lines 484-490; section 3.6 lines 695-704',
+  'Same reasoning as AD-I19, one level deeper in the chain.', 'SCHEMA_INVALID')
 
 // -------------------------------------------------------------------------
 // Budget cases: InMemoryAuthorityBudgetLedger reserve/dispatch/commit/cancel

@@ -113,8 +113,10 @@ def test_issue_root(case):
     if case["expected"]["result"] == "issue":
         assert issue_authority_delegation(case["body"], seed) == case["expected"]["delegation"]
     else:
-        with pytest.raises(AuthorityDelegationError):
+        with pytest.raises(AuthorityDelegationError) as exc_info:
             issue_authority_delegation(case["body"], seed)
+        if "sdk_code" in case["expected"]:
+            assert exc_info.value.code == case["expected"]["sdk_code"]
 
 
 @pytest.mark.parametrize("case", _by_kind("issue_child"), ids=[c["id"] for c in _by_kind("issue_child")])
