@@ -1055,12 +1055,12 @@ pushChainCase({
 pushChainCase({
   id: 'AD-N-H01', title: 'Root repeated as its own child', chain: [R, R],
   expectedState: 'invalid', expectedCode: 'CHAIN_DUPLICATE_ID', expectedIndex: 1,
-  lines: 'L582, L585-586', note: 'A repeated delegation_id is caught before the parent-link check that the same input would also fail, in both the draft\'s order and TypeScript\'s.',
+  lines: 'L582, L585-586', note: 'A repeated delegation_id is caught before the parent-link check that the same input would also fail, in both the draft\'s order and TypeScript\'s. It also necessarily fails issuer-to-subject continuity, since its issuer is its parent\'s issuer, not its parent\'s subject (L583, L585-586), and the depth rule, since its remaining depth equals its parent\'s, not at most one less (L532-533).',
 })
 pushChainCase({
   id: 'AD-N-H02', title: 'Child repeated as its own child', chain: [R, C1, C1],
   expectedState: 'invalid', expectedCode: 'CHAIN_DUPLICATE_ID', expectedIndex: 2,
-  lines: 'L582, L585-586', note: 'Same reasoning as AD-N-H01, one level deeper.',
+  lines: 'L582, L585-586', note: 'Same reasoning as AD-N-H01, one level deeper: the repeated record also necessarily fails issuer-to-subject continuity and the depth rule.',
 })
 pushChainCase({
   id: 'AD-N-H03', title: 'Empty trust table', chain: [R],
@@ -1895,12 +1895,12 @@ const conventions = {
 
 const withheld = [
   { topic: 'Multi-fault chains', reason: 'Every chain negative changes exactly one thing in an otherwise valid chain. In AD-N-S08, AD-N-S09, AD-N-S10, AD-N-S11, AD-N-S12, AD-N-S13, AD-N-S53, AD-N-S55, AD-N-S56, AD-N-U08, AD-N-H01, AD-N-H02 and AD-N-H10, that one change necessarily fails more than one check; each of those cases\' own note names the other checks it cannot avoid also failing. Chains built from two independent faults are withheld instead, because the draft does not settle which failure decides when two unrelated checks fail together. That includes the precedence inside one record between an I-JSON failure and an unknown version (formerly AD-N-S68, which paired an unsupported version with a non-I-JSON subject and is now removed) or an unsupported facet profile (formerly AD-N-S62, which paired an unsupported scope profile with a non-I-JSON record and is now removed).' },
-  { topic: 'Values the draft admits that the TypeScript schema rejects by a grammar the draft does not state', reason: 'A spend unit outside ^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$, and JSON number spellings such as 2.0 or 1e2 in wire input; whether the draft admits them is an open question.' },
+  { topic: 'Spend unit grammar and wire number spelling (open question)', reason: 'A spend unit outside ^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$, and JSON number spellings such as 2.0 or 1e2 in wire input; whether the draft admits them is an open question.' },
   { topic: 'An unknown record_type string: reported unsupported and still judged by the v1 schema', reason: 'A record_type naming some other string is unsupported (UNSUPPORTED_VERSION) but is still judged by the v1 body schema, unlike a recognised record_type paired with an unknown version, which is not. No rule states whether it should be judged.' },
   { topic: 'Key-resolution outcome structure', reason: 'not found, ambiguous, malformed, unreachable, unsupported scheme (L360-369): an open question.' },
   { topic: 'Runtime reputation and unresolved action reversibility', reason: 'L542-545 and L566 are action-time rules, not chain verification.' },
   { topic: 'Revocation records and cascade completion', reason: 'Sections 3.5 and 3.5.1: no wire format is fixed and no implementation exists.' },
-  { topic: 'Implementation limits that are not draft rules', reason: 'At most 256 records per chain, 1 MiB wire input, 1024 UTF-8 bytes per identifier, and the scope segment and values identifier grammars (aps-hierarchical-v1 and aps-values-identifiers-v1 treated as profile detail).' },
+  { topic: 'Grammars and limits the draft does not state', reason: 'Both the Python and TypeScript SDKs share these choices: at most 256 records per chain, 1 MiB of wire input, 1024 UTF-8 bytes per identifier, the scope segment grammar aps-hierarchical-v1, and the values identifier grammar aps-values-identifiers-v1. The two grammars reject values the draft text admits: line 516 says only that scope grants use ASCII colon-separated segments, and line 547 only that values identifiers are profile-defined. All five are provisional choices pending a protocol ruling, and no vector depends on any of them.' },
   { topic: "A child whose not_before is earlier than its parent's not_before, as a single fault", reason: "Impossible: the child's not_before is not before its issued_at, which is not before the parent's not_before." },
   { topic: "Issuer refusal when the parent's delegation_id does not match its content", reason: "The draft requires the issuer to verify the parent's signature and temporal validity (L696-698); it does not name the content address. Both the Python and TypeScript issuers recompute the parent's delegation_id and refuse with ID_MISMATCH when it does not match; no vector, because the draft names only signature and temporal validity, not the content address." },
 ]
