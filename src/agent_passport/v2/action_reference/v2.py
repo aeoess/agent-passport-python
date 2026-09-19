@@ -14,11 +14,15 @@ distinct from the section 4.2 legacy external correlation form.
 Mirrors the TypeScript SDK's ``src/v2/action-reference/v2.ts`` with the same
 profile string and domain-separation tags, giving the same digest for every
 input both accept. Known differences: an empty ``scope_required`` array is
-rejected here (``empty_scope_required``) and accepted by the TypeScript SDK;
-the order of checks is similar but not identical, so an input with several
-faults can be reported under a different code; values nested beyond this
-implementation's recursion limit are rejected with ``nesting_limit``.
-Canonicalization goes through the strict new-write I-JSON JCS in
+rejected here (``empty_scope_required``, a provisional fail-closed choice
+while the draft's default for an empty array is unresolved) and accepted by
+the TypeScript SDK;
+the TypeScript SDK's ``computeActionRefV2`` rejects an ``issued_at`` with
+second 60 (a leap second), which this port accepts; the order of checks is
+similar but not identical, so an input with several faults can be reported
+under a different code; values nested beyond this implementation's
+recursion limit are rejected with ``nesting_limit``. Canonicalization goes
+through the strict new-write I-JSON JCS in
 :mod:`agent_passport.receipt_core.jcs`, not the legacy canonicalizer.
 """
 
@@ -59,11 +63,14 @@ _REQUIRED_MEMBERS = (
 )
 _ALLOWED_MEMBERS = frozenset(_REQUIRED_MEMBERS)
 
-# issued_at: RFC 3339 UTC, exactly three fractional digits, literal Z. Anchored
-# by re.fullmatch, so no leading/trailing anchors are needed in the pattern.
+# issued_at: RFC 3339 UTC, exactly three fractional digits, literal Z. Second
+# 60 (a leap second) is accepted lexically: RFC 3339 admits it, and a
+# validator cannot consult the leap-second table to know whether one
+# actually occurred at a given UTC instant. Anchored by re.fullmatch, so no
+# leading/trailing anchors are needed in the pattern.
 _TIMESTAMP_RE = re.compile(
     r"[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])"
-    r"T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\.[0-9]{3}Z"
+    r"T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)\.[0-9]{3}Z"
 )
 _PAYLOAD_REF_RE = re.compile(r"[0-9a-f]{64}")
 _NONCE_RE = re.compile(r"[0-9a-f]{32}")
@@ -150,18 +157,20 @@ def validate_action_reference_input_v2(candidate: object) -> None:
        ``not_string`` / ``empty_string``).
     6. ``payload_ref`` is a string matching 64 lowercase hex characters (else
        ``not_string`` / ``bad_hex``).
-    7. ``scope_required`` is an array (else ``scope_not_array``). This function
-       takes no profile and therefore never admits an empty array: the draft
-       lets only a profile decide that, so ``[]`` is always
-       ``empty_scope_required`` here. Each element must be a non-empty string
+    7. ``scope_required`` is an array (else ``scope_not_array``). An empty
+       array is rejected with ``empty_scope_required``. This is provisional:
+       section 4.1 lets a profile permit an empty array but does not say what
+       a verifier with no profile does, and until that is ruled this function,
+       which takes no profile, fails closed on ``[]``. Each element must be a non-empty string
        (else ``not_string`` / ``empty_string``), already in NFC, and the array
        strictly increasing by the lexicographic order of UTF-8 encodings, with
        no duplicate (else ``scope_not_canonical``). Nothing is normalized here.
     8. ``issued_at`` is a string matching the canonical RFC 3339 UTC
        millisecond form, naming a day that exists in that month under the
        proleptic Gregorian calendar (else ``not_string`` / ``bad_timestamp``).
-       Second 60 (a leap second) is rejected; the draft does not say whether
-       leap seconds are admissible, so this rejection is provisional.
+       Second 60 is accepted lexically: RFC 3339 admits a leap second, and a
+       validator cannot consult the leap-second table to know whether one
+       actually occurred at a given UTC instant.
     9. ``nonce`` is a string matching 32 lowercase hex characters (else
        ``not_string`` / ``bad_hex``).
     """

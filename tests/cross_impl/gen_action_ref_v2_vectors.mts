@@ -21,6 +21,7 @@
 //   npx tsx tests/cross_impl/gen_action_ref_v2_vectors.mts <output.json>
 
 import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import { writeFileSync } from 'node:fs'
 
 // -------------------------------------------------------------------------
@@ -89,7 +90,7 @@ const FAILURE_CODES = [
   { code: 'not_string', meaning: 'a string field holds a non-string (number, null, array, object)', draft_lines: '789-799' },
   { code: 'empty_string', meaning: 'a string field or a scope element is ""', draft_lines: '798-799' },
   { code: 'bad_hex', meaning: 'payload_ref not 64 lowercase hex, or nonce not 32 lowercase hex', draft_lines: '793-794, 797-798, 815' },
-  { code: 'bad_timestamp', meaning: 'issued_at not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid calendar instant', draft_lines: '796-797, 815' },
+  { code: 'bad_timestamp', meaning: 'issued_at not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid calendar instant; second 00-60 is accepted (60 lexically, per RFC 3339)', draft_lines: '796-797, 815' },
   { code: 'scope_not_array', meaning: 'scope_required is not an array', draft_lines: '794' },
   { code: 'scope_not_canonical', meaning: 'scope array not NFC, not sorted by UTF-8 bytes, or not duplicate-free', draft_lines: '794-796, 814, 822-824' },
   { code: 'lone_surrogate', meaning: 'a string contains an unpaired UTF-16 surrogate', draft_lines: '819-821' },
@@ -108,12 +109,6 @@ const WITHHELD = [
     reason:
       'draft lines 798-800 let a profile permit an empty scope_required array, but the input object names ' +
       'no profile, so the default is not determined by the text.',
-  },
-  {
-    case: 'issued_at with second 60 (leap second, for example "2016-12-31T23:59:60.000Z")',
-    reason:
-      'RFC 3339 permits a leap second, APS says "UTC timestamp with exactly three fractional digits", and ' +
-      'the text does not say whether leap seconds are admissible.',
   },
 ]
 
@@ -392,6 +387,66 @@ for (const c of objectCases) {
     expected: expectedOut,
     expected_provenance: provenance,
     draft_lines,
+  })
+}
+
+// -------------------------------------------------------------------------
+// action_ref cases, entry "object": issued_at with second 60 (leap second).
+// RFC 3339 admits it lexically and section 4.1 names RFC 3339, so the draft
+// text itself accepts these, independent of what the TypeScript SDK's own
+// computeActionRefV2 does. The expected digest therefore comes straight
+// from the section 4.1 formula (domain tag + canonicalizeJCS), not from
+// calling computeActionRefV2, which currently rejects a leap second (see
+// ts_behaviour below); it does not decide the expected result here.
+// -------------------------------------------------------------------------
+
+const canonicalJcsModuleUrl = new URL('src/core/canonical-jcs.ts', `file://${tsRepo}/`).href
+const { canonicalizeJCS } = (await import(canonicalJcsModuleUrl)) as {
+  canonicalizeJCS: (value: unknown) => string
+}
+
+const LEAP_SECOND_PROVENANCE_NOTE =
+  'RFC 3339 admits second 60 for a leap second and section 4.1 names RFC 3339; a validator cannot ' +
+  'consult the leap-second table, so second 60 is accepted lexically. The expected digest is computed ' +
+  'from the section 4.1 formula (APS-ACTION-REF-V2, one zero byte, JCS of the input object) with ' +
+  'canonicalizeJCS, not taken from computeActionRefV2.'
+
+const leapSecondCases: { id: string; input: Record<string, unknown> }[] = [
+  { id: 'AR-P17', input: base({ issued_at: '2016-12-31T23:59:60.000Z' }) },
+  { id: 'AR-P18', input: base({ issued_at: '2026-04-08T12:00:60.000Z' }) },
+]
+
+for (const c of leapSecondCases) {
+  const digest = createHash('sha256')
+    .update('APS-ACTION-REF-V2\0' + canonicalizeJCS(c.input), 'utf8')
+    .digest('hex')
+
+  let tsBehaviour: Record<string, unknown>
+  try {
+    const tsRef = computeActionRefV2(c.input)
+    if (tsRef !== digest) {
+      fail(`${c.id}: TS computeActionRefV2 accepted with a different digest than the section 4.1 formula (${tsRef} vs ${digest})`)
+    }
+    tsBehaviour = { behaviour: 'accepts', action_ref: tsRef }
+  } catch (e) {
+    tsBehaviour = {
+      behaviour: 'rejects',
+      message: (e as Error).message,
+      note: 'TypeScript SDK behaviour at the pinned commit differs from the draft text',
+    }
+  }
+
+  actionRefById.set(c.id, digest)
+  record('object', 'draft-derived')
+  cases.push({
+    id: c.id,
+    entry: 'object',
+    input: c.input,
+    expected: { result: 'accept', action_ref: digest },
+    expected_provenance: 'draft-derived',
+    draft_lines: '807-808',
+    provenance_note: LEAP_SECOND_PROVENANCE_NOTE,
+    ts_behaviour: tsBehaviour,
   })
 }
 

@@ -370,6 +370,31 @@ def test_2000_02_29_is_accepted_leap_year_divisible_by_400():
     validate_action_reference_input_v2(doc)  # does not raise
 
 
+# -- Leap second: RFC 3339 admits it lexically, and a validator cannot -----
+# consult the leap-second table
+
+
+def test_leap_second_60_is_accepted_lexically():
+    # RFC 3339 admits second 60 for a leap second, and a validator cannot
+    # consult the leap-second table to know whether one actually occurred
+    # at this UTC instant, so it is accepted lexically.
+    doc = _base()
+    doc["issued_at"] = "2016-12-31T23:59:60.000Z"
+    validate_action_reference_input_v2(doc)  # does not raise
+
+
+def test_leap_second_60_is_accepted_lexically_at_an_arbitrary_time():
+    doc = _base()
+    doc["issued_at"] = "2026-04-08T12:00:60.000Z"
+    validate_action_reference_input_v2(doc)  # does not raise
+
+
+def test_second_61_is_still_rejected():
+    doc = _base()
+    doc["issued_at"] = "2026-04-08T12:00:61.000Z"
+    _expect_code(doc, "bad_timestamp")
+
+
 # Create-path input shape
 
 

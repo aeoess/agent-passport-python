@@ -19,7 +19,7 @@
     },
     {
       "code": "bad_timestamp",
-      "meaning": "timestamp not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid RFC 3339 date and time (month 01-12, day existing in the month, hour 00-23, minute 00-59, second 00-59; second 60 is withheld)",
+      "meaning": "timestamp not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid RFC 3339 date and time (month 01-12, day existing in the month, hour 00-23, minute 00-59, second 00-60, 60 accepted lexically per RFC 3339)",
       "draft_lines": "866-871"
     },
     {
@@ -28,19 +28,14 @@
       "draft_lines": "855-857"
     }
   ],
-  "withheld": [
-    {
-      "case": "timestamp with second 60 (leap second, \"2016-12-31T23:59:60.000Z\")",
-      "reason": "RFC 3339 permits it and the draft does not say whether it is admissible. The TypeScript SDK accepts it lexically."
-    }
-  ],
+  "withheld": [],
   "ts_behaviour_note": "ts_behaviour on a reject case records what the TypeScript reference implementation actually does on that input, observed by calling it directly at the pinned commit. It is not a conformance claim: this file does not assert the TypeScript SDK is verified against section 4.2, only reports its behaviour next to the spec's own answer. \"accepts\" means TS returned a digest where the spec requires a rejection; \"rejects\" means TS threw, and the accompanying message is the TypeScript SDK's own error text (SDK vocabulary, not protocol vocabulary).",
   "counts": {
-    "total": 22,
-    "accept": 9,
+    "total": 24,
+    "accept": 11,
     "reject": 13,
     "by_expected_provenance": {
-      "draft-derived": 13,
+      "draft-derived": 15,
       "ts-conformant-regression": 9
     }
   },
@@ -184,6 +179,38 @@
       },
       "expected_provenance": "ts-conformant-regression",
       "draft_lines": "852-857"
+    },
+    {
+      "id": "EX-P10",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": "2016-12-31T23:59:60.000Z"
+      },
+      "expected": {
+        "result": "accept",
+        "external_action_ref": "9987eae85a2037cd2b8cd300d357f33a633e47fb735af5fb6cc742ff41ec69ac"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "852-857",
+      "provenance_note": "RFC 3339 admits second 60 and section 4.2 names RFC 3339; accepted lexically. The TypeScript SDK at the pinned commit gives this digest."
+    },
+    {
+      "id": "EX-P11",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": "2026-04-08T12:00:60.000Z"
+      },
+      "expected": {
+        "result": "accept",
+        "external_action_ref": "04e4f90b49acbeec71f0f70c986a880adc2f0927095b8b925f45203c1447f0fc"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "852-857",
+      "provenance_note": "RFC 3339 admits second 60 and section 4.2 names RFC 3339; accepted lexically. The TypeScript SDK at the pinned commit gives this digest."
     },
     {
       "id": "EX-N01",
