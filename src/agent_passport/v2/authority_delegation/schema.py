@@ -444,11 +444,13 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
     # because I-JSON belongs to canonical serialization, not to this body
     # schema: if the record fails it, the failures are SCHEMA_INVALID followed
     # by UNSUPPORTED_VERSION, and otherwise UNSUPPORTED_VERSION alone. The one
-    # exception is a record carrying a key that is not exactly str, anywhere:
-    # the walk above has already reported it SCHEMA_INVALID alone, since
-    # reading its record_type or version would take a dict lookup that could
-    # run that key's own code, so neither UNSUPPORTED_VERSION nor
-    # UNSUPPORTED_PROFILE is ever added for such a record.
+    # exception is a record whose non-str key the walk above found: it has
+    # already been reported SCHEMA_INVALID alone, so neither
+    # UNSUPPORTED_VERSION nor UNSUPPORTED_PROFILE is added for it. The walk
+    # returns on the first such key wherever it sits, which is simpler than
+    # deciding which keys a later lookup could reach: a key of a dict that
+    # the record_type, version or profile lookups do reach could run its own
+    # code during those reads, and one nested deeper could not.
     # Reporting the I-JSON failure first, which makes a record invalid even
     # when its version is unknown or a facet's profile is unsupported, is a
     # provisional choice kept identical to the TypeScript SDK. It stands

@@ -57,11 +57,15 @@ still subject to the provisional precedence, documented at
 validate_authority_delegation_shape, under which a record that is not
 I-JSON is reported SCHEMA_INVALID first: a record that fails the I-JSON
 check and also names an unknown version or an unsupported profile is
-reported invalid on SCHEMA_INVALID, not unsupported. A record carrying a
-dict key that is not exactly str is reported SCHEMA_INVALID alone, with no
-UNSUPPORTED_VERSION or UNSUPPORTED_PROFILE after it, because reading its
-version or a facet's profile would take a dict lookup that could run that
-key's own code.
+reported invalid on SCHEMA_INVALID, not unsupported. A record whose
+non-str dict key the key-type pre-walk finds, that is, a key of a dict
+reached through exact dicts and lists only, is reported SCHEMA_INVALID
+alone, with no UNSUPPORTED_VERSION or UNSUPPORTED_PROFILE after it: the
+pre-walk returns on the first such key, because a key of a dict that the
+version or profile lookups reach could run its own code during those
+reads. A non-str key held below a container that is not exactly a dict or
+a list is not reached by that walk and is reported by the I-JSON walk
+instead, with the unsupported code after it.
 """
 
 from __future__ import annotations
