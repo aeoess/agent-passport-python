@@ -1,0 +1,1756 @@
+{
+  "name": "aps-action-ref-v2 and payload_ref vectors",
+  "draft": "draft-pidlisnyi-aps-03 section 4.1 (published text lines 751-832)",
+  "generated_from": {
+    "repository": "aeoess/agent-passport-system",
+    "commit": "c47b97b95642ea5bb6c19bee2bf795144b09fe1c",
+    "module": "src/v2/action-reference/v2.ts",
+    "generator": "tests/cross_impl/gen_action_ref_v2_vectors.mts"
+  },
+  "expected_provenance_values": {
+    "draft-derived": "The expected value follows directly from the requirement text: the failure-code table for every reject case that carries no provenance_note, case, the payload_ref formula (draft lines 804-805) computed independently with the rfc8785 Python package for every payload_ref digest (the job 1 conformance matrix does not mark payload_ref conformant for TS, because the aps-mcp-1 profile uses a different domain tag), and the NFC-normalize/sort/dedupe rule (draft lines 794-796, 819-824) for the canonical scope_required form recorded on every create-entry case. It holds independent of whether the TS reference implementation is marked conformant.",
+    "ts-conformant-regression": "The expected value is the result produced by the corrected TS reference implementation (a digest, or for the two payload cases that carry a provenance_note a rejection under the SDK I-JSON integer boundary) (computeActionRefV2 / computeActionRefV2FromJson / createActionReferenceInputV2). The job 1 conformance matrix marks the section 4.1 action_ref construction conformant for TS, so this file pins that implementation's own output as a cross-implementation regression value, independently cross-checked against an rfc8785-based recomputation (see cross_checks) rather than trusted outright."
+  },
+  "failure_codes": [
+    {
+      "code": "not_object",
+      "meaning": "input is not a JSON object",
+      "draft_lines": "757"
+    },
+    {
+      "code": "missing_member",
+      "meaning": "a required member is absent",
+      "draft_lines": "757-768"
+    },
+    {
+      "code": "unknown_member",
+      "meaning": "a member outside the eight",
+      "draft_lines": "813-814"
+    },
+    {
+      "code": "duplicate_member",
+      "meaning": "a member name occurs twice in the serialized document, compared after escape decoding",
+      "draft_lines": "814-817"
+    },
+    {
+      "code": "wrong_profile",
+      "meaning": "profile is not \"aps-action-ref-v2\"",
+      "draft_lines": "789"
+    },
+    {
+      "code": "not_string",
+      "meaning": "a string field holds a non-string (number, null, array, object)",
+      "draft_lines": "789-799"
+    },
+    {
+      "code": "empty_string",
+      "meaning": "a string field or a scope element is \"\"",
+      "draft_lines": "798-799"
+    },
+    {
+      "code": "bad_hex",
+      "meaning": "payload_ref not 64 lowercase hex, or nonce not 32 lowercase hex",
+      "draft_lines": "793-794, 797-798, 815"
+    },
+    {
+      "code": "bad_timestamp",
+      "meaning": "issued_at not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid calendar instant",
+      "draft_lines": "796-797, 815"
+    },
+    {
+      "code": "scope_not_array",
+      "meaning": "scope_required is not an array",
+      "draft_lines": "794"
+    },
+    {
+      "code": "scope_not_canonical",
+      "meaning": "scope array not NFC, not sorted by UTF-8 bytes, or not duplicate-free",
+      "draft_lines": "794-796, 814, 822-824"
+    },
+    {
+      "code": "lone_surrogate",
+      "meaning": "a string contains an unpaired UTF-16 surrogate",
+      "draft_lines": "819-821"
+    },
+    {
+      "code": "non_i_json",
+      "meaning": "a value that is not I-JSON (unsafe integer, non-finite number, invalid JSON text)",
+      "draft_lines": "814, 804-805"
+    }
+  ],
+  "withheld": [
+    {
+      "case": "scope_required = []",
+      "reason": "draft lines 798-800 let a profile permit an empty scope_required array, but the input object names no profile, so the default is not determined by the text."
+    },
+    {
+      "case": "issued_at with second 60 (leap second, for example \"2016-12-31T23:59:60.000Z\")",
+      "reason": "RFC 3339 permits a leap second, APS says \"UTC timestamp with exactly three fractional digits\", and the text does not say whether leap seconds are admissible."
+    }
+  ],
+  "counts": {
+    "total": 75,
+    "by_entry": {
+      "payload": 12,
+      "object": 53,
+      "json": 6,
+      "create": 4
+    },
+    "by_expected_provenance": {
+      "draft-derived": 53,
+      "ts-conformant-regression": 22
+    }
+  },
+  "cross_checks": {
+    "description": "Every payload_ref value and every accepted action_ref value in this file is independently recomputed in Python by tests/cross_impl/crosscheck_action_ref_v2_vectors.py, using the rfc8785 package (an RFC 8785 JSON Canonicalization Scheme implementation outside this project, not this project's own canonicalizer): payload_ref as sha256(b\"APS-ACTION-PAYLOAD-V1\\x00\" + rfc8785.dumps(payload)) and an accepted action_ref as sha256(b\"APS-ACTION-REF-V2\\x00\" + rfc8785.dumps(canonical_input)), both lowercase hex, compared byte for byte against the value recorded in this file. The script does not import agent_passport and does not depend on the TS SDK, so a mismatch means the value recorded in this file is wrong, not that the TS SDK is non-conformant.",
+    "command": "python tests/cross_impl/crosscheck_action_ref_v2_vectors.py"
+  },
+  "ts_error_messages_note": "ts_error_message values are the TypeScript SDK's own messages, recorded for reference. They are SDK vocabulary, not protocol vocabulary; the normative failure is the failure code.",
+  "cases": [
+    {
+      "id": "PR-P01",
+      "entry": "payload",
+      "input": {
+        "amount": "5000",
+        "currency": "USD",
+        "merchant": "example"
+      },
+      "expected": {
+        "result": "accept",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "804-805"
+    },
+    {
+      "id": "PR-P02",
+      "entry": "payload",
+      "input": {},
+      "expected": {
+        "result": "accept",
+        "payload_ref": "47f9fce19bc55b1a5a97e43bf6b87dd3f5315d16fc5f66da2f4b16b4e6aa11a5"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "804-805"
+    },
+    {
+      "id": "PR-P03",
+      "entry": "payload",
+      "input": [],
+      "expected": {
+        "result": "accept",
+        "payload_ref": "8c71c04ad405351259c5206939f8d8c0368b4f2f1c4ecbde1c0d1f0d5d8d17b6"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "804-805"
+    },
+    {
+      "id": "PR-P04",
+      "entry": "payload",
+      "input": {
+        "cart": [
+          "sku-1"
+        ]
+      },
+      "expected": {
+        "result": "accept",
+        "payload_ref": "3a90644cfd312e5c32c602edf0857f43eefe8b14a923c90ed1d035b6ca52234e"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "804-805"
+    },
+    {
+      "id": "PR-P05",
+      "entry": "payload",
+      "input": {
+        "a": 1,
+        "b": 1.5,
+        "c": 0,
+        "d": 1.2345e-20,
+        "e": 1e-7,
+        "f": 0.1,
+        "g": -1.25e-10
+      },
+      "expected": {
+        "result": "accept",
+        "payload_ref": "dec103f84232d687a5dde9f5c68f2db41ca242f24725e66fbbe00addb32cd4b3"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "804-805"
+    },
+    {
+      "id": "PR-P06",
+      "entry": "payload",
+      "input": {
+        "1": 4,
+        "€": 1,
+        "\r": 2,
+        "דּ": 3,
+        "😀": 5,
+        "": 6,
+        "ö": 7
+      },
+      "expected": {
+        "result": "accept",
+        "payload_ref": "f62b8b15e2de8a183d78affefdf4ffdc93fb2c7d620fd927ad41399588814943"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "804-805"
+    },
+    {
+      "id": "PR-P07",
+      "entry": "payload",
+      "input": {
+        "n": null,
+        "t": true,
+        "f": false,
+        "s": "quote\" backslash\\ tab\t newline\n bell\u0007",
+        "arr": [
+          1,
+          [
+            2,
+            [
+              3
+            ]
+          ],
+          {
+            "z": 0,
+            "a": 0
+          }
+        ]
+      },
+      "expected": {
+        "result": "accept",
+        "payload_ref": "0287b931e5582d971619ef72e505afac1b53a1a420d56bb13b97e99b817ce055"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "804-805"
+    },
+    {
+      "id": "PR-P08",
+      "entry": "payload",
+      "input": {
+        "u": "   😀 café"
+      },
+      "expected": {
+        "result": "accept",
+        "payload_ref": "82066c1dfcba48f5aec19baa2ee1a4f1c8036b1ebf56381b2ad36c8e6e3e8543"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "804-805"
+    },
+    {
+      "id": "PR-P09",
+      "entry": "payload",
+      "input": {
+        "max": 9007199254740991,
+        "min": -9007199254740991
+      },
+      "expected": {
+        "result": "accept",
+        "payload_ref": "27de9629b50d55398d5eac8c3c37d2f0bfc2d975c388d6de90b8786dd11ef9c5"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "804-805"
+    },
+    {
+      "id": "PR-N01",
+      "entry": "payload",
+      "input": {
+        "big": 9007199254740992
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "non_i_json",
+        "ts_error_message": "$.big: non-I-JSON number"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "814, 804-805",
+      "provenance_note": "Rejection rests on the I-JSON integer boundary both SDKs apply (an integer-valued number above 2**53-1 in magnitude is not accepted). RFC 7493 section 2.2 states that boundary as interoperability advice, so the expected result is the SDK policy for a row the job 1 matrix marks conformant, not a value the draft text fixes on its own."
+    },
+    {
+      "id": "PR-N03",
+      "entry": "payload",
+      "input": {
+        "big": 1e+21
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "non_i_json",
+        "ts_error_message": "$.big: non-I-JSON number"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "814, 804-805",
+      "provenance_note": "Rejection rests on the I-JSON integer boundary both SDKs apply (an integer-valued number above 2**53-1 in magnitude is not accepted). RFC 7493 section 2.2 states that boundary as interoperability advice, so the expected result is the SDK policy for a row the job 1 matrix marks conformant, not a value the draft text fixes on its own."
+    },
+    {
+      "id": "PR-N02",
+      "entry": "payload",
+      "input": {
+        "s": "\ud800"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "lone_surrogate",
+        "ts_error_message": "canonicalizeJCS: string contains an unpaired UTF-16 high surrogate; a lone surrogate has no valid UTF-8 encoding and RFC 8785 requires rejection"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "819-821"
+    },
+    {
+      "id": "AR-P01",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "4931f6d13c63a865901de8135ee442cd9ee40a1075e52c72594fa18c713a8382"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AR-P02",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "bf2b354867a49c601f52369f13f7bc16c8525dd8a18c8bc60eee1a3ec4217a57"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AR-P03",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/refunds",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "774289a05cb82825f9c578cc2850d874f95da4e4587fe301c1adc8a98a501e52"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AR-P04",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "3a90644cfd312e5c32c602edf0857f43eefe8b14a923c90ed1d035b6ca52234e",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "10da0051e0f4b3b91e81a47fcd2e0dc5f12654504dc9ddeeae03d8e17b0a7429"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AR-P05",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "ffeeddccbbaa99887766554433221100"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "909b5601d36a24cedb5407128786fcfdfd13f57581ebd4b755e898300dab0609"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AR-P06",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.001Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "adf1e35754e5b75a22a1a36c5e7bf16e7f472264c5d68496b17acb6982c269e6"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AR-P07",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "café:read",
+          "repo:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "2e0935ede0198e97fa6bfc93f1826a381577ab1910bedc290c27933b49cb9f06"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AR-P08",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "｡:x",
+          "😀:y"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "e8cf9ed1b5bbeb0ed47a1f4851c2a247d18bce78817dc78630976fd37971446d"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AR-P09",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/p?q=\"a\\b\"\n ",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "33d534c1bd7397a43936b1e9b125238385c855d44e0a20da6a2d2bbaf25a47c1"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AR-P10",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:example:😀",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "a86864ac3be99a6a166d83012073ea62dd6bb832e2a7ddb46725e9431d1e65a5"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AR-P11",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2028-02-29T23:59:59.999Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "9da07c6777f1cc66e99d57427b8faf0c63d1cc820e7c99bf73a6a27b9e5f3ed8"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AR-P12",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "0001-01-01T00:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "de0baf36e99937b37f25919aeead24dc571680fef7e94b449e8a3d50bf3a4c03"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AR-P13",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2000-02-29T00:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "f84fb2810db8d9e904e70b364ad3687da20b9c9fe29496acdf009c8e2e7709b1"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AR-P14",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00000000000000000000000000000000"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "e27d944d920a05cd8c287c8153b1aa576271912bdc11a0f297059fea22bb7b12"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AR-P15",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "*",
+          "commerce:*",
+          "commerce:read",
+          "data:read",
+          "data:write",
+          "repo:read",
+          "repo:write",
+          "z:1",
+          "z:10",
+          "z:2"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "c060813e9a01a6211b3fdccc56407cf89e8c537aab177f272a3658dfd4b886f4"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AR-P16",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "688e2e253708af5c44636f01631e260538e629440cfddbfbbd811accec8b570d"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AR-N01",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff",
+        "extra": "x"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "unknown_member",
+        "ts_error_message": "action reference: unknown field extra"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "813-814"
+    },
+    {
+      "id": "AR-N02",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "missing_member",
+        "ts_error_message": "action reference: missing nonce"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "757-768"
+    },
+    {
+      "id": "AR-N03",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v1",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "wrong_profile",
+        "ts_error_message": "action reference profile"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "789"
+    },
+    {
+      "id": "AR-N04",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "empty_string",
+        "ts_error_message": "agent_id"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "798-799"
+    },
+    {
+      "id": "AR-N05",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "empty_string",
+        "ts_error_message": "action_type"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "798-799"
+    },
+    {
+      "id": "AR-N06",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "empty_string",
+        "ts_error_message": "target"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "798-799"
+    },
+    {
+      "id": "AR-N07",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": 123,
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "not_string",
+        "ts_error_message": "agent_id"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "789-799"
+    },
+    {
+      "id": "AR-N08",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": null,
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "not_string",
+        "ts_error_message": "target"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "789-799"
+    },
+    {
+      "id": "AR-N09",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9E1D86673F6F2401F5504FDAC162C3A429DC2B539F9FA2E0D22A588FB3FFABDF",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_hex",
+        "ts_error_message": "payload_ref: expected 64 lowercase hexadecimal characters"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "793-794, 797-798, 815"
+    },
+    {
+      "id": "AR-N10",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabd",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_hex",
+        "ts_error_message": "payload_ref: expected 64 lowercase hexadecimal characters"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "793-794, 797-798, 815"
+    },
+    {
+      "id": "AR-N11",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdg",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_hex",
+        "ts_error_message": "payload_ref: expected 64 lowercase hexadecimal characters"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "793-794, 797-798, 815"
+    },
+    {
+      "id": "AR-N12",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": 12345,
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "not_string",
+        "ts_error_message": "payload_ref: expected 64 lowercase hexadecimal characters"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "789-799"
+    },
+    {
+      "id": "AR-N13",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeef"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_hex",
+        "ts_error_message": "nonce: expected 32 lowercase hexadecimal characters"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "793-794, 797-798, 815"
+    },
+    {
+      "id": "AR-N14",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899AABBCCDDEEFF"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_hex",
+        "ts_error_message": "nonce: expected 32 lowercase hexadecimal characters"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "793-794, 797-798, 815"
+    },
+    {
+      "id": "AR-N15",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp",
+        "ts_error_message": "issued_at: expected canonical UTC milliseconds"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "796-797, 815"
+    },
+    {
+      "id": "AR-N16",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp",
+        "ts_error_message": "issued_at: expected canonical UTC milliseconds"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "796-797, 815"
+    },
+    {
+      "id": "AR-N17",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000+00:00",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp",
+        "ts_error_message": "issued_at: expected canonical UTC milliseconds"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "796-797, 815"
+    },
+    {
+      "id": "AR-N18",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08t12:00:00.000z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp",
+        "ts_error_message": "issued_at: expected canonical UTC milliseconds"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "796-797, 815"
+    },
+    {
+      "id": "AR-N19",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-02-30T00:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp",
+        "ts_error_message": "issued_at: invalid calendar timestamp"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "796-797, 815"
+    },
+    {
+      "id": "AR-N20",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T24:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp",
+        "ts_error_message": "issued_at: expected canonical UTC milliseconds"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "796-797, 815"
+    },
+    {
+      "id": "AR-N21",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-13-01T00:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp",
+        "ts_error_message": "issued_at: expected canonical UTC milliseconds"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "796-797, 815"
+    },
+    {
+      "id": "AR-N22",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2027-02-29T00:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp",
+        "ts_error_message": "issued_at: invalid calendar timestamp"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "796-797, 815"
+    },
+    {
+      "id": "AR-N23",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": [
+          "2026-04-08T12:00:00.000Z"
+        ],
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "not_string",
+        "ts_error_message": "issued_at: expected canonical UTC milliseconds"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "789-799"
+    },
+    {
+      "id": "AR-N24",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": [
+          "00112233445566778899aabbccddeeff"
+        ]
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "not_string",
+        "ts_error_message": "nonce: expected 32 lowercase hexadecimal characters"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "789-799"
+    },
+    {
+      "id": "AR-N25",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": [
+          "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf"
+        ],
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "not_string",
+        "ts_error_message": "payload_ref: expected 64 lowercase hexadecimal characters"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "789-799"
+    },
+    {
+      "id": "AR-N26",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": [
+          [
+            "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf"
+          ]
+        ],
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "not_string",
+        "ts_error_message": "payload_ref: expected 64 lowercase hexadecimal characters"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "789-799"
+    },
+    {
+      "id": "AR-N27",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": "commerce:write",
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "scope_not_array",
+        "ts_error_message": "scope_required"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "794"
+    },
+    {
+      "id": "AR-N28",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:write",
+          "commerce:read"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "scope_not_canonical",
+        "ts_error_message": "scope_required: values must be sorted and unique by UTF-8 bytes"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "794-796, 814, 822-824"
+    },
+    {
+      "id": "AR-N29",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:read"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "scope_not_canonical",
+        "ts_error_message": "scope_required: values must be sorted and unique by UTF-8 bytes"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "794-796, 814, 822-824"
+    },
+    {
+      "id": "AR-N30",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "café:read"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "scope_not_canonical",
+        "ts_error_message": "scope_required: non-NFC value"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "794-796, 814, 822-824"
+    },
+    {
+      "id": "AR-N31",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "😀:y",
+          "｡:x"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "scope_not_canonical",
+        "ts_error_message": "scope_required: values must be sorted and unique by UTF-8 bytes"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "794-796, 814, 822-824"
+    },
+    {
+      "id": "AR-N32",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          ""
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "empty_string",
+        "ts_error_message": "scope_required: empty or non-string value"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "798-799"
+    },
+    {
+      "id": "AR-N33",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          1
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "not_string",
+        "ts_error_message": "scope_required: empty or non-string value"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "789-799"
+    },
+    {
+      "id": "AR-N34",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:example:\ud800",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "lone_surrogate",
+        "ts_error_message": "canonicalizeJCS: string contains an unpaired UTF-16 high surrogate; a lone surrogate has no valid UTF-8 encoding and RFC 8785 requires rejection"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "819-821"
+    },
+    {
+      "id": "AR-N35",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "\udc00:x"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "lone_surrogate",
+        "ts_error_message": "$.scope_required[0]: lone surrogate"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "819-821"
+    },
+    {
+      "id": "AR-N36",
+      "entry": "object",
+      "input": [
+        {
+          "profile": "aps-action-ref-v2",
+          "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+          "action_type": "commerce_preflight",
+          "target": "https://api.example/payments",
+          "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+          "scope_required": [
+            "commerce:read",
+            "commerce:write"
+          ],
+          "issued_at": "2026-04-08T12:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff"
+        }
+      ],
+      "expected": {
+        "result": "reject",
+        "failure": "not_object",
+        "ts_error_message": "action reference: expected object"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "757"
+    },
+    {
+      "id": "AR-N37",
+      "entry": "object",
+      "input": null,
+      "expected": {
+        "result": "reject",
+        "failure": "not_object",
+        "ts_error_message": "action reference: expected object"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "757"
+    },
+    {
+      "id": "AJ-P01",
+      "entry": "json",
+      "input_json": "{\"nonce\": \"00112233445566778899aabbccddeeff\", \"issued_at\": \"2026-04-08T12:00:00.000Z\", \"scope_required\": [\"commerce:read\",\"commerce:write\"], \"payload_ref\": \"9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf\", \"target\": \"https://api.example/payments\", \"action_type\": \"commerce_preflight\", \"agent_id\": \"did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK\", \"profile\": \"aps-action-ref-v2\"}",
+      "expected": {
+        "result": "accept",
+        "action_ref": "4931f6d13c63a865901de8135ee442cd9ee40a1075e52c72594fa18c713a8382"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "807-808"
+    },
+    {
+      "id": "AJ-N01",
+      "entry": "json",
+      "input_json": "{\"agent_id\":\"did:example:attacker\",\"profile\":\"aps-action-ref-v2\",\"agent_id\":\"did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK\",\"action_type\":\"commerce_preflight\",\"target\":\"https://api.example/payments\",\"payload_ref\":\"9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf\",\"scope_required\":[\"commerce:read\",\"commerce:write\"],\"issued_at\":\"2026-04-08T12:00:00.000Z\",\"nonce\":\"00112233445566778899aabbccddeeff\"}",
+      "expected": {
+        "result": "reject",
+        "failure": "duplicate_member",
+        "ts_error_message": "$: duplicate object member"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "814-817"
+    },
+    {
+      "id": "AJ-N02",
+      "entry": "json",
+      "input_json": "{\"\\u0061gent_id\":\"did:example:attacker\",\"profile\":\"aps-action-ref-v2\",\"agent_id\":\"did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK\",\"action_type\":\"commerce_preflight\",\"target\":\"https://api.example/payments\",\"payload_ref\":\"9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf\",\"scope_required\":[\"commerce:read\",\"commerce:write\"],\"issued_at\":\"2026-04-08T12:00:00.000Z\",\"nonce\":\"00112233445566778899aabbccddeeff\"}",
+      "expected": {
+        "result": "reject",
+        "failure": "duplicate_member",
+        "ts_error_message": "$: duplicate object member"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "814-817"
+    },
+    {
+      "id": "AJ-N03",
+      "entry": "json",
+      "input_json": "{\"profile\":\"aps-action-ref-v2\",\"agent_id\":\"did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK\",\"action_type\":\"commerce_preflight\",\"target\":\"https://api.example/\\ud800\",\"payload_ref\":\"9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf\",\"scope_required\":[\"commerce:read\",\"commerce:write\"],\"issued_at\":\"2026-04-08T12:00:00.000Z\",\"nonce\":\"00112233445566778899aabbccddeeff\"}",
+      "expected": {
+        "result": "reject",
+        "failure": "lone_surrogate",
+        "ts_error_message": "$: unpaired high surrogate"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "819-821"
+    },
+    {
+      "id": "AJ-N04",
+      "entry": "json",
+      "input_json": "{\"profile\":\"aps-action-ref-v2\",\"agent_id\":\"did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK\",\"action_type\":\"commerce_preflight\",\"target\":\"https://api.example/payments\",\"payload_ref\":\"9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf\",\"scope_required\":[\"commerce:read\",\"commerce:write\"],\"issued_at\":\"2026-04-08T12:00:00.000Z\",\"nonce\":\"00112233445566778899aabbccddeeff\"} {}",
+      "expected": {
+        "result": "reject",
+        "failure": "non_i_json",
+        "ts_error_message": "$: trailing JSON data"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "814, 804-805"
+    },
+    {
+      "id": "AJ-N05",
+      "entry": "json",
+      "input_json": "{\"profile\":\"aps-action-ref-v2\",\"agent_id\":\"did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK\",\"action_type\":\"commerce_preflight\",\"target\":\"https://api.example/payments\",\"payload_ref\":\"9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf\",\"scope_required\":[\"commerce:read\",\"commerce:write\"],\"issued_at\":\"2026-04-08T12:00:00.000Z\",\"nonce\":\"00112233445566778899aabbccddeeff\",\"x\":1e400}",
+      "expected": {
+        "result": "reject",
+        "failure": "non_i_json",
+        "ts_error_message": "$: non-finite number"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "814, 804-805"
+    },
+    {
+      "id": "AC-P01",
+      "entry": "create",
+      "create_input": {
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "repo:write",
+          "café:read"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "2e0935ede0198e97fa6bfc93f1826a381577ab1910bedc290c27933b49cb9f06",
+        "canonical_input": {
+          "profile": "aps-action-ref-v2",
+          "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+          "action_type": "commerce_preflight",
+          "target": "https://api.example/payments",
+          "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+          "scope_required": [
+            "café:read",
+            "repo:write"
+          ],
+          "issued_at": "2026-04-08T12:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff"
+        }
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "794-796, 807-808, 819-824"
+    },
+    {
+      "id": "AC-P02",
+      "entry": "create",
+      "create_input": {
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:write",
+          "commerce:read"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "4931f6d13c63a865901de8135ee442cd9ee40a1075e52c72594fa18c713a8382",
+        "canonical_input": {
+          "profile": "aps-action-ref-v2",
+          "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+          "action_type": "commerce_preflight",
+          "target": "https://api.example/payments",
+          "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+          "scope_required": [
+            "commerce:read",
+            "commerce:write"
+          ],
+          "issued_at": "2026-04-08T12:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff"
+        }
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "794-796, 807-808, 819-824"
+    },
+    {
+      "id": "AC-P03",
+      "entry": "create",
+      "create_input": {
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "😀:y",
+          "｡:x"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "e8cf9ed1b5bbeb0ed47a1f4851c2a247d18bce78817dc78630976fd37971446d",
+        "canonical_input": {
+          "profile": "aps-action-ref-v2",
+          "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+          "action_type": "commerce_preflight",
+          "target": "https://api.example/payments",
+          "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+          "scope_required": [
+            "｡:x",
+            "😀:y"
+          ],
+          "issued_at": "2026-04-08T12:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff"
+        }
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "794-796, 807-808, 819-824"
+    },
+    {
+      "id": "AC-N01",
+      "entry": "create",
+      "create_input": {
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "café:read",
+          "café:read"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "scope_not_canonical",
+        "ts_error_message": "scope_required: values must be sorted and unique by UTF-8 bytes"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "794-796, 814, 822-824"
+    }
+  ]
+}
