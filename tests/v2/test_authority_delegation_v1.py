@@ -1696,8 +1696,10 @@ class TestNonIJsonWalkRevisitsEachDistinctKeyStringOnce:
     scan of that string per dict, about a minute, even after string values
     were memoised. Each distinct key string is now scanned once, while a
     distinct key string with identical content is still checked on its
-    own, and a distinct key object with identical content is scanned on its
-    own too."""
+    own. The memo keys on id(), so a distinct str object is scanned even
+    when another object of identical content was scanned before it; that
+    costs a scan and changes no result, since equal content is equally well
+    formed, and no test below claims otherwise."""
 
     def test_one_key_string_shared_by_10000_dicts_in_an_unsupported_version_record_is_fast(self):
         shared_key = "k" * 100_000
@@ -1735,20 +1737,21 @@ class TestNonIJsonWalkRevisitsEachDistinctKeyStringOnce:
 
         assert [item.code for item in failures] == ["SCHEMA_INVALID", "UNSUPPORTED_VERSION"]
 
-    def test_a_distinct_key_object_with_identical_content_is_checked_on_its_own(self):
-        # Two str objects, equal and not the same object: the memo keys on id(),
-        # so the second is scanned rather than skipped.
+    def test_distinct_key_objects_are_each_judged_by_their_own_content(self):
+        # Two str objects of equal content, and a third of the same length whose
+        # content is ill formed: whichever way the memo is keyed, each key is
+        # judged by its own content.
         first_key = "".join(["k"] * 1_000)
-        second_key = "".join(["k"] * 999) + "\ufdd0"
-        third_key = "".join(["k"] * 1_000)
-        assert first_key == third_key and first_key is not third_key
+        same_content_key = "".join(["k"] * 1_000)
+        ill_formed_key = "".join(["k"] * 999) + "\ufdd0"
+        assert first_key == same_content_key and first_key is not same_content_key
 
         clean = _root_body(version="2.0", authority=_authority())
-        clean["extra"] = [{first_key: None}, {third_key: None}]
+        clean["extra"] = [{first_key: None}, {same_content_key: None}]
         assert [item.code for item in validate_authority_delegation_shape(clean)] == ["UNSUPPORTED_VERSION"]
 
         ill_formed = _root_body(version="2.0", authority=_authority())
-        ill_formed["extra"] = [{first_key: None}, {second_key: None}]
+        ill_formed["extra"] = [{first_key: None}, {ill_formed_key: None}]
         assert [item.code for item in validate_authority_delegation_shape(ill_formed)] == [
             "SCHEMA_INVALID", "UNSUPPORTED_VERSION",
         ]
