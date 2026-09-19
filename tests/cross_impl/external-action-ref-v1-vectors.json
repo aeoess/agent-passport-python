@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 section 4.2 (published text lines 845-892)",
   "generated_from": {
     "repository": "aeoess/agent-passport-system",
-    "commit": "9ba9acbb4eafc567644b0a4cc681d043cd60985d",
+    "commit": "5d596fd7fb0b28fc6431dc101ac6f1ddc48f0e62",
     "module": "src/core/external-action-ref.ts",
     "generator": "tests/cross_impl/gen_external_action_ref_v1_vectors.mts"
   },
@@ -29,7 +29,7 @@
     }
   ],
   "withheld": [],
-  "ts_behaviour_note": "ts_behaviour on a reject case records what the TypeScript reference implementation actually does on that input, observed by calling it directly at the pinned commit. It is not a conformance claim: this file does not assert the TypeScript SDK is verified against section 4.2, only reports its behaviour next to the spec's own answer. \"accepts\" means TS returned a digest where the spec requires a rejection; \"rejects\" means TS threw, and the accompanying message is the TypeScript SDK's own error text (SDK vocabulary, not protocol vocabulary).",
+  "ts_behaviour_note": "ts_behaviour on a reject case records what the TypeScript reference implementation actually does on that input, observed by calling it directly at the pinned commit. It is not a conformance claim: this file does not assert the TypeScript SDK is verified against section 4.2, only reports its behaviour next to the draft's own answer. \"accepts\" means TS returned a digest where the draft requires a rejection; \"rejects\" means TS threw, and the accompanying message is the TypeScript SDK's own error text (SDK vocabulary, not protocol vocabulary).",
   "counts": {
     "total": 27,
     "accept": 11,

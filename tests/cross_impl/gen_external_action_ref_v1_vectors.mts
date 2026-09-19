@@ -3,10 +3,11 @@
 // (tests/cross_impl/external-action-ref-v1-vectors.json).
 //
 // Every case, its expected result (accept/reject), its failure code, and its
-// expected_provenance are fixed by a written vector specification. This
-// script only fills in digests, and records what the TypeScript SDK actually
-// does on every case, by calling the TS reference implementation directly;
-// it does not decide any expected result itself. If the TS reference
+// expected_provenance are fixed in this script, next to the draft citation
+// each case's derivation rests on. This script only fills in digests, and
+// records what the TypeScript SDK actually does on every case, by calling
+// the TS reference implementation directly; it does not decide any
+// expected result itself. If the TS reference
 // disagrees with a fixed expected result on an ACCEPT case, or if the two
 // anchored no-normalization cases collide, the script exits nonzero and
 // names the offending case instead of silently recording whatever TS
@@ -14,11 +15,11 @@
 // known to diverge from the section 4.2 requirement text on several of them
 // (see the module header of src/agent_passport/external_action_ref.py), and
 // this script only records what TS actually does there ("ts_behaviour"), it
-// never enforces the spec's answer against it.
+// never enforces the draft's answer against it.
 //
 // This file must never claim the TypeScript SDK is "verified": recording
 // its behaviour is not a conformance claim, only a data point next to the
-// spec's own answer.
+// draft's own answer.
 //
 // The TS repository is located purely through the APS_TS_REPO environment
 // variable (a file:// URL is built from it) and the pinned commit purely
@@ -72,7 +73,7 @@ const { computeExternalActionRefV1 } = (await import(moduleUrl)) as {
 }
 
 // -------------------------------------------------------------------------
-// Fixed metadata (verbatim from the written specification, not derived, not invented)
+// Fixed metadata (verbatim, not derived, not invented)
 // -------------------------------------------------------------------------
 
 const FAILURE_CODES = [
@@ -121,7 +122,7 @@ const TS_BEHAVIOUR_NOTE =
   'ts_behaviour on a reject case records what the TypeScript reference implementation actually does on that ' +
   'input, observed by calling it directly at the pinned commit. It is not a conformance claim: this file does ' +
   'not assert the TypeScript SDK is verified against section 4.2, only reports its behaviour next to the ' +
-  'spec\'s own answer. "accepts" means TS returned a digest where the spec requires a rejection; "rejects" ' +
+  'draft\'s own answer. "accepts" means TS returned a digest where the draft requires a rejection; "rejects" ' +
   'means TS threw, and the accompanying message is the TypeScript SDK\'s own error text (SDK vocabulary, not ' +
   'protocol vocabulary).'
 
@@ -230,7 +231,7 @@ for (const c of acceptCases) {
   try {
     digest = computeExternalActionRefV1(tsInputOf(c.input))
   } catch (e) {
-    fail(`${c.id}: TS rejected an input the spec expects to accept: ${(e as Error).message}`)
+    fail(`${c.id}: TS rejected an input the draft expects to accept: ${(e as Error).message}`)
   }
   if (c.anchor && digest !== c.anchor) {
     fail(`${c.id}: TS digest ${digest} does not match the pinned anchor ${c.anchor}`)
