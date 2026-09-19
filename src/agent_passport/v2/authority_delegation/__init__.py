@@ -31,11 +31,7 @@ each documented at the function it affects:
 - every integer in the record is a Python int and nothing else: a float or a
   bool value where the schema calls for an integer is rejected; the
   TypeScript SDK also rejects a bool there, but cannot tell an
-  integer-valued float such as 80.0 apart from an integer (schema.py);
-- every object, array and string in the record is required to be exactly a
-  Python dict, list or str: a Mapping or Sequence subclass such as
-  collections.OrderedDict, which the TypeScript SDK's structural typing
-  cannot distinguish from a plain object, is rejected here (schema.py).
+  integer-valued float such as 80.0 apart from an integer (schema.py).
 
 Separately, a number of choices are kept identical to the TypeScript SDK in
 places where the draft states no rule of its own, each marked provisional at

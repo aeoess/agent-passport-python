@@ -71,6 +71,9 @@ def verify_authority_delegation_chain(
     one fault can therefore get a different failure code from this function
     than from the TypeScript SDK.
     """
+    # Provisional: the draft does not state a maximum chain length. This
+    # 256-record limit is kept identical to the TypeScript SDK, pending a
+    # protocol ruling.
     if type(chain) not in (list, tuple) or not (1 <= len(chain) <= 256):
         return _result(
             "invalid", (AuthorityFailure(code="SCHEMA_INVALID", message="chain must contain 1 through 256 records"),)

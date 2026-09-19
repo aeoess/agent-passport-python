@@ -30,6 +30,7 @@ from pathlib import Path
 import pytest
 from nacl.signing import SigningKey
 
+from agent_passport.v2.authority_delegation import schema as _schema_module
 from agent_passport.v2.authority_delegation import (
     AuthorityDelegationError,
     InMemoryAuthorityBudgetLedger,
@@ -1271,6 +1272,52 @@ class TestCyclicContainerIsNotPlainJsonData:
     def test_cycle_inside_an_unsupported_profile_facet_is_schema_invalid(self):
         grants: list = []
         grants.append(grants)
+        authority = _authority(scope={"profile": "custom-unsupported-v9", "grants": grants})
+        record = _bare_valid_record(authority)
+
+        result = _verify_one(record, "unused")
+
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
+
+
+class TestForgedPathMarkerCannotEscapeTheWalk:
+    """Round 5 of the requirement text. The walk in schema.py's
+    _has_non_i_json_value used to track a cycle by pushing a fresh
+    _LeaveContainer instance onto its own stack right after entering a dict
+    or list, and popping that instance back off, identified only by
+    type(current) is _LeaveContainer, once the container's own subtree had
+    been fully walked. A forged _LeaveContainer instance, placed anywhere
+    in a record wherever an ordinary value is walked, was then popped as if
+    it were the walk's own signal to leave a container, which could clear a
+    real container's id from path_ids while that container's subtree was
+    still being walked, defeating cycle detection and making the walk loop
+    forever on a self-referential container.
+
+    The walk now tracks that signal out of band instead, as a (payload,
+    is_exit) pair never taken from the record, so _LeaveContainer carries no
+    special meaning to it any more; an instance of it is just an ordinary
+    value of a type this walk does not recognize. The tests below place a
+    forged _LeaveContainer instance inside a non-cyclic and a
+    self-referential list and check it is rejected as such, combining with
+    UNSUPPORTED_PROFILE the same way the plain cycle test above does, and
+    that the self-referential case still terminates rather than looping
+    forever."""
+
+    def test_forged_marker_inside_an_unsupported_profile_facet_is_schema_invalid(self):
+        grants: list = ["commerce:checkout", _schema_module._LeaveContainer(12345)]
+        authority = _authority(scope={"profile": "custom-unsupported-v9", "grants": grants})
+        record = _bare_valid_record(authority)
+
+        result = _verify_one(record, "unused")
+
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
+
+    def test_self_referential_list_with_a_forged_marker_terminates_schema_invalid(self):
+        grants: list = []
+        grants.append(grants)
+        grants.append(_schema_module._LeaveContainer(id(grants)))
         authority = _authority(scope={"profile": "custom-unsupported-v9", "grants": grants})
         record = _bare_valid_record(authority)
 

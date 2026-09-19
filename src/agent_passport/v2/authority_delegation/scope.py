@@ -12,6 +12,16 @@ _SEGMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 
 
 def is_valid_scope_grant(grant: str) -> bool:
+    """True when grant is "*" or a well-formed aps-hierarchical-v1 grant.
+
+    Provisional, pending a protocol ruling: the aps-hierarchical-v1 segment
+    grammar checked by _SEGMENT (letters, digits, ".", "_", "-", up to 64
+    characters, starting with a letter or digit) is narrower than draft line
+    516's own requirement that scope grants use ASCII colon-separated
+    segments, and the limits below of at most 16 segments and 255 characters
+    for the whole grant are not stated by the draft at all. All three are
+    kept identical to the TypeScript SDK.
+    """
     if grant == "*":
         return True
     if type(grant) is not str or len(grant) == 0 or len(grant) > 255:
