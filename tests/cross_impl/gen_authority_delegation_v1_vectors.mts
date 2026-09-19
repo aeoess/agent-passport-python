@@ -153,7 +153,7 @@ function mutate<T>(base: T, fn: (draft: T) => void): T {
 
 /** "Signed by L": delegation_id = computeAuthorityDelegationId(body), then
  *  signature = signAuthorityDelegation({...body, delegation_id}, seed(L)).
- *  Used uniformly for every record this generator builds, valid or
+ *  Used for every record this generator builds outside issue(), valid or
  *  deliberately invalid: it bypasses issueAuthorityDelegation's own shape
  *  assertion (which would throw for a deliberately malformed body), and for
  *  a schema-valid body it produces byte-identical output to
@@ -472,6 +472,10 @@ interface ChainCaseSpec {
    *  non-I-JSON record under an unsupported profile). Takes precedence over expectedCode when given. */
   expectedCodes?: string[]
   expectedIndex?: number | null
+  /** 'ts-conformant-regression' for a case whose expected state does not follow from the
+   *  draft text, so the case pins current implementation behaviour instead. Defaults to
+   *  'draft-derived'. */
+  provenance?: 'draft-derived' | 'ts-conformant-regression'
   lines: string
   note: string
 }
@@ -510,12 +514,13 @@ function pushChainCase(spec: ChainCaseSpec): void {
     }
   }
 
-  record('chain', 'draft-derived')
+  const provenance = spec.provenance ?? 'draft-derived'
+  record('chain', provenance)
   cases.push({
     id: spec.id,
     kind: 'chain',
     title: spec.title,
-    expected_provenance: 'draft-derived',
+    expected_provenance: provenance,
     derivation: { lines: spec.lines, note: spec.note },
     chain: spec.chain,
     context: ctxSpec,
@@ -1039,13 +1044,15 @@ pushChainCase({
   id: 'AD-N-C05', title: 'Key resolver missing the root issuer', chain: [R],
   contextOverrides: { keys: keysWithout('principal') },
   expectedState: 'indeterminate', expectedCode: 'KEY_RESOLUTION_FAILED', expectedIndex: 0,
-  lines: 'L492, L321-323, L589-590', note: 'By analogy with L321-323 (without key-authority evidence the result is indeterminate) and L589-590, the state is indeterminate, not invalid; finer resolution-outcome structure (L360-369) is an open question and not tested here.',
+  provenance: 'ts-conformant-regression',
+  lines: 'L492, L360-369, L589-590', note: 'Both SDKs report indeterminate for a key the resolver does not return, by analogy with L321-323 (without key-authority evidence the result is indeterminate). The draft does not map a resolution outcome to one of the four verification states of L588-592, and L360-369 lists not found as one outcome among several, so this case pins current behaviour rather than a state the text fixes.',
 })
 pushChainCase({
   id: 'AD-N-C06', title: 'Key resolver missing the child issuer', chain: [R, C1],
   contextOverrides: { keys: keysWithout('agent-a') },
   expectedState: 'indeterminate', expectedCode: 'KEY_RESOLUTION_FAILED', expectedIndex: 1,
-  lines: 'L492, L321-323, L589-590', note: 'By analogy with L321-323 (without key-authority evidence the result is indeterminate) and L589-590, the state is indeterminate, not invalid; same reasoning as AD-N-C05, one level deeper in the chain.',
+  provenance: 'ts-conformant-regression',
+  lines: 'L492, L360-369, L589-590', note: 'Same as AD-N-C05, one level deeper in the chain: the state a resolution failure maps to is not fixed by the draft, so this case pins current behaviour.',
 })
 
 // -------------------------------------------------------------------------
@@ -1850,8 +1857,9 @@ const description =
   '(AuthorityFailureCode in src/v2/authority-delegation/types.ts, and BudgetOperationResult.code), which the ' +
   'draft does not name, and the Python port shares the same strings as SDK parity, not a protocol claim. Every ' +
   'record\'s delegation_id and signature were computed by the TypeScript reference\'s canonical.ts ' +
-  '(computeAuthorityDelegationId and signAuthorityDelegation, or issueAuthorityDelegation for records this file ' +
-  'names as valid), except the all-zero placeholder in AD-N-S13 (which cannot be canonicalized at all) and the ' +
+  '(computeAuthorityDelegationId and signAuthorityDelegation; a record this file names as valid is minted through ' +
+  'issueAuthorityDelegation for a root body and issueSubAuthorityDelegation for a child body, which produce the ' +
+  'same bytes), except the all-zero placeholder in AD-N-S13 (which cannot be canonicalized at all) and the ' +
   'records a case edits after signing, as its own title says; tests/cross_impl/crosscheck_authority_delegation_v1_vectors.py ' +
   'recomputes every one of them independently with the rfc8785 package and PyNaCl. This file is not "TS verified" ' +
   'and no case in it should be described that way: TypeScript output was consulted only for the bytes and ' +
@@ -1897,7 +1905,7 @@ const withheld = [
   { topic: 'Multi-fault chains', reason: 'Every chain negative changes exactly one thing in an otherwise valid chain. In AD-N-S08, AD-N-S09, AD-N-S10, AD-N-S11, AD-N-S12, AD-N-S13, AD-N-S53, AD-N-S55, AD-N-S56, AD-N-U08, AD-N-H01, AD-N-H02 and AD-N-H10, that one change necessarily fails more than one check; each of those cases\' own note names the other checks it cannot avoid also failing. Chains built from two independent faults are withheld instead, because the draft does not settle which failure decides when two unrelated checks fail together. That includes the precedence inside one record between an I-JSON failure and an unknown version (formerly AD-N-S68, which paired an unsupported version with a non-I-JSON subject and is now removed) or an unsupported facet profile (formerly AD-N-S62, which paired an unsupported scope profile with a non-I-JSON record and is now removed).' },
   { topic: 'Spend unit grammar and wire number spelling (open question)', reason: 'A spend unit outside ^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$, and JSON number spellings such as 2.0 or 1e2 in wire input; whether the draft admits them is an open question.' },
   { topic: 'An unknown record_type string: reported unsupported and still judged by the v1 schema', reason: 'A record_type naming some other string is unsupported (UNSUPPORTED_VERSION) but is still judged by the v1 body schema, unlike a recognised record_type paired with an unknown version, which is not. No rule states whether it should be judged.' },
-  { topic: 'Key-resolution outcome structure', reason: 'not found, ambiguous, malformed, unreachable, unsupported scheme (L360-369): an open question.' },
+  { topic: 'Key-resolution outcome structure', reason: 'not found, ambiguous, malformed, unreachable, unsupported scheme (L360-369), and which of the four verification states each one maps to: an open question. AD-N-C05 and AD-N-C06 cover a key the resolver does not return, labelled ts-conformant-regression for that reason, and no case here derives a state for the other outcomes.' },
   { topic: 'Runtime reputation and unresolved action reversibility', reason: 'L542-545 and L566 are action-time rules, not chain verification.' },
   { topic: 'Revocation records and cascade completion', reason: 'Sections 3.5 and 3.5.1: no wire format is fixed and no implementation exists.' },
   { topic: 'Grammars and limits the draft does not state', reason: 'Both the Python and TypeScript SDKs share these choices: at most 256 records per chain, 1 MiB of wire input, 1024 UTF-8 bytes per identifier, the scope segment grammar aps-hierarchical-v1, and the values identifier grammar aps-values-identifiers-v1. The two grammars reject values the draft text admits: line 516 says only that scope grants use ASCII colon-separated segments, and line 547 only that values identifiers are profile-defined. All five are provisional choices pending a protocol ruling, and no vector depends on any of them.' },

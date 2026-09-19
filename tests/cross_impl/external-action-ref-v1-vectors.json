@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 section 4.2 (published text lines 845-892)",
   "generated_from": {
     "repository": "aeoess/agent-passport-system",
-    "commit": "ae024deb10fc49a034afdce6980b35dbba0d944d",
+    "commit": "05695c70675c2a703495c2e07844b729d706895f",
     "module": "src/core/external-action-ref.ts",
     "generator": "tests/cross_impl/gen_external_action_ref_v1_vectors.mts"
   },
