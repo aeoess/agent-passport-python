@@ -128,6 +128,64 @@ class TestNonceGeneration:
         assert first["nonce"] != second["nonce"]
 
 
+class TestIssuedRecordSharesNoMutableObjectWithTheCallersBody:
+    """Round 5B of the requirement text. Both issuers used to return a
+    record built out of the caller's own nested "authority" dicts and
+    lists, because the internal nonce step only shallow-copied the body's
+    top level. A caller that mutated one of those nested objects after
+    issuance (its own body template, reused for a later issuance, say)
+    would silently change an already-issued record out from under it. Both
+    issuers now deep-copy the body before filling in the nonce, so nothing
+    in the returned record is the same object as anything in the caller's
+    body, and the issued bytes are unaffected either way."""
+
+    def test_root_record_is_unaffected_by_editing_the_bodys_authority_after_issuing(self):
+        seed, public_key = _keypair()
+        body = _root_body(nonce="00" * 16)
+
+        record = issue_authority_delegation(body, seed)
+        before = copy.deepcopy(record)
+
+        body["authority"]["scope"]["grants"].append("commerce:checkout")
+        body["authority"]["depth"]["remaining"] = 0
+        body["authority"]["time"]["not_after"] = "2026-01-03T00:00:00.000Z"
+
+        assert record == before
+        assert _verify_one(record, public_key).state == "valid"
+
+    def test_child_record_is_unaffected_by_editing_the_bodys_authority_after_issuing(self):
+        chain = _Chain()
+        child_body = {
+            "record_type": "aps:authority-delegation:v1",
+            "version": "1.0",
+            "parent_delegation_id": chain.root["delegation_id"],
+            "issuer": "did:example:agent-a",
+            "subject": "did:example:agent-b",
+            "verification_method": "did:example:agent-a#key-1",
+            "issued_at": "2026-01-01T00:05:00.000Z",
+            "authority": _authority(
+                depth={"remaining": 1},
+                time={"not_before": "2026-01-01T00:10:00.000Z", "not_after": "2026-01-01T00:20:00.000Z"},
+            ),
+            "nonce": "22" * 16,
+        }
+
+        record = issue_sub_authority_delegation(
+            chain.root,
+            child_body,
+            chain.agent_a_seed,
+            now=child_body["issued_at"],
+            resolve_verification_key=chain.resolve_verification_key,
+            resolve_revocation=lambda delegation: "active",
+        )
+        before = copy.deepcopy(record)
+
+        child_body["authority"]["scope"]["grants"] = ["something:else"]
+        child_body["authority"]["depth"]["remaining"] = 0
+
+        assert record == before
+
+
 class TestFloatAndBoolRejection:
     def _valid_record(self) -> dict:
         seed, _ = _keypair()
@@ -1327,6 +1385,62 @@ class TestForgedPathMarkerCannotEscapeTheWalk:
         assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
 
 
+def _shared_reference_chain(depth: int) -> list:
+    """node_0 = [], node_i = [node_(i-1), node_(i-1)] for i in 1..depth: a
+    plain, non-cyclic list structure with depth + 1 distinct list objects
+    but 2**depth distinct root-to-leaf paths through them, since every
+    level holds two references to the very same object one level down."""
+    node: list = []
+    for _ in range(depth):
+        node = [node, node]
+    return node
+
+
+class TestNonIJsonWalkRevisitsEachDistinctContainerOnce:
+    """Round 5B of the requirement text. _has_non_i_json_value used to walk
+    a container again every time it was reached through another reference,
+    even off the current path, so a shared-reference structure with d
+    distinct containers but 2**d root-to-leaf paths took time and memory
+    exponential in d. It now remembers the id() of every container already
+    walked clean and skips it when reached again off the current path,
+    while a genuine cycle (the container's id still on the current path)
+    is still rejected."""
+
+    def test_depth_40_shared_reference_structure_inside_an_unsupported_facet_is_fast(self):
+        structure = _shared_reference_chain(40)
+        authority = _authority(scope={"profile": "custom-unsupported-v9", "grants": structure})
+        record = _bare_valid_record(authority)
+
+        start = time.perf_counter()
+        failures = validate_authority_delegation_shape(record)
+        elapsed = time.perf_counter() - start
+
+        assert elapsed < 1.0, f"took {elapsed:.3f}s"
+        # Purely plain-JSON nested lists: no SCHEMA_INVALID from the I-JSON
+        # walk, only the facet's own unsupported profile.
+        assert [item.code for item in failures] == ["UNSUPPORTED_PROFILE"]
+
+    def test_depth_40_shared_reference_structure_matches_direct_walk_result(self):
+        structure = _shared_reference_chain(40)
+        start = time.perf_counter()
+        result = _schema_module._has_non_i_json_value(structure)
+        elapsed = time.perf_counter() - start
+
+        assert result is False
+        assert elapsed < 1.0, f"took {elapsed:.3f}s"
+
+    def test_cycle_reached_through_a_shared_non_cyclic_reference_is_still_rejected(self):
+        # `shared` is referenced twice below (once directly, once through
+        # `cyclic`), so the second reference is exactly the off-path,
+        # already-walked-clean case; `cyclic` contains itself and must
+        # still be caught.
+        shared = _shared_reference_chain(5)
+        cyclic: list = [shared]
+        cyclic.append(cyclic)
+
+        assert _schema_module._has_non_i_json_value([shared, cyclic]) is True
+
+
 class TestIntegerMagnitudeMustFitADouble:
     """An integer this package will canonicalize as a JSON number must
     itself survive conversion to an IEEE 754 double: float(v) raising
@@ -1582,3 +1696,36 @@ class TestRecordTypeVersionAndFacetProfiles:
         )
         failures = validate_authority_delegation_shape(probe)
         assert [item.code for item in failures] == ["UNSUPPORTED_PROFILE"]
+
+
+class TestIssuerCopiesOnlyAfterValidation:
+    """The issuers deep-copy the body only after it has passed validation, so a
+    malformed body still gets a coded refusal rather than an exception from the
+    copy itself."""
+
+    def _root_with_grants(self, grants):
+        body = _root_body()
+        body["authority"]["scope"]["grants"] = grants
+        return body
+
+    def test_very_deep_nesting_is_refused_with_a_code(self):
+        seed, _ = _keypair()
+        deep = []
+        cursor = deep
+        for _ in range(200000):
+            nested = []
+            cursor.append(nested)
+            cursor = nested
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            issue_authority_delegation(self._root_with_grants([deep]), seed)
+        assert exc_info.value.code == "SCHEMA_INVALID"
+
+    def test_a_value_with_copy_hooks_is_refused_without_calling_them(self):
+        class CopyHookRaises:
+            def __deepcopy__(self, memo):
+                raise RuntimeError("the copy hook must not run")
+
+        seed, _ = _keypair()
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            issue_authority_delegation(self._root_with_grants([CopyHookRaises()]), seed)
+        assert exc_info.value.code == "SCHEMA_INVALID"
