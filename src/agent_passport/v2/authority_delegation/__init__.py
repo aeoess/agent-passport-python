@@ -14,14 +14,20 @@ delegation_id, its signature through the caller's key resolver, its validity
 at the caller's `now`, and a revocation status of exactly "active" (draft
 section 3.6).
 
+Both SDKs also refuse to issue from a body that already carries its own
+delegation_id or signature member, of any value, before doing anything else
+with that body. Draft section 3.1 (lines 484-490) computes delegation_id and
+signature from a body without those two members, so such a body would yield
+a record whose delegation_id does not recompute from itself; section 3.6
+(lines 695-704) enforces signature integrity at issuance and says an issuer
+does not leave an invalidity for a later verifier to discover (issue.py).
+
 Points that are deliberately different in behaviour from the TypeScript SDK,
 each documented at the function it affects:
 - the order chain verification decides between several simultaneous faults
   (verify.py);
 - a missing nonce on an issuing body is filled in with 16 random bytes
   rather than required (issue.py);
-- a body that already carries delegation_id or signature is refused outright
-  rather than hashed and signed with the stray member included (issue.py);
 - every integer in the record is a Python int and nothing else: a float or a
   bool value where the schema calls for an integer is rejected, even where
   the TypeScript SDK cannot tell the difference (schema.py);
