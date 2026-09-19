@@ -9207,6 +9207,690 @@
       }
     },
     {
+      "id": "AD-N-S54",
+      "kind": "chain",
+      "title": "nonce with a trailing line feed",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L462, L481",
+        "note": "nonce must be exactly 32 lowercase hex characters, with nothing appended."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff\n",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:31110fb09505c6bce390cbed511c9984cbe66fabb05f1213d671c9ba7fbf7ff2",
+          "signature": "892dc2575194772d858b7a1d79d9b89fc9a32d454fcac190469bc40eda18f0f49889b116c893802b7e0358f9381764249d4c0a3bdbb0ff2016526625d94c060e"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:31110fb09505c6bce390cbed511c9984cbe66fabb05f1213d671c9ba7fbf7ff2"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "invalid",
+        "sdk_codes": [
+          "NONCANONICAL_VALUE"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "invalid",
+        "codes": [
+          "NONCANONICAL_VALUE"
+        ],
+        "index": 0
+      }
+    },
+    {
+      "id": "AD-N-S55",
+      "kind": "chain",
+      "title": "delegation_id with a trailing line feed",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L456, L484",
+        "note": "delegation_id must be exactly sha256: followed by 64 lowercase hex characters; the signature is computed over the record as written, with the trailing line feed."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249\n",
+          "signature": "efa1ee38a78daf55ffbc1487e98b848e90028ff11f3f53dab8dc05e617f4d1d8a7d7df4f559d57b58f498c7cc2717ea9c55f026d0d5e9f64c135b758de31b505"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249\n"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "invalid",
+        "sdk_codes": [
+          "SCHEMA_INVALID"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "invalid",
+        "codes": [
+          "SCHEMA_INVALID"
+        ],
+        "index": 0
+      }
+    },
+    {
+      "id": "AD-N-S56",
+      "kind": "chain",
+      "title": "signature with a trailing line feed",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L477",
+        "note": "signature must be exactly 128 lowercase hex characters, with nothing appended."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249",
+          "signature": "a05cee47318a43c2161785335aff5f6daa20abd24dffb86a36fec57971129e946c37092499bf62e458846dff46a1d0879e2d9568d277ef27111b5037b1b48704\n"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "invalid",
+        "sdk_codes": [
+          "SCHEMA_INVALID"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "invalid",
+        "codes": [
+          "SCHEMA_INVALID"
+        ],
+        "index": 0
+      }
+    },
+    {
+      "id": "AD-N-S57",
+      "kind": "chain",
+      "title": "issued_at with a trailing line feed",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L198-199, L480-481",
+        "note": "issued_at must be exactly the canonical UTC-millisecond form, with nothing appended."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z\n",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:5dee37afd42fd8b2385a09c82bc9849e639f1f05a8413b8691a0e99433f90686",
+          "signature": "c11d31f4b0b689ba96a749dc335aa7a2abfea18afb66abb916f581d80596ae868f67b0c0c3ace7cd45ca93273823c7b9bb8fcb0381c4899d7f10ed559b5ac100"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:5dee37afd42fd8b2385a09c82bc9849e639f1f05a8413b8691a0e99433f90686"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "invalid",
+        "sdk_codes": [
+          "NONCANONICAL_VALUE"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "invalid",
+        "codes": [
+          "NONCANONICAL_VALUE"
+        ],
+        "index": 0
+      }
+    },
+    {
+      "id": "AD-N-S58",
+      "kind": "chain",
+      "title": "time.not_before with a trailing line feed",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L480-481",
+        "note": "time bounds must be exactly the canonical UTC-millisecond form, with nothing appended."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z\n",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:aff367b10c2a2f853acbc03cfc95f1ac2c376d94ecaa4a30310cfe74a879e645",
+          "signature": "36212575960ff1ad6e0339ad9319ecb866d1e1ebe90276f660f33552c3f9fe7c1b8b96a767bdbec7ab2ad94c70dda51c67e3ca8396a4b5c2085824326307060e"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:aff367b10c2a2f853acbc03cfc95f1ac2c376d94ecaa4a30310cfe74a879e645"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "invalid",
+        "sdk_codes": [
+          "NONCANONICAL_VALUE"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "invalid",
+        "codes": [
+          "NONCANONICAL_VALUE"
+        ],
+        "index": 0
+      }
+    },
+    {
+      "id": "AD-N-S59",
+      "kind": "chain",
+      "title": "spend per_action with a trailing line feed",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L524-525",
+        "note": "A canonical unsigned decimal integer has nothing appended to it."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000\n",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:33120aad40f201fa847f5d4a18565bba624d4d137b6e2e3e233237f01ecc06f4",
+          "signature": "9866acafc9bd3c5c969935acfe95afc3a2a57a224f0be5daac364f767a31e30a86a29c4e7d7a20ae08f151e4161dfb6a79181d95d8685776437e626220e8b10a"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:33120aad40f201fa847f5d4a18565bba624d4d137b6e2e3e233237f01ecc06f4"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "invalid",
+        "sdk_codes": [
+          "NONCANONICAL_VALUE"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "invalid",
+        "codes": [
+          "NONCANONICAL_VALUE"
+        ],
+        "index": 0
+      }
+    },
+    {
       "id": "AD-N-U01",
       "kind": "chain",
       "title": "Unsupported scope profile",
@@ -21647,6 +22331,251 @@
           }
         ]
       }
+    },
+    {
+      "id": "AD-B14",
+      "kind": "budget",
+      "title": "action_ref with a trailing line feed is rejected, the clean one is not",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L807-808",
+        "note": "action_ref must be exactly 64 lowercase hex characters, with nothing appended; the two actionRefs are distinct reservation keys, so the second reserve is unaffected by the first."
+      },
+      "chains": {
+        "main": [
+          {
+            "record_type": "aps:authority-delegation:v1",
+            "version": "1.0",
+            "parent_delegation_id": null,
+            "issuer": "did:example:principal",
+            "subject": "did:example:agent-a",
+            "verification_method": "did:example:principal#key-1",
+            "issued_at": "2026-07-18T22:00:00.000Z",
+            "nonce": "00112233445566778899aabbccddeeff",
+            "authority": {
+              "scope": {
+                "profile": "aps-hierarchical-v1",
+                "grants": [
+                  "commerce:*",
+                  "travel:book"
+                ]
+              },
+              "spend": {
+                "mode": "bounded",
+                "unit": "iso4217:USD:minor",
+                "per_action": "5000",
+                "cumulative": "10000"
+              },
+              "depth": {
+                "remaining": 2
+              },
+              "time": {
+                "not_before": "2026-07-18T22:00:00.000Z",
+                "not_after": "2026-07-19T22:00:00.000Z"
+              },
+              "reputation": {
+                "profile": "aps-score-0-100-v1",
+                "ceiling": 80
+              },
+              "values": {
+                "profile": "aps-values-identifiers-v1",
+                "required": [
+                  "F-001",
+                  "F-003"
+                ]
+              },
+              "reversibility": {
+                "profile": "aps-tci-v1",
+                "ceiling": "compensable"
+              }
+            },
+            "delegation_id": "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249",
+            "signature": "a05cee47318a43c2161785335aff5f6daa20abd24dffb86a36fec57971129e946c37092499bf62e458846dff46a1d0879e2d9568d277ef27111b5037b1b48704"
+          },
+          {
+            "record_type": "aps:authority-delegation:v1",
+            "version": "1.0",
+            "parent_delegation_id": "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249",
+            "issuer": "did:example:agent-a",
+            "subject": "did:example:agent-b",
+            "verification_method": "did:example:agent-a#key-1",
+            "issued_at": "2026-07-18T22:10:00.000Z",
+            "nonce": "102132435465768798a9bacbdcedfe0f",
+            "authority": {
+              "scope": {
+                "profile": "aps-hierarchical-v1",
+                "grants": [
+                  "commerce:checkout"
+                ]
+              },
+              "spend": {
+                "mode": "bounded",
+                "unit": "iso4217:USD:minor",
+                "per_action": "2500",
+                "cumulative": "5000"
+              },
+              "depth": {
+                "remaining": 1
+              },
+              "time": {
+                "not_before": "2026-07-18T22:10:00.000Z",
+                "not_after": "2026-07-19T12:00:00.000Z"
+              },
+              "reputation": {
+                "profile": "aps-score-0-100-v1",
+                "ceiling": 70
+              },
+              "values": {
+                "profile": "aps-values-identifiers-v1",
+                "required": [
+                  "F-001",
+                  "F-003",
+                  "F-007"
+                ]
+              },
+              "reversibility": {
+                "profile": "aps-tci-v1",
+                "ceiling": "tentative"
+              }
+            },
+            "delegation_id": "sha256:59c7179591b4d82fe7a63c097b3f79719494cdd7a9e39cd0036e36ed1c88e76d",
+            "signature": "1278bfcc9a24bdb765995987ee829b38eae9acc709184061b8d62387456e83db9512524786b46a696b530f604855827510100de931ce5017f9a2c929d2b28b07"
+          },
+          {
+            "record_type": "aps:authority-delegation:v1",
+            "version": "1.0",
+            "parent_delegation_id": "sha256:59c7179591b4d82fe7a63c097b3f79719494cdd7a9e39cd0036e36ed1c88e76d",
+            "issuer": "did:example:agent-b",
+            "subject": "did:example:agent-c",
+            "verification_method": "did:example:agent-b#key-1",
+            "issued_at": "2026-07-18T22:20:00.000Z",
+            "nonce": "fedcba98765432100123456789abcdef",
+            "authority": {
+              "scope": {
+                "profile": "aps-hierarchical-v1",
+                "grants": [
+                  "commerce:checkout"
+                ]
+              },
+              "spend": {
+                "mode": "bounded",
+                "unit": "iso4217:USD:minor",
+                "per_action": "1000",
+                "cumulative": "2000"
+              },
+              "depth": {
+                "remaining": 0
+              },
+              "time": {
+                "not_before": "2026-07-18T22:20:00.000Z",
+                "not_after": "2026-07-19T06:00:00.000Z"
+              },
+              "reputation": {
+                "profile": "aps-score-0-100-v1",
+                "ceiling": 70
+              },
+              "values": {
+                "profile": "aps-values-identifiers-v1",
+                "required": [
+                  "F-001",
+                  "F-003",
+                  "F-007"
+                ]
+              },
+              "reversibility": {
+                "profile": "aps-tci-v1",
+                "ceiling": "tentative"
+              }
+            },
+            "delegation_id": "sha256:5d035e780434b0d8c61cb83a2fd7383ff03485869c75f403fc3e015054185297",
+            "signature": "69acb979f9e7f4cb21fce309ced0948c4649170b63f7282bc4e4dfb5b3ec502bfed55e90974dde764d3466d7181abb46a29cc5ad66e2b4ef3fc6e90e1cfa840e"
+          }
+        ]
+      },
+      "record_labels": {
+        "R": "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249",
+        "C1": "sha256:59c7179591b4d82fe7a63c097b3f79719494cdd7a9e39cd0036e36ed1c88e76d",
+        "C2": "sha256:5d035e780434b0d8c61cb83a2fd7383ff03485869c75f403fc3e015054185297"
+      },
+      "steps": [
+        {
+          "op": "reserve",
+          "chain": "main",
+          "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
+          "unit": "iso4217:USD:minor",
+          "amount": "1",
+          "expected": {
+            "ok": false,
+            "sdk_code": "CONFLICT"
+          },
+          "counters_after": {
+            "R": {
+              "reserved": "0",
+              "committed": "0"
+            },
+            "C1": {
+              "reserved": "0",
+              "committed": "0"
+            },
+            "C2": {
+              "reserved": "0",
+              "committed": "0"
+            }
+          }
+        },
+        {
+          "op": "reserve",
+          "chain": "main",
+          "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "unit": "iso4217:USD:minor",
+          "amount": "1",
+          "expected": {
+            "ok": true,
+            "sdk_code": "RESERVED",
+            "state": "reserved"
+          },
+          "counters_after": {
+            "R": {
+              "reserved": "1",
+              "committed": "0"
+            },
+            "C1": {
+              "reserved": "1",
+              "committed": "0"
+            },
+            "C2": {
+              "reserved": "1",
+              "committed": "0"
+            }
+          }
+        }
+      ],
+      "expected": {
+        "steps": [
+          {
+            "ok": false,
+            "sdk_code": "CONFLICT"
+          },
+          {
+            "ok": true,
+            "sdk_code": "RESERVED",
+            "state": "reserved"
+          }
+        ]
+      },
+      "ts_behaviour": {
+        "steps": [
+          {
+            "ok": false,
+            "code": "CONFLICT"
+          },
+          {
+            "ok": true,
+            "code": "RESERVED",
+            "state": "reserved"
+          }
+        ]
+      }
     }
   ],
   "withheld": [
@@ -21692,16 +22621,16 @@
     }
   ],
   "counts": {
-    "total": 154,
+    "total": 161,
     "by_kind": {
-      "chain": 119,
+      "chain": 125,
       "wire": 8,
       "issue_root": 1,
       "issue_child": 13,
-      "budget": 13
+      "budget": 14
     },
     "by_provenance": {
-      "draft-derived": 151,
+      "draft-derived": 158,
       "ts-conformant-regression": 3
     }
   }
