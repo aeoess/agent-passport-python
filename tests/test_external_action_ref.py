@@ -2,12 +2,12 @@
 """Leap-second handling for the section 4.2 external correlation form
 (action-ref-v1-jcs-sha256, :func:`agent_passport.compute_external_action_ref_v1`).
 
-draft-pidlisnyi-aps-03 spec addendum item 2: a canonical timestamp's second
-field of 60 is valid only when the hour is 23, the minute is 59, and the day
-is the last day of its month in the proleptic Gregorian calendar (RFC 3339
-section 5.7; Appendix D's "YYYY-MM-DDT23:59:60Z"). Every other second-60
-timestamp is rejected with ``bad_timestamp``. Second 61 is rejected under
-every rule; no RFC 3339 grammar admits it.
+A canonical timestamp's second field of 60 is valid only when the hour is
+23, the minute is 59, and the day is the last day of its month in the
+proleptic Gregorian calendar (RFC 3339 section 5.7; Appendix D's
+"YYYY-MM-DDT23:59:60Z"). Every other second-60 timestamp is rejected with
+``bad_timestamp``. Second 61 is rejected under every rule; no RFC 3339
+grammar admits it.
 """
 
 import re
@@ -27,15 +27,16 @@ def _base() -> dict:
 
 
 def test_second_60_at_2359_on_the_last_day_of_the_year_is_accepted():
-    # 2016-12-31T23:59:60Z is RFC 3339 Appendix D's own leap-second example.
+    # 2016-12-31T23:59:60Z is an actual leap second, 23:59:60 on the last
+    # day of a month.
     fields = _base()
     fields["timestamp"] = "2016-12-31T23:59:60.000Z"
     assert re.fullmatch(r"[0-9a-f]{64}", compute_external_action_ref_v1(**fields))
 
 
 def test_second_60_at_an_arbitrary_time_is_now_rejected():
-    # Formerly accepted lexically; item 2 makes this a rejection because
-    # 12:00 on April 8 is not a leap-second position.
+    # Formerly accepted lexically; now rejected because 12:00 on April 8 is
+    # not 23:59 on the last day of a month.
     fields = _base()
     fields["timestamp"] = "2026-04-08T12:00:60.000Z"
     with pytest.raises(ExternalActionRefError) as exc_info:

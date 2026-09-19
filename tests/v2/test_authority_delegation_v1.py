@@ -1005,19 +1005,19 @@ class TestNonIJsonValuesAnywhereInRecord:
         return _bare_valid_record(authority)
 
     def test_tuple_containing_a_noncharacter_is_invalid(self):
-        record = self._record_with_scope_grants(("x", "y" + "﷐"))
+        record = self._record_with_scope_grants(("x", "y" + "\ufdd0"))
         result = _verify_one(record, "unused")
         assert result.state == "invalid"
         assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
 
     def test_ordereddict_key_containing_a_noncharacter_is_invalid(self):
-        record = self._record_with_scope_grants(OrderedDict([("segment" + "﷐", "value")]))
+        record = self._record_with_scope_grants(OrderedDict([("segment" + "\ufdd0", "value")]))
         result = _verify_one(record, "unused")
         assert result.state == "invalid"
         assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
 
     def test_str_subclass_containing_a_noncharacter_is_invalid(self):
-        record = self._record_with_scope_grants(_NoncharacterStr("bad" + "﷐"))
+        record = self._record_with_scope_grants(_NoncharacterStr("bad" + "\ufdd0"))
         result = _verify_one(record, "unused")
         assert result.state == "invalid"
         assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
@@ -1048,12 +1048,12 @@ class TestNonIJsonValuesAnywhereInRecord:
 
 
 class TestSecond60OnlyAtLastMomentOfMonth:
-    """draft-pidlisnyi-aps-03 spec addendum item 2: a canonical timestamp's
-    second field of 60 is valid only when the hour is 23, the minute is 59,
-    and the day is the last day of its month in the proleptic Gregorian
-    calendar (RFC 3339 section 5.7; Appendix D's "YYYY-MM-DDT23:59:60Z").
-    Every other second-60 timestamp is invalid. Exercises the section 3
-    public entry point, is_canonical_timestamp, directly."""
+    """A canonical timestamp's second field of 60 is valid only when the
+    hour is 23, the minute is 59, and the day is the last day of its month
+    in the proleptic Gregorian calendar (RFC 3339 section 5.7; Appendix D's
+    "YYYY-MM-DDT23:59:60Z"). Every other second-60 timestamp is invalid.
+    Exercises the section 3 public entry point, is_canonical_timestamp,
+    directly."""
 
     @pytest.mark.parametrize(
         "timestamp",
@@ -1095,12 +1095,12 @@ class TestSecond60OnlyAtLastMomentOfMonth:
 
 
 class TestRootNotBeforeMayPredateIssuedAt:
-    """draft-pidlisnyi-aps-03 spec addendum item 3: the check that
-    time.not_before cannot predate issued_at binds a delegated child only
-    (draft section 3.2 lines 536-537, "A child's not_before MUST NOT predate
-    its issued_at"). A record whose parent_delegation_id is null is a root
-    and is exempt from that check; the window must still be non-empty, and a
-    child must still be issued inside its parent's window."""
+    """The check that time.not_before cannot predate issued_at binds a
+    delegated child only (draft section 3.2 lines 536-537, "A child's
+    not_before MUST NOT predate its issued_at"). A record whose
+    parent_delegation_id is null is a root and is exempt from that check;
+    the window must still be non-empty, and a child must still be issued
+    inside its parent's window."""
 
     def test_backdated_root_verifies_valid(self):
         seed, public_key = _keypair()
@@ -1207,7 +1207,7 @@ class TestRecordTypeVersionAndFacetProfiles:
         assert [item.code for item in failures] == ["UNSUPPORTED_VERSION"]
 
     def test_recognised_type_with_unknown_version_and_a_noncharacter_reports_both_codes(self):
-        probe = self._probe(version="2.0", subject="did:example:agent-a﷐")
+        probe = self._probe(version="2.0", subject="did:example:agent-a\ufdd0")
 
         failures = validate_authority_delegation_shape(probe)
 
@@ -1218,11 +1218,24 @@ class TestRecordTypeVersionAndFacetProfiles:
         assert [item.code for item in failures] == ["UNSUPPORTED_VERSION"]
         assert failures[0].message == "unsupported authority-delegation record_type or version"
 
-    def test_unrecognised_record_type_with_a_v1_body_is_still_judged_by_the_v1_schema(self):
+    def test_unrecognised_record_type_with_an_otherwise_valid_v1_body_is_unsupported_version(self):
         failures = validate_authority_delegation_shape(
             self._probe(record_type="aps:authority-delegation:v2"),
         )
         assert [item.code for item in failures] == ["UNSUPPORTED_VERSION"]
+
+    def test_unrecognised_record_type_with_an_extra_top_level_member_is_schema_invalid(self):
+        # Discriminates this from the recognised-type/unknown-version branch
+        # above, which skips the exact-keys check entirely: an unrecognised
+        # record_type string is still judged by the v1 schema's structural
+        # checks, so an extra top-level member is caught as SCHEMA_INVALID
+        # before UNSUPPORTED_VERSION is ever considered. This is current
+        # behaviour for a case the draft leaves open: no rule states whether
+        # an unknown record_type string should be judged by the v1 schema.
+        failures = validate_authority_delegation_shape(
+            self._probe(record_type="aps:authority-delegation:v2", extensions={}),
+        )
+        assert [item.code for item in failures] == ["SCHEMA_INVALID"]
 
     def test_reputation_profile_as_a_number_is_schema_invalid(self):
         probe = self._probe(authority=_authority(reputation={"profile": 5, "ceiling": 80}))

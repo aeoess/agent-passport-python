@@ -184,8 +184,8 @@ def _utf8_len(value: str) -> int:
 
 
 def is_canonical_timestamp(value) -> bool:
-    """RFC 3339 canonical UTC milliseconds, with second 60 restricted to a
-    real leap-second position.
+    """RFC 3339 canonical UTC milliseconds, with second 60 valid only at
+    23:59 on the last day of a month (RFC 3339 section 5.7; Appendix D).
 
     A second of 60 is valid only when the hour is 23, the minute is 59, and
     the day is the last day of its month in the proleptic Gregorian
@@ -218,8 +218,10 @@ def compare_canonical_timestamps(a: str, b: str) -> int:
     RFC 3339 section 5.1: timestamps in the same format (all UTC "Z", same
     number of fractional digits) sort as strings into time order, so this
     compares the strings directly rather than parsing them into a datetime
-    (which has no representation for a leap-second ":60" value). Defined only
-    for values that have already passed is_canonical_timestamp.
+    (which has no representation for a leap-second ":60" value: a second of
+    60 is valid only at 23:59 on the last day of a month, RFC 3339 section
+    5.7 and Appendix D). Defined only for values that have already passed
+    is_canonical_timestamp.
     """
     if a < b:
         return -1
