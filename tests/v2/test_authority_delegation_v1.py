@@ -687,6 +687,38 @@ class TestReserveChainTypeChecked:
         assert result.code == "CONFLICT"
 
 
+class TestReserveUnitTypeChecked:
+    """A unit that is not an exact str must return CONFLICT before any
+    counter or reservation state changes, on a chain with no bounded member
+    (so the value of the unit would otherwise never be checked at all)."""
+
+    @pytest.mark.parametrize("bad_unit", [["x"], {"u": 1}, True, 1])
+    def test_non_string_unit_on_unbounded_chain_returns_conflict(self, bad_unit):
+        seed, _ = _keypair()
+        leaf = issue_authority_delegation(_root_body(), seed)
+        ledger = InMemoryAuthorityBudgetLedger()
+        action_ref = "b" * 64
+
+        refused = ledger.reserve([leaf], action_ref, bad_unit, "1")
+        assert refused.ok is False
+        assert refused.code == "CONFLICT"
+
+        retry = ledger.reserve([leaf], action_ref, "iso4217:USD:minor", "1")
+        assert retry.ok is True
+        assert retry.code == "RESERVED"
+
+    def test_string_unit_on_unbounded_chain_reserves_as_before(self):
+        seed, _ = _keypair()
+        leaf = issue_authority_delegation(_root_body(), seed)
+        ledger = InMemoryAuthorityBudgetLedger()
+        action_ref = "c" * 64
+
+        result = ledger.reserve([leaf], action_ref, "iso4217:USD:minor", "1")
+
+        assert result.ok is True
+        assert result.code == "RESERVED"
+
+
 class TestLedgerNonStringKeysReturnDefined:
     """mark_dispatched, commit and cancel with an action_ref that is not a
     str must return NOT_FOUND rather than raising out of an unhashable dict

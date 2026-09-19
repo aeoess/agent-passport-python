@@ -29,30 +29,33 @@ each documented at the function it affects:
 - a missing nonce on an issuing body is filled in with 16 random bytes
   rather than required (issue.py);
 - every integer in the record is a Python int and nothing else: a float or a
-  bool value where the schema calls for an integer is rejected, even where
-  the TypeScript SDK cannot tell the difference (schema.py);
+  bool value where the schema calls for an integer is rejected; the
+  TypeScript SDK also rejects a bool there, but cannot tell an
+  integer-valued float such as 80.0 apart from an integer (schema.py);
 - every object, array and string in the record is required to be exactly a
   Python dict, list or str: a Mapping or Sequence subclass such as
   collections.OrderedDict, which the TypeScript SDK's structural typing
   cannot distinguish from a plain object, is rejected here (schema.py).
 
-Separately, a small number of choices are kept identical to the TypeScript
-SDK in places where the draft states no rule of its own, each marked
-provisional at the point it applies: the grammar required of a bounded spend's
-unit; and rejecting a wire number token with a fraction or exponent even
-where it denotes an integer. record_type, version and facet profiles are
-settled, not provisional: a record_type or version that is not a string is
-invalid; a record whose record_type names the v1 type and whose version
-names some other string is unsupported and is not judged by the v1 body
-schema at all; a record_type naming some other string is still judged by the
-v1 body schema, which is left open; a facet's profile that is missing or not
-a string is invalid; and a facet's profile naming an unsupported string is
-unsupported without its content being judged by the section 3.2 value rules.
-Also kept identical without being provisional,
-because they are implementation limits rather than draft rules: the
-aps-hierarchical-v1 scope segment grammar, the aps-values-identifiers-v1
-identifier grammar, and the limits of 256 records per chain, 1024 UTF-8 bytes
-per identifier, and 1 MiB of wire input.
+Separately, a number of choices are kept identical to the TypeScript SDK in
+places where the draft states no rule of its own, each marked provisional at
+the point it applies, pending a protocol ruling: the grammar required of a
+bounded spend's unit; rejecting a wire number token with a fraction or
+exponent even where it denotes an integer; the aps-hierarchical-v1 scope
+segment grammar, which is narrower than draft line 516's own requirement
+that scope grants use ASCII colon-separated segments; the
+aps-values-identifiers-v1 identifier grammar, which is narrower than draft
+line 547's own description of a profile-defined identifier; and the limits
+of 256 records per chain, 1024 UTF-8 bytes per identifier, and 1 MiB of wire
+input, none of which the draft states. record_type, version and facet
+profiles are settled, not provisional: a record_type or version that is not
+a string is invalid; a record whose record_type names the v1 type and whose
+version names some other string is unsupported and is not judged by the v1
+body schema at all; a record_type naming some other string is still judged
+by the v1 body schema, which is left open; a facet's profile that is missing
+or not a string is invalid; and a facet's profile naming an unsupported
+string is unsupported without its content being judged by the section 3.2
+value rules.
 """
 
 from __future__ import annotations

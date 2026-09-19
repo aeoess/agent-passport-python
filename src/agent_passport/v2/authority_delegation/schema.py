@@ -7,12 +7,14 @@ Every JSON type test below is exact (``type(v) is str``, ``type(v) is int``,
 ``type(v) is list``, ``type(v) is dict``) rather than ``isinstance``, so that a
 Python ``bool`` (a subclass of ``int``) or ``float`` never passes as one of
 this schema's integers: ``depth.remaining`` written as ``2.0`` or
-``reputation.ceiling`` written as ``80.0`` or ``True`` is rejected, even
-though the TypeScript SDK has no way to see that distinction (a JavaScript
-number carries no separate integer/float tag). This is a deliberate,
-fail-closed difference from the TypeScript SDK's ``Number.isInteger`` check,
-kept because Python happens to be able to tell the difference, not because
-the draft asks for it.
+``reputation.ceiling`` written as ``80.0`` or ``True`` is rejected. The
+TypeScript SDK also rejects ``true`` where an integer is required, but has
+no way to see the difference between an integer-valued float such as
+``80.0`` and the integer ``80`` (a JavaScript number carries no separate
+integer/float tag). For that one case this is a deliberate, fail-closed
+difference from the TypeScript SDK's ``Number.isInteger`` check, kept
+because Python happens to be able to tell the difference, not because the
+draft asks for it.
 
 ``_has_non_i_json_value`` below applies the same exact-type rule to the
 whole record, recursively: the values it checks are exactly the values RFC
