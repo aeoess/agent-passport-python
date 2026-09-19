@@ -318,7 +318,7 @@ def test_empty_scope_required():
     _expect_code(doc, "empty_scope_required")
 
 
-# ── Item 4: section 4.1 rejects noncharacters ───────────────────────────────
+# ── section 4.1 rejects noncharacters ───────────────────────────────────────
 # (draft-pidlisnyi-aps-03 lines 813-815 and 204; RFC 7493 section 2.1)
 
 
@@ -345,6 +345,38 @@ def test_rejects_scope_required_element_noncharacter_u_10ffff():
 def test_rejects_payload_noncharacter_u_1fffe():
     with pytest.raises(ActionReferenceError) as exc_info:
         compute_payload_ref_v1({"note": "x" + "\U0001fffe"})
+    assert exc_info.value.code == "non_i_json"
+
+
+class _StrSubclass(str):
+    """A str subclass, used below to check that the noncharacter walk in
+    :mod:`agent_passport.v2.action_reference.v2` matches keys and string
+    values with ``isinstance`` rather than an exact type check, the same
+    way ``assert_i_json`` admits a str-subclass key (see that walk's
+    docstring)."""
+
+
+def test_payload_str_subclass_key_noncharacter_raises_non_i_json():
+    with pytest.raises(ActionReferenceError) as exc_info:
+        compute_payload_ref_v1({_StrSubclass("k" + "\U0000fdd0"): "v"})
+    assert exc_info.value.code == "non_i_json"
+
+
+def test_payload_nested_str_subclass_key_noncharacter_raises_non_i_json():
+    with pytest.raises(ActionReferenceError) as exc_info:
+        compute_payload_ref_v1({"outer": {_StrSubclass("k" + "\U0000fdd0"): "v"}})
+    assert exc_info.value.code == "non_i_json"
+
+
+def test_payload_str_subclass_value_noncharacter_raises_non_i_json():
+    with pytest.raises(ActionReferenceError) as exc_info:
+        compute_payload_ref_v1({"note": _StrSubclass("x" + "\U0000ffff")})
+    assert exc_info.value.code == "non_i_json"
+
+
+def test_payload_plain_noncharacter_key_raises_non_i_json():
+    with pytest.raises(ActionReferenceError) as exc_info:
+        compute_payload_ref_v1({"k" + "\U0000fdd0": "v"})
     assert exc_info.value.code == "non_i_json"
 
 
@@ -435,12 +467,13 @@ def test_2000_02_29_is_accepted_leap_year_divisible_by_400():
     validate_action_reference_input_v2(doc)  # does not raise
 
 
-# -- Item 2: second 60 valid only at 23:59 on the last day of a month ------
+# -- second 60 valid only at 23:59 on the last day of a month --------------
 # (RFC 3339 section 5.7; Appendix D's "YYYY-MM-DDT23:59:60Z")
 
 
 def test_second_60_at_2359_on_the_last_day_of_the_year_is_accepted():
-    # 2016-12-31T23:59:60Z is RFC 3339 Appendix D's own leap-second example.
+    # 2016-12-31T23:59:60Z is an actual leap second, 23:59:60 on the last
+    # day of a month.
     doc = _base()
     doc["issued_at"] = "2016-12-31T23:59:60.000Z"
     ref = compute_action_ref_v2(doc)
@@ -448,8 +481,8 @@ def test_second_60_at_2359_on_the_last_day_of_the_year_is_accepted():
 
 
 def test_second_60_at_an_arbitrary_time_is_now_rejected():
-    # Formerly accepted lexically; item 2 makes this a rejection because
-    # 12:00 on April 8 is not a leap-second position.
+    # Formerly accepted lexically; now rejected because 12:00 on April 8 is
+    # not 23:59 on the last day of a month.
     doc = _base()
     doc["issued_at"] = "2026-04-08T12:00:60.000Z"
     with pytest.raises(ActionReferenceError) as exc_info:

@@ -133,9 +133,10 @@ def _classify_i_json_error(message: str) -> str:
 
 
 # The 66 Unicode noncharacters: U+FDD0 through U+FDEF, and U+xFFFE/U+xFFFF for
-# each of the 17 planes. Not an RFC 7493 term; this module rejects them under
-# the section 4.1 I-JSON requirement (draft-pidlisnyi-aps-03 lines 813-815;
-# RFC 7493 section 2.1) even though the shared strict I-JSON helper in
+# each of the 17 planes. RFC 7493 section 2.1 refers to Noncharacters as
+# defined by Unicode; this module enforces that under the section 4.1
+# I-JSON requirement (draft-pidlisnyi-aps-03 lines 813-815; RFC 7493
+# section 2.1) even though the shared strict I-JSON helper in
 # receipt_core/jcs.py does not, per this module's docstring above.
 _NONCHARACTER_LOW_16 = frozenset({0xFFFE, 0xFFFF})
 
@@ -179,8 +180,12 @@ def _check_no_noncharacters(root: object) -> None:
     one of its own containers is recognized and not walked a second time,
     rather than looping forever. This assumes `root` already passed the
     shared strict I-JSON check (called before this in every caller below),
-    so the only container types it needs to handle are `list` and `dict`,
-    and every dict key is already known to be a `str`.
+    so the only container types it needs to handle are `list` and `dict`.
+    Every dict key is already known to be a `str` instance: assert_i_json
+    (:mod:`agent_passport.receipt_core.jcs`) admits a key with `isinstance`,
+    not an exact type check, so it accepts a `str` subclass; this walk
+    checks keys and string values the same way, with `isinstance`, so it
+    does not silently skip a subclass instance the shared check let through.
     """
     ancestors: set[int] = set()
     stack: list[object] = [root]
@@ -189,7 +194,7 @@ def _check_no_noncharacters(root: object) -> None:
         if type(item) is _NoncharacterWalkExit:
             ancestors.discard(item.identity)
             continue
-        if type(item) is str:
+        if isinstance(item, str):
             for char in item:
                 if _is_noncharacter(ord(char)):
                     raise ActionReferenceError(
@@ -212,7 +217,7 @@ def _check_no_noncharacters(root: object) -> None:
             ancestors.add(identity)
             stack.append(_NoncharacterWalkExit(identity))
             for key, value in cast(dict, item).items():
-                if type(key) is str:
+                if isinstance(key, str):
                     for char in key:
                         if _is_noncharacter(ord(char)):
                             raise ActionReferenceError(

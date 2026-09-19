@@ -39,14 +39,13 @@ agent-passport-system ``src/core/external-action-ref.ts``) on every valid
 input in the vector set is checked by
 tests/cross_impl/external-action-ref-v1-vectors.json.
 
-Known divergences: since agent-passport-system 221131d0 the TypeScript
-computeExternalActionRefV1 rejects non-string fields and array-wrapped and
-calendar-invalid timestamps, as this helper does, and both accept a
-timestamp second of 60 only at 23:59 on the last day of its month (RFC 3339
-section 5.7; Appendix D's ``YYYY-MM-DDT23:59:60Z``); this helper rejects
-every other second-60 value with ``bad_timestamp``. The remaining difference
-is that the TypeScript helper also accepts a ``Date`` object, which this
-helper does not.
+Known divergences: the TypeScript computeExternalActionRefV1 rejects
+non-string fields and array-wrapped and calendar-invalid timestamps, as this
+helper does, and both currently accept a timestamp second of 60 only at
+23:59 on the last day of its month (RFC 3339 section 5.7; Appendix D's
+``YYYY-MM-DDT23:59:60Z``); this helper rejects every other second-60 value
+with ``bad_timestamp``. The remaining difference is that the TypeScript
+helper also accepts a ``Date`` object, which this helper does not.
 """
 
 from __future__ import annotations
