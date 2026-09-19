@@ -70,6 +70,19 @@ def verify_authority_delegation_chain(
     3.3, not a conclusion the draft itself states; a chain with more than
     one fault can therefore get a different failure code from this function
     than from the TypeScript SDK.
+
+    Second deliberate difference: ``trust_root`` and ``resolve_revocation``
+    are called with the caller's own record object, the exact dict from the
+    chain passed in. The TypeScript SDK hands its callbacks a plain-data
+    copy, because it snapshots every record before reading it, so a
+    callback there cannot be given a value whose second read differs, and
+    cannot reach the caller's object at all. Here a callback that compares
+    its argument by identity against a record it already holds succeeds,
+    and a callback that mutates its argument mutates the caller's record.
+    Every check this function makes is an exact-type read of a plain dict,
+    which runs no caller code of its own; the callbacks are the only caller
+    code it runs. The draft says nothing about what a verifier hands a
+    caller-supplied callback.
     """
     # Provisional: the draft does not state a maximum chain length. This
     # 256-record limit is kept identical to the TypeScript SDK, pending a
