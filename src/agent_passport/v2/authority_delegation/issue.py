@@ -216,6 +216,17 @@ def issue_sub_authority_delegation(
     if parent_failures:
         raise AuthorityDelegationError(parent_failures[0].code, tuple(parent_failures))
 
+    # The parent has passed the shape check, so it is a plain JSON value of
+    # exact types and bounded depth and copying it runs no caller code. Every
+    # check below reads this copy, and resolve_revocation is handed a copy of
+    # its own, so neither a callback writing to what it is given nor the
+    # caller writing to its own dict can change what the linkage, continuity,
+    # issuance-time and attenuation checks compare the child body against.
+    # Signing a child that widens its parent is the invalidity section 3.6
+    # requires an issuer to refuse rather than leave for a later verifier
+    # (lines 700-704).
+    parent = copy.deepcopy(parent)
+
     expected_parent_id = compute_authority_delegation_id(authority_delegation_body(parent))
     if expected_parent_id != parent["delegation_id"]:
         raise AuthorityDelegationError(
@@ -253,7 +264,7 @@ def issue_sub_authority_delegation(
         )
 
     try:
-        parent_revocation = resolve_revocation(parent)
+        parent_revocation = resolve_revocation(copy.deepcopy(parent))
     except Exception:
         parent_revocation = None
     # Exact type, not just equality: a str subclass instance that merely

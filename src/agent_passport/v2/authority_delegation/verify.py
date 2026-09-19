@@ -12,6 +12,8 @@ keyword-only argument supplied by the caller.
 
 from __future__ import annotations
 
+import copy
+
 import dataclasses
 
 from .canonical import authority_delegation_body, compute_authority_delegation_id, verify_authority_delegation_signature
@@ -71,17 +73,19 @@ def verify_authority_delegation_chain(
     one fault can therefore get a different failure code from this function
     than from the TypeScript SDK.
 
-    Second deliberate difference: ``trust_root`` and ``resolve_revocation``
-    are called with the caller's own record object, the exact dict from the
-    chain passed in. The TypeScript SDK hands its callbacks a plain-data
-    copy, because it snapshots every record before reading it, so a
-    callback there cannot be given a value whose second read differs, and
-    cannot reach the caller's object at all. Here a callback that compares
-    its argument by identity against a record it already holds succeeds,
-    and a callback that mutates its argument mutates the caller's record.
-    Every check this function makes is an exact-type read of a plain dict,
-    which runs no caller code of its own; the callbacks are the only caller
-    code it runs. The draft says nothing about what a verifier hands a
+    ``trust_root`` and ``resolve_revocation`` are each handed a deep copy of
+    the record, made after phase 1 has validated it, and every phase from
+    there on reads this function's own copy of the chain rather than the
+    caller's dicts. A callback is given a copy because the phases after it
+    read that record again: a callback that wrote to what it was given would
+    otherwise change what the linkage, continuity, issuance-time,
+    attenuation, validity and revocation checks see, and a chain that widens
+    its parent's authority would verify valid. What a callback does to its
+    own copy changes nothing here, and neither does a caller writing to its
+    own dicts once this function has copied them. The TypeScript SDK gives
+    its callbacks a copy for the same reason. A callback that compares its
+    argument by identity against a record the caller already holds therefore
+    fails in both SDKs; the draft says nothing about what a verifier hands a
     caller-supplied callback.
     """
     # Provisional: the draft does not state a maximum chain length. This
@@ -110,6 +114,12 @@ def verify_authority_delegation_chain(
         if failures:
             unsupported = all(item.code in ("UNSUPPORTED_VERSION", "UNSUPPORTED_PROFILE") for item in failures)
             return _result("unsupported" if unsupported else "invalid", failures)
+
+    # Every record has now passed the shape check, so each one is a plain JSON
+    # value of exact types and bounded depth: copying it runs no caller code.
+    # Every phase below reads this copy, so nothing a callback or the caller
+    # does to a dict of its own changes what the remaining phases see.
+    chain = [copy.deepcopy(chain[i]) for i in range(n)]
 
     # Phase 2: delegation_id, for every record.
     for i in range(n):
@@ -164,7 +174,7 @@ def verify_authority_delegation_chain(
             (AuthorityFailure(code="ROOT_UNTRUSTED", message="root trust policy is unavailable", index=0),),
         )
     try:
-        trust_decision = trust_root(root)
+        trust_decision = trust_root(copy.deepcopy(root))
     except Exception:
         return _result(
             "indeterminate",
@@ -246,7 +256,7 @@ def verify_authority_delegation_chain(
     for i in range(n):
         delegation = chain[i]
         try:
-            resolved = resolve_revocation(delegation)
+            resolved = resolve_revocation(copy.deepcopy(delegation))
             # Exact type, not just equality: a str subclass instance that
             # merely compares equal to "active" or "revoked" must not count
             # as one of those two outcomes.
