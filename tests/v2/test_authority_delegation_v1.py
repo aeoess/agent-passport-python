@@ -1696,7 +1696,8 @@ class TestNonIJsonWalkRevisitsEachDistinctKeyStringOnce:
     scan of that string per dict, about a minute, even after string values
     were memoised. Each distinct key string is now scanned once, while a
     distinct key string with identical content is still checked on its
-    own."""
+    own, and a distinct key object with identical content is scanned on its
+    own too."""
 
     def test_one_key_string_shared_by_10000_dicts_in_an_unsupported_version_record_is_fast(self):
         shared_key = "k" * 100_000
@@ -1724,7 +1725,7 @@ class TestNonIJsonWalkRevisitsEachDistinctKeyStringOnce:
         assert result.state == "unsupported"
         assert [item.code for item in result.failures] == ["UNSUPPORTED_PROFILE"]
 
-    def test_an_ill_formed_key_is_still_found_after_a_clean_key_with_the_same_content_is_memoised(self):
+    def test_an_ill_formed_key_is_still_found_after_a_clean_key_of_the_same_length_is_memoised(self):
         clean_key = "k" * 1_000
         ill_formed_key = "k" * 999 + "\ufdd0"
         body = _root_body(version="2.0", authority=_authority())
@@ -1733,6 +1734,24 @@ class TestNonIJsonWalkRevisitsEachDistinctKeyStringOnce:
         failures = validate_authority_delegation_shape(body)
 
         assert [item.code for item in failures] == ["SCHEMA_INVALID", "UNSUPPORTED_VERSION"]
+
+    def test_a_distinct_key_object_with_identical_content_is_checked_on_its_own(self):
+        # Two str objects, equal and not the same object: the memo keys on id(),
+        # so the second is scanned rather than skipped.
+        first_key = "".join(["k"] * 1_000)
+        second_key = "".join(["k"] * 999) + "\ufdd0"
+        third_key = "".join(["k"] * 1_000)
+        assert first_key == third_key and first_key is not third_key
+
+        clean = _root_body(version="2.0", authority=_authority())
+        clean["extra"] = [{first_key: None}, {third_key: None}]
+        assert [item.code for item in validate_authority_delegation_shape(clean)] == ["UNSUPPORTED_VERSION"]
+
+        ill_formed = _root_body(version="2.0", authority=_authority())
+        ill_formed["extra"] = [{first_key: None}, {second_key: None}]
+        assert [item.code for item in validate_authority_delegation_shape(ill_formed)] == [
+            "SCHEMA_INVALID", "UNSUPPORTED_VERSION",
+        ]
 
 
 class TestIntegerMagnitudeMustFitADouble:
