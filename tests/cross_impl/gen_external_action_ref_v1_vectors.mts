@@ -52,6 +52,44 @@ function fail(message: string): never {
   process.exit(1)
 }
 
+/** True for any of the 66 Unicode noncharacters: U+FDD0 through U+FDEF, and
+ *  every code point whose low 16 bits are FFFE or FFFF (RFC 7493 section
+ *  2.1, by reference to the Unicode Standard). Kept identical to the same
+ *  helper in gen_authority_delegation_v1_vectors.mts. */
+function isNoncharacter(codePoint: number): boolean {
+  if (codePoint >= 0xfdd0 && codePoint <= 0xfdef) return true
+  const low16 = codePoint & 0xffff
+  return low16 === 0xfffe || low16 === 0xffff
+}
+
+/** Replace every literal Unicode noncharacter code point in `jsonText` with
+ *  its JSON \u escape, so the vector file this generator writes never
+ *  carries a literal noncharacter byte, only its escape. Kept identical to
+ *  the same helper in gen_authority_delegation_v1_vectors.mts. This file's
+ *  cases carry no noncharacter, so the step is a no-op on this file's
+ *  output; it runs anyway so both generators share one write path. */
+function escapeNoncharacters(jsonText: string): string {
+  let out = ''
+  for (let i = 0; i < jsonText.length; i++) {
+    const unit = jsonText.charCodeAt(i)
+    if (unit >= 0xd800 && unit <= 0xdbff && i + 1 < jsonText.length) {
+      const low = jsonText.charCodeAt(i + 1)
+      if (low >= 0xdc00 && low <= 0xdfff) {
+        const codePoint = (unit - 0xd800) * 0x400 + (low - 0xdc00) + 0x10000
+        if (isNoncharacter(codePoint)) {
+          out += `\\u${unit.toString(16).padStart(4, '0')}\\u${low.toString(16).padStart(4, '0')}`
+        } else {
+          out += jsonText[i] + jsonText[i + 1]
+        }
+        i++
+        continue
+      }
+    }
+    out += isNoncharacter(unit) ? `\\u${unit.toString(16).padStart(4, '0')}` : jsonText[i]
+  }
+  return out
+}
+
 // Re-verify the precondition already checked once: the TS
 // reference must be sitting exactly on the pinned commit with a clean tree.
 // This does not embed any path literal: both values are read from the
@@ -364,6 +402,6 @@ const document = {
   cases,
 }
 
-writeFileSync(outPath, JSON.stringify(document, null, 2) + '\n', 'utf8')
+writeFileSync(outPath, escapeNoncharacters(JSON.stringify(document, null, 2)) + '\n', 'utf8')
 console.log(`wrote ${cases.length} cases to ${outPath}`)
 console.log(JSON.stringify(counts, null, 2))

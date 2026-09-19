@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6",
   "generated_from": {
     "repository": "agent-passport-system",
-    "commit": "e454dbf7307f975349449ce9f969fafd252c93d6"
+    "commit": "67284ec97024249115434cddfe2c5e51738b6202"
   },
   "provenance_definitions": {
     "draft-derived": "the expected state, outcome or rejection follows from the draft text, directly or by an analogy the case's derivation note states, with RFC 3339 or RFC 7493 where cited; TypeScript output was not consulted to decide it.",
@@ -2481,8 +2481,8 @@
       "title": "Second 60 at 23:59 on the last day of a month",
       "expected_provenance": "draft-derived",
       "derivation": {
-        "lines": "L796-797 and L480-481 (RFC 3339 timestamps), RFC 3339 sections 5.1 and 5.6",
-        "note": "2016-12-31T23:59:60Z was an actual leap second, which RFC 3339 sections 5.6 and 5.7 admit; same-format timestamps sort as strings into time order (RFC 3339 section 5.1)."
+        "lines": "L480-481; RFC 3339 section 5.7 and Appendix D",
+        "note": "2016-12-31T23:59:60.000Z is second 60 at 23:59 on the last day of a month, which RFC 3339 section 5.7 and Appendix D admit; same-format timestamps sort as strings into time order (RFC 3339 section 5.1)."
       },
       "chain": [
         {
@@ -4146,7 +4146,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L456, L484",
-        "note": "delegation_id must be sha256: followed by 64 lowercase hex characters; the signature is computed over the record as written, with the uppercased id."
+        "note": "delegation_id must be sha256: followed by 64 lowercase hex characters; the signature is computed over the record as written, with the uppercased id. A malformed delegation_id also cannot equal the recomputed id."
       },
       "chain": [
         {
@@ -4260,7 +4260,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L484",
-        "note": "delegation_id must carry the sha256: prefix."
+        "note": "delegation_id must carry the sha256: prefix. A malformed delegation_id also cannot equal the recomputed id."
       },
       "chain": [
         {
@@ -4374,7 +4374,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L428, L456",
-        "note": "parent_delegation_id must be null or a well-formed delegation digest; no re-link, the malformed value is the fault under test."
+        "note": "parent_delegation_id must be null or a well-formed delegation digest; no re-link, the malformed value is the fault under test. A malformed parent_delegation_id also cannot link to the parent."
       },
       "chain": [
         {
@@ -4537,7 +4537,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L426-427, L204",
-        "note": "issuer must be an I-JSON string."
+        "note": "issuer must be an I-JSON string. A malformed issuer also resolves no key in the key table."
       },
       "chain": [
         {
@@ -4651,7 +4651,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L426-427",
-        "note": "issuer must be a string, not an array."
+        "note": "issuer must be a string, not an array. A malformed issuer also resolves no key in the key table."
       },
       "chain": [
         {
@@ -4767,7 +4767,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L204",
-        "note": "RFC 7493 section 2.1 forbids unpaired surrogates; JCS over validated I-JSON cannot canonicalize this record, so its delegation_id and signature are the all-zero placeholder rather than computed bytes."
+        "note": "RFC 7493 section 2.1 forbids unpaired surrogates; JCS over validated I-JSON cannot canonicalize this record, so its delegation_id and signature are the all-zero placeholder rather than computed bytes. A record that is not I-JSON has no RFC 8785 form, so neither its id nor its signature can be computed."
       },
       "chain": [
         {
@@ -9321,7 +9321,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L535, L584",
-        "note": "not_before equal to not_after makes the half-open window empty, so the record is never currently valid."
+        "note": "not_before equal to not_after makes the half-open window empty, so the record is never currently valid. An empty window never contains now."
       },
       "chain": [
         {
@@ -9549,7 +9549,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L456, L484",
-        "note": "delegation_id must be exactly sha256: followed by 64 lowercase hex characters; the signature is computed over the record as written, with the trailing line feed."
+        "note": "delegation_id must be exactly sha256: followed by 64 lowercase hex characters; the signature is computed over the record as written, with the trailing line feed. A malformed delegation_id also cannot equal the recomputed id."
       },
       "chain": [
         {
@@ -9663,7 +9663,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L477",
-        "note": "signature must be exactly 128 lowercase hex characters, with nothing appended."
+        "note": "signature must be exactly 128 lowercase hex characters, with nothing appended. A malformed signature also cannot verify."
       },
       "chain": [
         {
@@ -11034,122 +11034,6 @@
       }
     },
     {
-      "id": "AD-N-S68",
-      "kind": "chain",
-      "title": "Unsupported version 2.0 combined with a non-I-JSON subject (U+FDD0)",
-      "expected_provenance": "draft-derived",
-      "derivation": {
-        "lines": "L204 with RFC 7493 section 2.1, L426",
-        "note": "The record-wide I-JSON check belongs to canonical serialization, not the v1 body schema (draft line 204), and runs before the version check; it fails on the noncharacter, so the failures are SCHEMA_INVALID followed by UNSUPPORTED_VERSION and the state is invalid, even though the record_type names the v1 type."
-      },
-      "chain": [
-        {
-          "record_type": "aps:authority-delegation:v1",
-          "version": "2.0",
-          "parent_delegation_id": null,
-          "issuer": "did:example:principal",
-          "subject": "did:example:agent-a\ufdd0",
-          "verification_method": "did:example:principal#key-1",
-          "issued_at": "2026-07-18T22:00:00.000Z",
-          "nonce": "00112233445566778899aabbccddeeff",
-          "authority": {
-            "scope": {
-              "profile": "aps-hierarchical-v1",
-              "grants": [
-                "commerce:*",
-                "travel:book"
-              ]
-            },
-            "spend": {
-              "mode": "bounded",
-              "unit": "iso4217:USD:minor",
-              "per_action": "5000",
-              "cumulative": "10000"
-            },
-            "depth": {
-              "remaining": 2
-            },
-            "time": {
-              "not_before": "2026-07-18T22:00:00.000Z",
-              "not_after": "2026-07-19T22:00:00.000Z"
-            },
-            "reputation": {
-              "profile": "aps-score-0-100-v1",
-              "ceiling": 80
-            },
-            "values": {
-              "profile": "aps-values-identifiers-v1",
-              "required": [
-                "F-001",
-                "F-003"
-              ]
-            },
-            "reversibility": {
-              "profile": "aps-tci-v1",
-              "ceiling": "compensable"
-            }
-          },
-          "delegation_id": "sha256:7580693b8727b425f3526aacb26398f9d5a7e6d6f60bfb49849ed7ded01009c2",
-          "signature": "e206ff8c187ae9f5a22deb2dfd2fb4c44a60d8c3d1bdd1c10ada4f40661c77f1287c33ccf738a00f823422b3921d2749d56faf83d602ba0bb3bf10b547ba4600"
-        }
-      ],
-      "context": {
-        "now": "2026-07-18T23:00:00.000Z",
-        "keys": [
-          {
-            "issuer": "did:example:principal",
-            "verification_method": "did:example:principal#key-1",
-            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
-          },
-          {
-            "issuer": "did:example:agent-a",
-            "verification_method": "did:example:agent-a#key-1",
-            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
-          },
-          {
-            "issuer": "did:example:agent-b",
-            "verification_method": "did:example:agent-b#key-1",
-            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
-          },
-          {
-            "issuer": "did:example:agent-c",
-            "verification_method": "did:example:agent-c#key-1",
-            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
-          },
-          {
-            "issuer": "did:example:outsider",
-            "verification_method": "did:example:outsider#key-1",
-            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
-          }
-        ],
-        "trust": {
-          "mode": "table",
-          "trusted_root_ids": [
-            "sha256:7580693b8727b425f3526aacb26398f9d5a7e6d6f60bfb49849ed7ded01009c2"
-          ]
-        },
-        "revocation": {
-          "default": "active"
-        }
-      },
-      "expected": {
-        "state": "invalid",
-        "sdk_codes": [
-          "SCHEMA_INVALID",
-          "UNSUPPORTED_VERSION"
-        ],
-        "index": 0
-      },
-      "ts_behaviour": {
-        "state": "invalid",
-        "codes": [
-          "SCHEMA_INVALID",
-          "UNSUPPORTED_VERSION"
-        ],
-        "index": 0
-      }
-    },
-    {
       "id": "AD-N-U01",
       "kind": "chain",
       "title": "Unsupported scope profile",
@@ -11949,11 +11833,11 @@
     {
       "id": "AD-N-U08",
       "kind": "chain",
-      "title": "Scope profile change between parent and child",
+      "title": "Scope profile change between parent and child cannot be exercised on its own",
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L512-514, L590",
-        "note": "C1's own scope profile is unsupported at the shape level, independent of the parent/child comparison."
+        "note": "Only one scope profile is supported, so a profile change always gives the child an unsupported profile of its own, which the shape step already reports (UNSUPPORTED_PROFILE at index 1, L590). The profile-change comparison (L512-514) would report the same code and cannot be exercised separately while only one scope profile is defined."
       },
       "chain": [
         {
@@ -14647,7 +14531,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L537-538, L583-584",
-        "note": "issued_at equals the parent's not_after, outside the half-open window; this always also widens time, but the issuance-time check precedes the facet check in both the draft's order and TypeScript's."
+        "note": "issued_at equals the parent's not_after, outside the half-open window; this always also widens time, but the issuance-time check precedes the facet check in both the draft's order and TypeScript's. For the same reason as AD-I05, the child's own not_before cannot precede its issued_at, which here is the parent's not_after, so the child is also not yet valid at this case's now."
       },
       "chain": [
         {
@@ -16921,7 +16805,7 @@
     {
       "id": "AD-N-F14",
       "kind": "chain",
-      "title": "Leap-second ordering widens time",
+      "title": "Child not_after later than the parent's second-60 not_after widens time",
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "RFC 3339 section 5.1",
@@ -19188,8 +19072,8 @@
       "title": "issue_child: parent R, body C1 issued at the parent's expiry",
       "expected_provenance": "draft-derived",
       "derivation": {
-        "lines": "L698-701",
-        "note": "The parent has already expired at the moment of issuance."
+        "lines": "L537-538",
+        "note": "At this case's context now, the parent is currently valid, so the fault is that the child's own issued_at falls outside the parent's validity window (section 3.2, a child MUST be issued while the parent is valid). The child's time window also necessarily widens the parent's (TIME_WIDENING): its not_before cannot precede its own issued_at, which here is the parent's not_after, so the window cannot help but extend past the parent's end while remaining non-empty. The pinned sdk_code follows the order both SDK issuers use, issued_at before the facet comparisons; the draft does not fix that order for issuers."
       },
       "parent": {
         "record_type": "aps:authority-delegation:v1",
@@ -19336,8 +19220,8 @@
       "title": "issue_child: parent R, body C1 issued before the parent starts",
       "expected_provenance": "draft-derived",
       "derivation": {
-        "lines": "L698-699",
-        "note": "The parent is not yet valid at the moment of issuance."
+        "lines": "L537-538",
+        "note": "At this case's context now, the parent is currently valid, so the fault is that the child's own issued_at falls outside the parent's validity window (section 3.2, a child MUST be issued while the parent is valid): its issued_at is one minute before the parent's own not_before. The pinned sdk_code follows the order both SDK issuers use, issued_at before the facet comparisons; the draft does not fix that order for issuers."
       },
       "parent": {
         "record_type": "aps:authority-delegation:v1",
@@ -21496,6 +21380,135 @@
       "ts_behaviour": {
         "result": "refuse",
         "error": "authority delegation body must carry neither delegation_id nor signature (SCHEMA_INVALID)"
+      }
+    },
+    {
+      "id": "AD-I22",
+      "kind": "issue_root",
+      "title": "issue_root: body C1 (a valid child body under R), key agent-a",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "section 3.6 lines 695-704; section 3.1 line 428",
+        "note": "The root issuer issues roots only: a child is minted only through the child issuer, which performs the section 3.6 parent checks, and parent_delegation_id is null only for a root."
+      },
+      "body": {
+        "record_type": "aps:authority-delegation:v1",
+        "version": "1.0",
+        "parent_delegation_id": "sha256:804f6ece621ec55c339ed2d763602d3b0016b7d2321fba37c5f5ea64374cf249",
+        "issuer": "did:example:agent-a",
+        "subject": "did:example:agent-b",
+        "verification_method": "did:example:agent-a#key-1",
+        "issued_at": "2026-07-18T22:10:00.000Z",
+        "nonce": "102132435465768798a9bacbdcedfe0f",
+        "authority": {
+          "scope": {
+            "profile": "aps-hierarchical-v1",
+            "grants": [
+              "commerce:checkout"
+            ]
+          },
+          "spend": {
+            "mode": "bounded",
+            "unit": "iso4217:USD:minor",
+            "per_action": "2500",
+            "cumulative": "5000"
+          },
+          "depth": {
+            "remaining": 1
+          },
+          "time": {
+            "not_before": "2026-07-18T22:10:00.000Z",
+            "not_after": "2026-07-19T12:00:00.000Z"
+          },
+          "reputation": {
+            "profile": "aps-score-0-100-v1",
+            "ceiling": 70
+          },
+          "values": {
+            "profile": "aps-values-identifiers-v1",
+            "required": [
+              "F-001",
+              "F-003",
+              "F-007"
+            ]
+          },
+          "reversibility": {
+            "profile": "aps-tci-v1",
+            "ceiling": "tentative"
+          }
+        }
+      },
+      "signing_key": "agent-a",
+      "expected": {
+        "result": "refuse",
+        "sdk_code": "PARENT_MISMATCH"
+      },
+      "ts_behaviour": {
+        "result": "refuse",
+        "error": "authority delegation root body must have a null parent_delegation_id (PARENT_MISMATCH)"
+      }
+    },
+    {
+      "id": "AD-I23",
+      "kind": "issue_root",
+      "title": "issue_root: an orphan child body with a fabricated parent_delegation_id, key agent-a",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "section 3.6 lines 695-704; section 3.1 line 428",
+        "note": "The root issuer issues roots only: a child is minted only through the child issuer, which performs the section 3.6 parent checks, and parent_delegation_id is null only for a root."
+      },
+      "body": {
+        "record_type": "aps:authority-delegation:v1",
+        "version": "1.0",
+        "parent_delegation_id": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "issuer": "did:example:agent-a",
+        "subject": "did:example:agent-b",
+        "verification_method": "did:example:agent-a#key-1",
+        "issued_at": "2026-07-18T22:10:00.000Z",
+        "nonce": "102132435465768798a9bacbdcedfe0f",
+        "authority": {
+          "scope": {
+            "profile": "aps-hierarchical-v1",
+            "grants": [
+              "*"
+            ]
+          },
+          "spend": {
+            "mode": "unbounded"
+          },
+          "depth": {
+            "remaining": 255
+          },
+          "time": {
+            "not_before": "2026-07-18T22:10:00.000Z",
+            "not_after": "2026-07-19T12:00:00.000Z"
+          },
+          "reputation": {
+            "profile": "aps-score-0-100-v1",
+            "ceiling": 70
+          },
+          "values": {
+            "profile": "aps-values-identifiers-v1",
+            "required": [
+              "F-001",
+              "F-003",
+              "F-007"
+            ]
+          },
+          "reversibility": {
+            "profile": "aps-tci-v1",
+            "ceiling": "tentative"
+          }
+        }
+      },
+      "signing_key": "agent-a",
+      "expected": {
+        "result": "refuse",
+        "sdk_code": "PARENT_MISMATCH"
+      },
+      "ts_behaviour": {
+        "result": "refuse",
+        "error": "authority delegation root body must have a null parent_delegation_id (PARENT_MISMATCH)"
       }
     },
     {
@@ -25072,7 +25085,7 @@
   "withheld": [
     {
       "topic": "Multi-fault chains",
-      "reason": "The draft does not say which failure decides when several steps fail. Only single-fault chains are included; AD-N-H01, AD-N-H02, AD-N-H10 and AD-N-S62 carry an unavoidable later fault and each case explains why the order does not matter for it. For AD-N-S62, the I-JSON failure belongs to the first step of the section 3.3 order (closed schema and canonical values), so it is decided before the unsupported profile it also carries."
+      "reason": "Every chain negative changes exactly one thing in an otherwise valid chain. In AD-N-S08, AD-N-S09, AD-N-S10, AD-N-S11, AD-N-S12, AD-N-S13, AD-N-S53, AD-N-S55, AD-N-S56, AD-N-S62, AD-N-U08, AD-N-H01, AD-N-H02 and AD-N-H10, that one change necessarily fails more than one check; each of those cases' own note names the other checks it cannot avoid also failing. A chain built from two independent faults is withheld instead, because the draft does not settle which failure decides when two unrelated checks fail together. That includes the precedence inside one record between an I-JSON failure and an unknown version (formerly AD-N-S68, which paired an unsupported version with a non-I-JSON subject and is now removed)."
     },
     {
       "topic": "Values the draft admits that the TypeScript schema rejects by a grammar the draft does not state",
@@ -25108,16 +25121,16 @@
     }
   ],
   "counts": {
-    "total": 183,
+    "total": 184,
     "by_kind": {
-      "chain": 139,
+      "chain": 138,
       "wire": 9,
-      "issue_root": 4,
+      "issue_root": 6,
       "issue_child": 17,
       "budget": 14
     },
     "by_provenance": {
-      "draft-derived": 179,
+      "draft-derived": 180,
       "ts-conformant-regression": 4
     }
   }

@@ -177,11 +177,32 @@ function forceSignWithId(body: any, delegationId: string, label: Label): any {
   return { ...unsigned, signature: AD.signAuthorityDelegation(unsigned, seedHex(label)) }
 }
 
-/** issueAuthorityDelegation(body, seed(label)): used for the base valid
- *  records (R, C1, C2) and their valid variants, since a schema-valid record
- *  is issued through this TS entry point rather than force-signed by hand. */
-function issue(body: any, label: Label): any {
-  return AD.issueAuthorityDelegation(body, seedHex(label))
+/** issueAuthorityDelegation(body, seed(label)) for a root body (parent_delegation_id
+ *  null), or issueSubAuthorityDelegation(parent, body, seed(label), options) for a
+ *  child body, given its parent record as the third argument. options.now is the
+ *  child's own issued_at, which is inside the parent's validity window for every
+ *  base record and variant this generator builds this way; resolveVerificationKey
+ *  looks the signer up in the file's full key table (ALL_KEY_ENTRIES); resolveRevocation
+ *  always answers "active". Used for the base valid records (R, C1, C2) and their
+ *  valid variants, since a schema-valid record is issued through these TS entry
+ *  points rather than force-signed by hand. A case that needs the child issuer
+ *  itself to refuse calls pushIssueChildCase (or pushIssueRootCase) directly instead;
+ *  a case that needs an already-issued chain member to carry a fault after the fact
+ *  uses forceSign. */
+function issue(body: any, label: Label, parent?: any): any {
+  if (body.parent_delegation_id === null) {
+    return AD.issueAuthorityDelegation(body, seedHex(label))
+  }
+  if (!parent) fail('issue: a body with a non-null parent_delegation_id requires its parent record')
+  const resolveVerificationKey = (issuer: string, vm: string): string | null => {
+    const hit = ALL_KEY_ENTRIES.find((k) => k.issuer === issuer && k.verification_method === vm)
+    return hit ? hit.public_key_hex : null
+  }
+  return AD.issueSubAuthorityDelegation(parent, body, seedHex(label), {
+    now: body.issued_at,
+    resolveVerificationKey,
+    resolveRevocation: () => 'active',
+  })
 }
 
 /** AD-N-S13 only: the mutated body cannot be canonicalized (a lone
@@ -199,14 +220,14 @@ function forceSignExpectingCanonicalizationFailure(body: any, label: Label, case
   fail(`${caseId}: expected computeAuthorityDelegationId to throw on a lone surrogate, but it did not`)
 }
 
-/** AD-N-U10, AD-N-U11 and AD-N-S68: compute delegation_id and signature over
- *  the record as written wherever JCS allows it (the same recipe as
- *  forceSign), falling back to the AD-N-S13 all-zero placeholder only if
- *  canonicalization actually throws (e.g. a lone surrogate). None of these
- *  three cases' mutations are lone surrogates, so in practice this always
- *  takes the forceSign branch; the fallback exists so this helper would
- *  still produce a definite value, rather than throwing, if a future
- *  mutation of one of these cases ever did fail to canonicalize. */
+/** AD-N-U10 and AD-N-U11: compute delegation_id and signature over the
+ *  record as written wherever JCS allows it (the same recipe as forceSign),
+ *  falling back to the AD-N-S13 all-zero placeholder only if canonicalization
+ *  actually throws (e.g. a lone surrogate). Neither of these two cases'
+ *  mutations are lone surrogates, so in practice this always takes the
+ *  forceSign branch; the fallback exists so this helper would still produce
+ *  a definite value, rather than throwing, if a future mutation of one of
+ *  these cases ever did fail to canonicalize. */
 function forceSignOrZeroPlaceholder(body: any, label: Label): any {
   try {
     AD.computeAuthorityDelegationId(body)
@@ -350,7 +371,11 @@ function buildOptions(spec: ContextSpec, chain: any[]) {
           throw new Error('trust policy unavailable')
         }
   const resolveRevocation = (delegation: any): RevocationValue => {
-    const idx = chain.indexOf(delegation)
+    // Look the member up by delegation_id, as the Python runner does: the verifier hands
+    // this callback a plain-data copy of the chain member, not the caller's own object,
+    // so a lookup by object identity would never match.
+    const idx = chain.findIndex((member: any) =>
+      member !== null && typeof member === 'object' && member.delegation_id === delegation?.delegation_id)
     const key = String(idx)
     const value = spec.revocation.by_index && key in spec.revocation.by_index ? spec.revocation.by_index[key] : spec.revocation.default
     if (value === 'unavailable') throw new Error('revocation resolver unavailable')
@@ -405,7 +430,7 @@ const BODY_C1 = {
   },
 }
 
-const C1 = issue(BODY_C1, 'agent-a')
+const C1 = issue(BODY_C1, 'agent-a', R)
 
 const BODY_C2 = {
   record_type: 'aps:authority-delegation:v1',
@@ -427,7 +452,7 @@ const BODY_C2 = {
   },
 }
 
-const C2 = issue(BODY_C2, 'agent-b')
+const C2 = issue(BODY_C2, 'agent-b', C1)
 
 const RU = mutate(BODY_R, (b) => { b.authority.spend = { mode: 'unbounded' } })
 const RU_REC = issue(RU, 'principal')
@@ -529,7 +554,7 @@ pushChainCase({
     b.authority = clone(BODY_R.authority)
     b.authority.depth = { remaining: 1 }
   })
-  const E = issue(bodyE, 'agent-a')
+  const E = issue(bodyE, 'agent-a', R)
   pushChainCase({
     id: 'AD-P04', title: 'Equal facets narrow only by depth', chain: [R, E], expectedState: 'valid',
     lines: 'L516-566, L532-538',
@@ -538,7 +563,7 @@ pushChainCase({
 }
 
 {
-  const c1UnderUnbounded = issue(mutate(BODY_C1, (b) => { b.parent_delegation_id = RU_REC.delegation_id }), 'agent-a')
+  const c1UnderUnbounded = issue(mutate(BODY_C1, (b) => { b.parent_delegation_id = RU_REC.delegation_id }), 'agent-a', RU_REC)
   pushChainCase({
     id: 'AD-P05', title: 'Unbounded parent, bounded child', chain: [RU_REC, c1UnderUnbounded],
     expectedState: 'valid', lines: 'L527-528', note: 'A bounded child under an unbounded parent has no parent limit to exceed.',
@@ -550,7 +575,7 @@ pushChainCase({
     b.parent_delegation_id = RU_REC.delegation_id
     b.authority.spend = { mode: 'unbounded' }
   })
-  const c1UnboundedRec = issue(c1Unbounded, 'agent-a')
+  const c1UnboundedRec = issue(c1Unbounded, 'agent-a', RU_REC)
   pushChainCase({
     id: 'AD-P06', title: 'Unbounded parent, unbounded child', chain: [RU_REC, c1UnboundedRec], expectedState: 'valid',
     lines: 'L571-574', note: 'An unbounded child under an unbounded parent is the equal component of the order, not a widening.',
@@ -562,7 +587,7 @@ pushChainCase({
   const childP07 = issue(mutate(BODY_C1, (b) => {
     b.parent_delegation_id = rootStar.delegation_id
     b.authority.scope.grants = ['commerce:checkout', 'travel:*']
-  }), 'agent-a')
+  }), 'agent-a', rootStar)
   pushChainCase({
     id: 'AD-P07', title: 'Root scope "*" covers any child scope', chain: [rootStar, childP07], expectedState: 'valid',
     lines: 'L516-517', note: 'The wildcard "*" grant covers every child grant.',
@@ -574,7 +599,7 @@ pushChainCase({
   const childP08 = issue(mutate(BODY_C1, (b) => {
     b.parent_delegation_id = rootCommerceStar.delegation_id
     b.authority.scope.grants = ['commerce']
-  }), 'agent-a')
+  }), 'agent-a', rootCommerceStar)
   pushChainCase({
     id: 'AD-P08', title: '"commerce:*" covers the bare grant "commerce"', chain: [rootCommerceStar, childP08], expectedState: 'valid',
     lines: 'L518-519', note: '"p:*" covers "p".',
@@ -583,7 +608,7 @@ pushChainCase({
   const childP09 = issue(mutate(BODY_C1, (b) => {
     b.parent_delegation_id = rootCommerceStar.delegation_id
     b.authority.scope.grants = ['commerce:*']
-  }), 'agent-a')
+  }), 'agent-a', rootCommerceStar)
   pushChainCase({
     id: 'AD-P09', title: '"commerce:*" covers itself', chain: [rootCommerceStar, childP09], expectedState: 'valid',
     lines: 'L518-519', note: 'A grant beginning "commerce:" is covered by the identical wildcard grant.',
@@ -592,7 +617,7 @@ pushChainCase({
   const childP10 = issue(mutate(BODY_C1, (b) => {
     b.parent_delegation_id = rootCommerceStar.delegation_id
     b.authority.scope.grants = ['commerce:checkout:*']
-  }), 'agent-a')
+  }), 'agent-a', rootCommerceStar)
   pushChainCase({
     id: 'AD-P10', title: '"commerce:*" covers a longer wildcard descendant', chain: [rootCommerceStar, childP10], expectedState: 'valid',
     lines: 'L518-519', note: '"commerce:checkout:*" is a descendant of "commerce:*".',
@@ -600,7 +625,7 @@ pushChainCase({
 }
 
 {
-  const childP11 = issue(mutate(BODY_C1, (b) => { b.authority.scope.grants = [] }), 'agent-a')
+  const childP11 = issue(mutate(BODY_C1, (b) => { b.authority.scope.grants = [] }), 'agent-a', R)
   pushChainCase({
     id: 'AD-P11', title: 'Empty child scope is vacuously covered', chain: [R, childP11], expectedState: 'valid',
     lines: 'L519-521', note: 'An empty grants array is vacuously covered, and is itself sorted, unique and irredundant.',
@@ -614,7 +639,7 @@ pushChainCase({
   const childSpendBounds = issue(mutate(BODY_C1, (b) => {
     b.parent_delegation_id = rootSpendBounds.delegation_id
     b.authority.spend = { mode: 'bounded', unit: 'iso4217:USD:minor', per_action: '0', cumulative: '0' }
-  }), 'agent-a')
+  }), 'agent-a', rootSpendBounds)
   pushChainCase({
     id: 'AD-P12', title: 'Spend bounds at the extremes', chain: [rootSpendBounds, childSpendBounds], expectedState: 'valid',
     lines: 'L524-527', note: 'Zero and the maximum canonical quantity are both admissible bounds that narrow correctly.',
@@ -626,7 +651,7 @@ pushChainCase({
   const childDepth254 = issue(mutate(BODY_C1, (b) => {
     b.parent_delegation_id = rootDepth255.delegation_id
     b.authority.depth = { remaining: 254 }
-  }), 'agent-a')
+  }), 'agent-a', rootDepth255)
   pushChainCase({
     id: 'AD-P13', title: 'Depth bounds at the extremes', chain: [rootDepth255, childDepth254], expectedState: 'valid',
     lines: 'L531-533', note: 'Depth 255 down to 254 consumes exactly one hop at the top of the range.',
@@ -638,7 +663,7 @@ pushChainCase({
   const childRep0 = issue(mutate(BODY_C1, (b) => {
     b.parent_delegation_id = rootRep100.delegation_id
     b.authority.reputation = { profile: 'aps-score-0-100-v1', ceiling: 0 }
-  }), 'agent-a')
+  }), 'agent-a', rootRep100)
   pushChainCase({
     id: 'AD-P14', title: 'Reputation bounds at the extremes', chain: [rootRep100, childRep0], expectedState: 'valid',
     lines: 'L541-542', note: 'Reputation ceiling 100 down to 0 still narrows.',
@@ -650,11 +675,11 @@ pushChainCase({
   const childComp = issue(mutate(BODY_C1, (b) => {
     b.parent_delegation_id = rootIrrev.delegation_id
     b.authority.reversibility = { profile: 'aps-tci-v1', ceiling: 'compensable' }
-  }), 'agent-a')
+  }), 'agent-a', rootIrrev)
   const grandchildTent = issue(mutate(BODY_C2, (b) => {
     b.parent_delegation_id = childComp.delegation_id
     b.authority.reversibility = { profile: 'aps-tci-v1', ceiling: 'tentative' }
-  }), 'agent-b')
+  }), 'agent-b', childComp)
   pushChainCase({
     id: 'AD-P15', title: 'Reversibility ladder narrows down', chain: [rootIrrev, childComp, grandchildTent], expectedState: 'valid',
     lines: 'L553-566', note: 'irreversible -> compensable -> tentative is monotonically non-increasing on the three-class ladder.',
@@ -670,12 +695,12 @@ pushChainCase({
     b.parent_delegation_id = RL.delegation_id
     b.issued_at = '2016-12-31T23:59:60.000Z'
     b.authority.time = { not_before: '2016-12-31T23:59:60.000Z', not_after: '2017-01-01T00:00:00.500Z' }
-  }), 'agent-a')
+  }), 'agent-a', RL)
   pushChainCase({
     id: 'AD-P16', title: 'Second 60 at 23:59 on the last day of a month', chain: [RL, CL],
     contextOverrides: { now: '2016-12-31T23:59:60.500Z' }, expectedState: 'valid',
-    lines: 'L796-797 and L480-481 (RFC 3339 timestamps), RFC 3339 sections 5.1 and 5.6',
-    note: '2016-12-31T23:59:60Z was an actual leap second, which RFC 3339 sections 5.6 and 5.7 admit; same-format timestamps sort as strings into time order (RFC 3339 section 5.1).',
+    lines: 'L480-481; RFC 3339 section 5.7 and Appendix D',
+    note: '2016-12-31T23:59:60.000Z is second 60 at 23:59 on the last day of a month, which RFC 3339 section 5.7 and Appendix D admit; same-format timestamps sort as strings into time order (RFC 3339 section 5.1).',
   })
 }
 
@@ -708,7 +733,7 @@ pushChainCase({
   const c1LastMs = issue(mutate(BODY_C1, (b) => {
     b.issued_at = '2026-07-19T21:59:59.999Z'
     b.authority.time = { not_before: '2026-07-19T21:59:59.999Z', not_after: '2026-07-19T22:00:00.000Z' }
-  }), 'agent-a')
+  }), 'agent-a', R)
   pushChainCase({
     id: 'AD-P20', title: "Child issued in the parent's last millisecond", chain: [R, c1LastMs],
     contextOverrides: { now: '2026-07-19T21:59:59.999Z' }, expectedState: 'valid',
@@ -761,7 +786,7 @@ rootOnlyInvalid('AD-N-S07', 'Unsupported version 2.0', 'L426', 'The draft states
   pushChainCase({
     id: 'AD-N-S08', title: 'delegation_id hex uppercased', chain: [forceSignWithId(body, upperId, 'principal')],
     expectedState: 'invalid', expectedCode: 'SCHEMA_INVALID', expectedIndex: 0,
-    lines: 'L456, L484', note: 'delegation_id must be sha256: followed by 64 lowercase hex characters; the signature is computed over the record as written, with the uppercased id.',
+    lines: 'L456, L484', note: 'delegation_id must be sha256: followed by 64 lowercase hex characters; the signature is computed over the record as written, with the uppercased id. A malformed delegation_id also cannot equal the recomputed id.',
   })
 }
 {
@@ -771,7 +796,7 @@ rootOnlyInvalid('AD-N-S07', 'Unsupported version 2.0', 'L426', 'The draft states
   pushChainCase({
     id: 'AD-N-S09', title: 'delegation_id without the sha256: prefix', chain: [forceSignWithId(body, noPrefix, 'principal')],
     expectedState: 'invalid', expectedCode: 'SCHEMA_INVALID', expectedIndex: 0,
-    lines: 'L484', note: 'delegation_id must carry the sha256: prefix.',
+    lines: 'L484', note: 'delegation_id must carry the sha256: prefix. A malformed delegation_id also cannot equal the recomputed id.',
   })
 }
 {
@@ -780,18 +805,18 @@ rootOnlyInvalid('AD-N-S07', 'Unsupported version 2.0', 'L426', 'The draft states
   pushChainCase({
     id: 'AD-N-S10', title: 'parent_delegation_id one hex character short', chain: [R, c1bad],
     expectedState: 'invalid', expectedCode: 'SCHEMA_INVALID', expectedIndex: 1,
-    lines: 'L428, L456', note: 'parent_delegation_id must be null or a well-formed delegation digest; no re-link, the malformed value is the fault under test.',
+    lines: 'L428, L456', note: 'parent_delegation_id must be null or a well-formed delegation digest; no re-link, the malformed value is the fault under test. A malformed parent_delegation_id also cannot link to the parent.',
   })
 }
-rootOnlyInvalid('AD-N-S11', 'issuer is a number', 'L426-427, L204', 'issuer must be an I-JSON string.', 'SCHEMA_INVALID', (b) => { b.issuer = 5 })
-rootOnlyInvalid('AD-N-S12', 'issuer is an array', 'L426-427', 'issuer must be a string, not an array.', 'SCHEMA_INVALID', (b) => { b.issuer = ['did:example:principal'] })
+rootOnlyInvalid('AD-N-S11', 'issuer is a number', 'L426-427, L204', 'issuer must be an I-JSON string. A malformed issuer also resolves no key in the key table.', 'SCHEMA_INVALID', (b) => { b.issuer = 5 })
+rootOnlyInvalid('AD-N-S12', 'issuer is an array', 'L426-427', 'issuer must be a string, not an array. A malformed issuer also resolves no key in the key table.', 'SCHEMA_INVALID', (b) => { b.issuer = ['did:example:principal'] })
 {
   const body = mutate(BODY_R, (b) => { b.subject = 'did:example:agent-a\uD800' })
   const rec = forceSignExpectingCanonicalizationFailure(body, 'principal', 'AD-N-S13')
   pushChainCase({
     id: 'AD-N-S13', title: 'subject carries a lone surrogate', chain: [rec],
     expectedState: 'invalid', expectedCode: 'SCHEMA_INVALID', expectedIndex: 0,
-    lines: 'L204', note: 'RFC 7493 section 2.1 forbids unpaired surrogates; JCS over validated I-JSON cannot canonicalize this record, so its delegation_id and signature are the all-zero placeholder rather than computed bytes.',
+    lines: 'L204', note: 'RFC 7493 section 2.1 forbids unpaired surrogates; JCS over validated I-JSON cannot canonicalize this record, so its delegation_id and signature are the all-zero placeholder rather than computed bytes. A record that is not I-JSON has no RFC 8785 form, so neither its id nor its signature can be computed.',
   })
 }
 rootOnlyInvalid('AD-N-S14', 'issued_at without milliseconds', 'L480-481, L198-199', 'issued_at must be exact UTC-millisecond form.', 'NONCANONICAL_VALUE', (b) => { b.issued_at = '2026-07-18T22:00:00Z' })
@@ -852,7 +877,7 @@ pushChainCase({
   expectedState: 'invalid', expectedCode: 'SCHEMA_INVALID', expectedIndex: null,
   lines: 'L580, L1655-1660', note: 'A root-to-leaf chain has a root; the empty array is a structurally malformed input with a defined result.',
 })
-rootOnlyInvalid('AD-N-S53', 'Empty half-open validity window', 'L535, L584', 'not_before equal to not_after makes the half-open window empty, so the record is never currently valid.', 'SCHEMA_INVALID', (b) => { b.authority.time = { not_before: '2026-07-18T22:00:00.000Z', not_after: '2026-07-18T22:00:00.000Z' } })
+rootOnlyInvalid('AD-N-S53', 'Empty half-open validity window', 'L535, L584', 'not_before equal to not_after makes the half-open window empty, so the record is never currently valid. An empty window never contains now.', 'SCHEMA_INVALID', (b) => { b.authority.time = { not_before: '2026-07-18T22:00:00.000Z', not_after: '2026-07-18T22:00:00.000Z' } })
 
 rootOnlyInvalid('AD-N-S54', 'nonce with a trailing line feed', 'L462, L481', 'nonce must be exactly 32 lowercase hex characters, with nothing appended.', 'NONCANONICAL_VALUE', (b) => { b.nonce = b.nonce + '\n' })
 
@@ -863,7 +888,7 @@ rootOnlyInvalid('AD-N-S54', 'nonce with a trailing line feed', 'L462, L481', 'no
   pushChainCase({
     id: 'AD-N-S55', title: 'delegation_id with a trailing line feed', chain: [forceSignWithId(body, idWithLineFeed, 'principal')],
     expectedState: 'invalid', expectedCode: 'SCHEMA_INVALID', expectedIndex: 0,
-    lines: 'L456, L484', note: 'delegation_id must be exactly sha256: followed by 64 lowercase hex characters; the signature is computed over the record as written, with the trailing line feed.',
+    lines: 'L456, L484', note: 'delegation_id must be exactly sha256: followed by 64 lowercase hex characters; the signature is computed over the record as written, with the trailing line feed. A malformed delegation_id also cannot equal the recomputed id.',
   })
 }
 
@@ -872,7 +897,7 @@ rootOnlyInvalid('AD-N-S54', 'nonce with a trailing line feed', 'L462, L481', 'no
   pushChainCase({
     id: 'AD-N-S56', title: 'signature with a trailing line feed', chain: [{ ...rec, signature: rec.signature + '\n' }],
     expectedState: 'invalid', expectedCode: 'SCHEMA_INVALID', expectedIndex: 0,
-    lines: 'L477', note: 'signature must be exactly 128 lowercase hex characters, with nothing appended.',
+    lines: 'L477', note: 'signature must be exactly 128 lowercase hex characters, with nothing appended. A malformed signature also cannot verify.',
   })
 }
 
@@ -927,17 +952,6 @@ pushChainCase({
   note: 'RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; minute 58 is not minute 59. issued_at and time.not_before are both 2016-12-31T23:58:00.000Z and now is 2016-12-31T23:58:30.000Z, so the window is well-formed, non-empty and contains now, and the only fault is the minute on not_after.',
 })
 
-{
-  const body = mutate(BODY_R, (b) => { b.version = '2.0'; b.subject = b.subject + '\uFDD0' })
-  pushChainCase({
-    id: 'AD-N-S68', title: 'Unsupported version 2.0 combined with a non-I-JSON subject (U+FDD0)',
-    chain: [forceSignOrZeroPlaceholder(body, 'principal')],
-    expectedState: 'invalid', expectedCodes: ['SCHEMA_INVALID', 'UNSUPPORTED_VERSION'], expectedIndex: 0,
-    lines: 'L204 with RFC 7493 section 2.1, L426',
-    note: 'The record-wide I-JSON check belongs to canonical serialization, not the v1 body schema (draft line 204), and runs before the version check; it fails on the noncharacter, so the failures are SCHEMA_INVALID followed by UNSUPPORTED_VERSION and the state is invalid, even though the record_type names the v1 type.',
-  })
-}
-
 // -------------------------------------------------------------------------
 // Chain cases, negative: unsupported facet profiles
 // -------------------------------------------------------------------------
@@ -958,9 +972,9 @@ rootOnlyUnsupported('AD-N-U07', 'Unsupported reversibility profile', UNSUPPORTED
 {
   const c1bad = forceSign(mutate(BODY_C1, (b) => { b.authority.scope.profile = 'aps-hierarchical-v2' }), 'agent-a')
   pushChainCase({
-    id: 'AD-N-U08', title: 'Scope profile change between parent and child', chain: [R, c1bad],
+    id: 'AD-N-U08', title: 'Scope profile change between parent and child cannot be exercised on its own', chain: [R, c1bad],
     expectedState: 'unsupported', expectedCode: 'UNSUPPORTED_PROFILE', expectedIndex: 1,
-    lines: 'L512-514, L590', note: "C1's own scope profile is unsupported at the shape level, independent of the parent/child comparison.",
+    lines: 'L512-514, L590', note: "Only one scope profile is supported, so a profile change always gives the child an unsupported profile of its own, which the shape step already reports (UNSUPPORTED_PROFILE at index 1, L590). The profile-change comparison (L512-514) would report the same code and cannot be exercised separately while only one scope profile is defined.",
   })
 }
 rootOnlyInvalid('AD-N-U09', 'Unsupported reversibility profile, otherwise valid content', 'L590, L512-514', "The content is valid under v1, so the case is a single fault: reversibility.ceiling 'compensable' would itself be v1-valid, unlike AD-N-U07's 'reversible', which is outside the v1 three-class enum.", 'UNSUPPORTED_PROFILE', (b) => { b.authority.reversibility = { profile: 'aps-tci-v2', ceiling: 'compensable' } }, 'unsupported')
@@ -1123,7 +1137,7 @@ pushChainCase({
   pushChainCase({
     id: 'AD-N-H10', title: "Child issued exactly at the parent's expiry", chain: [R, c1bad],
     expectedState: 'invalid', expectedCode: 'ISSUED_AT_OUTSIDE_PARENT', expectedIndex: 1,
-    lines: 'L537-538, L583-584', note: 'issued_at equals the parent\'s not_after, outside the half-open window; this always also widens time, but the issuance-time check precedes the facet check in both the draft\'s order and TypeScript\'s.',
+    lines: 'L537-538, L583-584', note: 'issued_at equals the parent\'s not_after, outside the half-open window; this always also widens time, but the issuance-time check precedes the facet check in both the draft\'s order and TypeScript\'s. For the same reason as AD-I05, the child\'s own not_before cannot precede its issued_at, which here is the parent\'s not_after, so the child is also not yet valid at this case\'s now.',
   })
 }
 
@@ -1189,7 +1203,7 @@ facetCase('AD-N-F13', 'Reversibility ceiling widened', 'L553-566', "Child ceilin
     b.authority.time = { not_before: '2016-12-31T23:59:60.000Z', not_after: '2017-01-01T00:00:00.000Z' }
   }), 'agent-a')
   pushChainCase({
-    id: 'AD-N-F14', title: 'Leap-second ordering widens time', chain: [RL2, CL2],
+    id: 'AD-N-F14', title: "Child not_after later than the parent's second-60 not_after widens time", chain: [RL2, CL2],
     contextOverrides: { now: '2016-12-31T23:59:60.500Z' },
     expectedState: 'invalid', expectedCode: 'TIME_WIDENING', expectedIndex: 1,
     lines: 'RFC 3339 section 5.1', note: 'As strings, "2017-01-01T00:00:00.000Z" sorts after "2016-12-31T23:59:60.999Z", so the child\'s not_after is later than the parent\'s.',
@@ -1488,14 +1502,18 @@ pushIssueChildCase('AD-I05', "issue_child: parent R, body C1 issued at the paren
     b.issued_at = '2026-07-19T22:00:00.000Z'
     b.authority.time = { not_before: '2026-07-19T22:00:00.000Z', not_after: '2026-07-19T23:00:00.000Z' }
   }), 'agent-a', { keys: 'default', revocation_parent: 'active' }, false, 'draft-derived',
-  'L698-701', 'The parent has already expired at the moment of issuance.', 'ISSUED_AT_OUTSIDE_PARENT')
+  'L537-538',
+  "At this case's context now, the parent is currently valid, so the fault is that the child's own issued_at falls outside the parent's validity window (section 3.2, a child MUST be issued while the parent is valid). The child's time window also necessarily widens the parent's (TIME_WIDENING): its not_before cannot precede its own issued_at, which here is the parent's not_after, so the window cannot help but extend past the parent's end while remaining non-empty. The pinned sdk_code follows the order both SDK issuers use, issued_at before the facet comparisons; the draft does not fix that order for issuers.",
+  'ISSUED_AT_OUTSIDE_PARENT')
 
 pushIssueChildCase('AD-I06', 'issue_child: parent R, body C1 issued before the parent starts', R,
   mutate(BODY_C1, (b) => {
     b.issued_at = '2026-07-18T21:59:00.000Z'
     b.authority.time.not_before = '2026-07-18T22:00:00.000Z'
   }), 'agent-a', { keys: 'default', revocation_parent: 'active' }, false, 'draft-derived',
-  'L698-699', 'The parent is not yet valid at the moment of issuance.', 'ISSUED_AT_OUTSIDE_PARENT')
+  'L537-538',
+  "At this case's context now, the parent is currently valid, so the fault is that the child's own issued_at falls outside the parent's validity window (section 3.2, a child MUST be issued while the parent is valid): its issued_at is one minute before the parent's own not_before. The pinned sdk_code follows the order both SDK issuers use, issued_at before the facet comparisons; the draft does not fix that order for issuers.",
+  'ISSUED_AT_OUTSIDE_PARENT')
 
 pushIssueChildCase('AD-I07', 'issue_child: parent R revoked', R, clone(BODY_C1), 'agent-a',
   { keys: 'default', revocation_parent: 'revoked' }, false, 'draft-derived',
@@ -1571,6 +1589,28 @@ pushIssueChildCase('AD-I21', 'issue_child: parent R, body C1 plus a stray signat
   'section 3.1 lines 484-490; section 3.6 lines 695-704',
   'Same reasoning as AD-I19, one level deeper in the chain.', 'SCHEMA_INVALID')
 
+const PARENT_MISMATCH_ROOT_NOTE =
+  'The root issuer issues roots only: a child is minted only through the child issuer, which performs the ' +
+  'section 3.6 parent checks, and parent_delegation_id is null only for a root.'
+
+pushIssueRootCase('AD-I22', 'issue_root: body C1 (a valid child body under R), key agent-a',
+  clone(BODY_C1), 'agent-a', false, 'draft-derived',
+  'section 3.6 lines 695-704; section 3.1 line 428',
+  PARENT_MISMATCH_ROOT_NOTE, 'PARENT_MISMATCH')
+
+{
+  const orphanC1 = mutate(BODY_C1, (b) => {
+    b.parent_delegation_id = `sha256:${'a'.repeat(64)}`
+    b.authority.scope.grants = ['*']
+    b.authority.spend = { mode: 'unbounded' }
+    b.authority.depth = { remaining: 255 }
+  })
+  pushIssueRootCase('AD-I23', 'issue_root: an orphan child body with a fabricated parent_delegation_id, key agent-a',
+    orphanC1, 'agent-a', false, 'draft-derived',
+    'section 3.6 lines 695-704; section 3.1 line 428',
+    PARENT_MISMATCH_ROOT_NOTE, 'PARENT_MISMATCH')
+}
+
 // -------------------------------------------------------------------------
 // Budget cases: InMemoryAuthorityBudgetLedger reserve/dispatch/commit/cancel
 // -------------------------------------------------------------------------
@@ -1583,17 +1623,17 @@ const S1_BUDGET = issue(mutate(BODY_C1, (b) => {
   b.subject = 'did:example:agent-b'
   b.nonce = '11111111111111111111111111111111'
   b.authority.spend = { mode: 'bounded', unit: 'iso4217:USD:minor', per_action: '1000', cumulative: '1000' }
-}), 'agent-a')
+}), 'agent-a', P_BUDGET)
 const S2_BUDGET = issue(mutate(BODY_C1, (b) => {
   b.parent_delegation_id = P_BUDGET.delegation_id
   b.subject = 'did:example:agent-c'
   b.nonce = '22222222222222222222222222222222'
   b.authority.spend = { mode: 'bounded', unit: 'iso4217:USD:minor', per_action: '1000', cumulative: '1000' }
-}), 'agent-a')
+}), 'agent-a', P_BUDGET)
 const CB_BUDGET = issue(mutate(BODY_C1, (b) => {
   b.parent_delegation_id = RU_REC.delegation_id
   b.authority.spend = { mode: 'bounded', unit: 'iso4217:USD:minor', per_action: '100', cumulative: '100' }
-}), 'agent-a')
+}), 'agent-a', RU_REC)
 
 const ACTION_REF_A = 'a'.repeat(64)
 const ACTION_REF_B = 'b'.repeat(64)
@@ -1865,7 +1905,7 @@ const conventions = {
 }
 
 const withheld = [
-  { topic: 'Multi-fault chains', reason: 'The draft does not say which failure decides when several steps fail. Only single-fault chains are included; AD-N-H01, AD-N-H02, AD-N-H10 and AD-N-S62 carry an unavoidable later fault and each case explains why the order does not matter for it. For AD-N-S62, the I-JSON failure belongs to the first step of the section 3.3 order (closed schema and canonical values), so it is decided before the unsupported profile it also carries.' },
+  { topic: 'Multi-fault chains', reason: 'Every chain negative changes exactly one thing in an otherwise valid chain. In AD-N-S08, AD-N-S09, AD-N-S10, AD-N-S11, AD-N-S12, AD-N-S13, AD-N-S53, AD-N-S55, AD-N-S56, AD-N-S62, AD-N-U08, AD-N-H01, AD-N-H02 and AD-N-H10, that one change necessarily fails more than one check; each of those cases\' own note names the other checks it cannot avoid also failing. A chain built from two independent faults is withheld instead, because the draft does not settle which failure decides when two unrelated checks fail together. That includes the precedence inside one record between an I-JSON failure and an unknown version (formerly AD-N-S68, which paired an unsupported version with a non-I-JSON subject and is now removed).' },
   { topic: 'Values the draft admits that the TypeScript schema rejects by a grammar the draft does not state', reason: 'A spend unit outside ^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$, and JSON number spellings such as 2.0 or 1e2 in wire input; whether the draft admits them is an open question.' },
   { topic: 'An unknown record_type string: reported unsupported and still judged by the v1 schema', reason: 'A record_type naming some other string is unsupported (UNSUPPORTED_VERSION) but is still judged by the v1 body schema, unlike a recognised record_type paired with an unknown version, which is not. No rule states whether it should be judged.' },
   { topic: 'Key-resolution outcome structure', reason: 'not found, ambiguous, malformed, unreachable, unsupported scheme (L360-369): an open question.' },
