@@ -1,6 +1,6 @@
 # Copyright (c) 2026 Tymofii Pidlisnyi
 # SPDX-License-Identifier: Apache-2.0
-"""Native action_ref: cross-language parity + canonicalization semantics."""
+"""compute_action_ref, the pre-draft-03 compatibility digest: cross-language parity + canonicalization semantics."""
 
 import json
 from pathlib import Path

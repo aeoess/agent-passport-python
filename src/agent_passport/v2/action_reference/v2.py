@@ -1,19 +1,24 @@
 # Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """APS native action reference, draft-pidlisnyi-aps-03 section 4.1 (profile ``aps-action-ref-v2``).
 
-This is the draft-03 native ``action_ref``: a content-addressed identity for one
-authorized action, bound to the acting agent, the exact target, the granted scope,
-the payload actually dispatched, an issuance timestamp, and a nonce. It is
-DISTINCT from :func:`agent_passport.action_ref.compute_action_ref`, which is a
+This is the draft-03 native ``action_ref``: the content-addressed identity of
+one intended action; it commits to the acting agent, the operation, the exact
+target, the payload presented for authorization and dispatch (through
+``payload_ref``), the scopes required, the issuance time and a nonce;
+computing it establishes no authorization, grant or dispatch. It is DISTINCT
+from :func:`agent_passport.action_ref.compute_action_ref`, which is a
 pre-draft-03 compatibility digest over a different preimage and must never be
 presented as an ``action_ref`` or as ``action-ref-v1-jcs-sha256``. It is also
 distinct from the section 4.2 legacy external correlation form.
 
-Mirrors ``src/v2/action-reference/v2.ts`` in the TypeScript SDK: the same
-profile string, the same two domain-separation tags, the same validation
-order and the same rejection of a non-string ``payload_ref``/``issued_at``/
-``nonce`` before the format check runs (no ``String()`` coercion). Canonicalization
-goes through the strict new-write I-JSON JCS in
+Mirrors the TypeScript SDK's ``src/v2/action-reference/v2.ts`` with the same
+profile string and domain-separation tags, giving the same digest for every
+input both accept. Known differences: an empty ``scope_required`` array is
+rejected here (``empty_scope_required``) and accepted by the TypeScript SDK;
+the order of checks is similar but not identical, so an input with several
+faults can be reported under a different code; values nested beyond this
+implementation's recursion limit are rejected with ``nesting_limit``.
+Canonicalization goes through the strict new-write I-JSON JCS in
 :mod:`agent_passport.receipt_core.jcs`, not the legacy canonicalizer.
 """
 
@@ -75,8 +80,10 @@ class ActionReferenceError(ValueError):
     ``missing_member``, ``unknown_member``, ``duplicate_member``,
     ``wrong_profile``, ``not_string``, ``empty_string``, ``bad_hex``,
     ``bad_timestamp``, ``scope_not_array``, ``scope_not_canonical``,
-    ``lone_surrogate``, ``non_i_json``, ``empty_scope_required``, so a caller
-    can branch on the failure without parsing the message.
+    ``lone_surrogate``, ``non_i_json``, ``empty_scope_required``,
+    ``nesting_limit``, so a caller can branch on the failure without parsing
+    the message. ``nesting_limit`` is an implementation limit of this Python
+    port, not a rule of the draft; the TypeScript SDK accepts deeper values.
 
     Subclasses ``ValueError`` so an existing fail-closed handler that catches
     ``ValueError`` around validation or canonicalization keeps working.
@@ -86,6 +93,26 @@ class ActionReferenceError(ValueError):
         super().__init__(message)
         #: Stable machine-readable failure code. See the class docstring.
         self.code = code
+
+
+def _classify_i_json_error(message: str) -> str:
+    """Classify a jcs error message into a stable ActionReferenceError code.
+
+    An unpaired UTF-16 surrogate message always ENDS WITH the exact suffix
+    ": unpaired UTF-16 surrogate" (see ``_assert_scalar_string`` in
+    :mod:`agent_passport.receipt_core.jcs`); the strict parser's duplicate-
+    member message is EXACTLY "$: duplicate object member". Matching on
+    these exact forms, and not on a substring the message merely contains,
+    matters because both messages can embed a caller-controlled JSON path or
+    member name: a payload key named "surrogate" holding a non-finite number,
+    or an extra member named "duplicate object member", must not be
+    misclassified just because that text appears somewhere in the message.
+    """
+    if message.endswith(": unpaired UTF-16 surrogate"):
+        return "lone_surrogate"
+    if message == "$: duplicate object member":
+        return "duplicate_member"
+    return "non_i_json"
 
 
 def _is_leap_year(year: int) -> bool:
@@ -133,6 +160,8 @@ def validate_action_reference_input_v2(candidate: object) -> None:
     8. ``issued_at`` is a string matching the canonical RFC 3339 UTC
        millisecond form, naming a day that exists in that month under the
        proleptic Gregorian calendar (else ``not_string`` / ``bad_timestamp``).
+       Second 60 (a leap second) is rejected; the draft does not say whether
+       leap seconds are admissible, so this rejection is provisional.
     9. ``nonce`` is a string matching 32 lowercase hex characters (else
        ``not_string`` / ``bad_hex``).
     """
@@ -153,9 +182,14 @@ def validate_action_reference_input_v2(candidate: object) -> None:
 
     try:
         assert_i_json(obj)
+    except RecursionError as exc:
+        raise ActionReferenceError(
+            "action reference input: value nested too deeply for this implementation",
+            "nesting_limit",
+        ) from exc
     except IJsonValidationError as exc:
-        code = "lone_surrogate" if "surrogate" in str(exc) else "non_i_json"
-        raise ActionReferenceError(str(exc), code) from exc
+        message = str(exc)
+        raise ActionReferenceError(message, _classify_i_json_error(message)) from exc
 
     if obj["profile"] != ACTION_REF_V2_PROFILE:
         raise ActionReferenceError(
@@ -235,11 +269,18 @@ def compute_action_ref_v2(input_object: dict) -> str:
     """Compute the draft-03 section 4.1 ``action_ref`` (lowercase hex SHA-256).
 
     Validates first, then hashes the domain-separation tag concatenated with
-    the strict RFC 8785 JCS bytes of `input_object`, matching
-    ``computeActionRefV2`` in the TS reference exactly.
+    the strict RFC 8785 JCS bytes of `input_object`, giving the same digest
+    as ``computeActionRefV2`` in the TypeScript SDK for any input both
+    accept.
     """
     validate_action_reference_input_v2(input_object)
-    canonical = strict_jcs(input_object)
+    try:
+        canonical = strict_jcs(input_object)
+    except RecursionError as exc:
+        raise ActionReferenceError(
+            "action reference input: value nested too deeply for this implementation",
+            "nesting_limit",
+        ) from exc
     return hashlib.sha256(ACTION_REF_V2_DOMAIN + canonical.encode("utf-8")).hexdigest()
 
 
@@ -255,9 +296,14 @@ def compute_payload_ref_v1(payload: object) -> str:
     """
     try:
         canonical = strict_jcs(payload)
+    except RecursionError as exc:
+        raise ActionReferenceError(
+            "payload: value nested too deeply for this implementation",
+            "nesting_limit",
+        ) from exc
     except IJsonValidationError as exc:
-        code = "lone_surrogate" if "surrogate" in str(exc) else "non_i_json"
-        raise ActionReferenceError(str(exc), code) from exc
+        message = str(exc)
+        raise ActionReferenceError(message, _classify_i_json_error(message)) from exc
     return hashlib.sha256(PAYLOAD_REF_V1_DOMAIN + canonical.encode("utf-8")).hexdigest()
 
 
@@ -294,6 +340,10 @@ def create_action_reference_input_v2(
         if type(scope) is not str:
             raise ActionReferenceError(
                 "scope_required: element is not a string", "not_string"
+            )
+        if len(scope) == 0:
+            raise ActionReferenceError(
+                "scope_required: element must not be empty", "empty_string"
             )
         # Checked before sorting: the sort key encodes to UTF-8, which has no
         # encoding for an unpaired surrogate and would raise a bare
@@ -341,15 +391,14 @@ def parse_action_reference_input_v2(raw: str) -> dict:
     """
     try:
         parsed = parse_strict_i_json(raw)
+    except RecursionError as exc:
+        raise ActionReferenceError(
+            "action reference input: value nested too deeply for this implementation",
+            "nesting_limit",
+        ) from exc
     except IJsonValidationError as exc:
         message = str(exc)
-        if "duplicate object member" in message:
-            code = "duplicate_member"
-        elif "surrogate" in message:
-            code = "lone_surrogate"
-        else:
-            code = "non_i_json"
-        raise ActionReferenceError(message, code) from exc
+        raise ActionReferenceError(message, _classify_i_json_error(message)) from exc
     validate_action_reference_input_v2(parsed)
     return cast(dict, parsed)
 

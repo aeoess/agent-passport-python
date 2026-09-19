@@ -1,5 +1,5 @@
 # Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
-"""The legacy action_ref timestamp accepts only what TypeScript can recompute.
+"""The compute_action_ref (pre-draft-03 compatibility digest) timestamp accepts only what TypeScript can recompute.
 
 `datetime.fromisoformat` is a convenience parser, not RFC 3339. It took a space
 in place of the date-time separator, and it rolled hour 24 into the next day.
@@ -30,7 +30,7 @@ class TestTheTwoSpellingsThatLeftTypeScriptBehind:
 
     def test_hour_24_is_refused(self):
         # It used to normalize to 2026-04-06T00:00:00Z, giving one instant two
-        # spellings and therefore two action_refs.
+        # spellings and therefore two digests.
         with pytest.raises(ValueError, match="hour 24"):
             _normalize_timestamp("2026-04-05T24:00:00Z")
 

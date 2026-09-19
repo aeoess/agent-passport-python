@@ -1,13 +1,12 @@
 # Copyright 2026 Tymofii Pidlisnyi. Apache-2.0 license. See LICENSE.
 """The three action-reference forms are distinct primitives with distinct preimages.
 
-For the same underlying action, compute_action_ref (pre-draft-03
-compatibility digest), compute_external_action_ref_v1 (draft-pidlisnyi-aps-03
-section 4.2, action-ref-v1-jcs-sha256) and compute_action_ref_v2
-(draft-pidlisnyi-aps-03 section 4.1, aps-action-ref-v2) MUST produce three
-different digests: they hash different preimages under different rules, and
-a caller must never treat one as interchangeable with another (see each
-function's own docstring for what it is and is not).
+For this action, compute_action_ref (pre-draft-03 compatibility digest),
+compute_external_action_ref_v1 (draft-pidlisnyi-aps-03 section 4.2,
+action-ref-v1-jcs-sha256) and compute_action_ref_v2 (draft-pidlisnyi-aps-03
+section 4.1, aps-action-ref-v2) give three different values, as expected
+from their different preimages: they hash different fields under different
+rules (see each function's own docstring for what it is and is not).
 """
 
 from __future__ import annotations
@@ -55,8 +54,8 @@ def test_three_forms_give_three_different_digests():
 
     digests = {pre_draft, external_v1, native_v2}
     assert len(digests) == 3, (
-        "the pre-draft, section 4.2, and section 4.1 forms must never collide "
-        f"for the same underlying action: {digests}"
+        "expected three different values from three different preimages "
+        f"for this action: {digests}"
     )
 
     for digest in (pre_draft, external_v1, native_v2):
