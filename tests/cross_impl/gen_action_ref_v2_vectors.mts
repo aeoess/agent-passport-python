@@ -94,7 +94,7 @@ const FAILURE_CODES = [
   { code: 'scope_not_array', meaning: 'scope_required is not an array', draft_lines: '794' },
   { code: 'scope_not_canonical', meaning: 'scope array not NFC, not sorted by UTF-8 bytes, or not duplicate-free', draft_lines: '794-796, 814, 822-824' },
   { code: 'lone_surrogate', meaning: 'a string contains an unpaired UTF-16 surrogate', draft_lines: '819-821' },
-  { code: 'non_i_json', meaning: 'a value that is not I-JSON (unsafe integer, non-finite number, invalid JSON text)', draft_lines: '814, 804-805' },
+  { code: 'non_i_json', meaning: 'a value that is not I-JSON (unsafe integer, non-finite number, invalid JSON text, or a Unicode noncharacter in a string or member name at any depth, RFC 7493 section 2.1)', draft_lines: '814, 804-805' },
   { code: 'empty_scope_required', meaning: 'scope_required is an empty array', draft_lines: '798-800', note: 'no case uses it: the draft leaves the default open, see withheld' },
   { code: 'nesting_limit', meaning: 'a value nested too deeply for an implementation', draft_lines: 'none', note: 'an implementation limit, not a draft rule; no case uses it' },
 ] as const
@@ -191,6 +191,18 @@ const INTEGER_BOUNDARY_NOTE =
   'SDK policy for a construction whose TypeScript implementation was reviewed against the draft text and found to ' +
   'follow it, not a value the draft text fixes on its own.'
 
+const NONCHARACTER_REJECT_NOTE =
+  'draft-pidlisnyi-aps-03 lines 813-815 require a verifier to reject an object carrying a non-I-JSON value; read ' +
+  'with line 204 (JCS runs only over validated I-JSON) and RFC 7493 section 2.1, an I-JSON string or member name ' +
+  'must not contain a Unicode noncharacter (U+FDD0 through U+FDEF, or any code point whose low 16 bits are FFFE ' +
+  'or FFFF). This rejection applies at every section 4.1 entry point: object, JSON text, create and payload.'
+
+const NONCHARACTER_ACCEPT_NOTE =
+  'U+FFFD and U+1F600 are ordinary code points, not Unicode noncharacters, so RFC 7493 section 2.1 admits them ' +
+  'and this input is accepted. The expected digest is computed from the section 4.1 formula (APS-ACTION-REF-V2, ' +
+  'one zero byte, JCS of the input object) with canonicalizeJCS and checked against computeActionRefV2, the same ' +
+  'method the file uses for its other draft-derived digests.'
+
 const payloadCases: PayloadCase[] = [
   { id: 'PR-P01', payload: { amount: '5000', currency: 'USD', merchant: 'example' }, expected: { result: 'accept' } },
   { id: 'PR-P02', payload: {}, expected: { result: 'accept' } },
@@ -250,6 +262,34 @@ for (const c of payloadCases) {
     expected_provenance: provenance,
     draft_lines,
     ...(c.provenance_note ? { provenance_note: c.provenance_note } : {}),
+  })
+}
+
+// -------------------------------------------------------------------------
+// payload_ref cases: section 4.1 rejects noncharacters (item 4). Every code
+// point below is written as an explicit \u escape (a surrogate pair for a
+// supplementary-plane code point), never a literal noncharacter byte.
+// -------------------------------------------------------------------------
+
+{
+  // U+1FFFE, a noncharacter, surrogate pair \uD83F\uDFFE.
+  const payload = { note: 'x' + '\uD83F\uDFFE' }
+  let expectedOut: Record<string, unknown>
+  try {
+    const ref = computePayloadRefV1(payload)
+    fail(`PR-N04: TS accepted a payload expected to reject (non_i_json): ${ref}`)
+  } catch (e) {
+    expectedOut = { result: 'reject', failure: 'non_i_json', ts_error_message: (e as Error).message }
+  }
+  record('payload', 'draft-derived')
+  cases.push({
+    id: 'PR-N04',
+    entry: 'payload',
+    input: payload,
+    expected: expectedOut,
+    expected_provenance: 'draft-derived',
+    draft_lines: '813-815, 204',
+    provenance_note: NONCHARACTER_REJECT_NOTE,
   })
 }
 
@@ -510,6 +550,83 @@ for (const c of secondSixtyRejectCases) {
 }
 
 // -------------------------------------------------------------------------
+// action_ref cases, entry "object": section 4.1 rejects noncharacters
+// (item 4). Draft lines 813-815 require a verifier to reject an object
+// carrying a non-I-JSON value; read with line 204 (JCS runs only over
+// validated I-JSON) and RFC 7493 section 2.1, a noncharacter code point
+// (U+FDD0 through U+FDEF, or any code point whose low 16 bits are FFFE or
+// FFFF) inside a string or member name is not I-JSON. The two accept cases
+// below use ordinary code points (U+FFFD, U+1F600) that are not
+// noncharacters, so their expected digest is the section 4.1 formula,
+// checked against computeActionRefV2 rather than simply trusted from it.
+// Every code point is written as an explicit \u escape (a surrogate pair
+// for a supplementary-plane code point), never a literal noncharacter or
+// supplementary-plane byte.
+// -------------------------------------------------------------------------
+
+{
+  const noncharacterAcceptCases: { id: string; input: Record<string, unknown> }[] = [
+    // U+FFFD (the replacement character) is an ordinary code point, not a noncharacter.
+    { id: 'AR-P21', input: base({ agent_id: BASE.agent_id + '\uFFFD' }) },
+    // U+1F600, surrogate pair \uD83D\uDE00, is an ordinary code point, not a noncharacter.
+    { id: 'AR-P22', input: base({ target: BASE.target + '\uD83D\uDE00' }) },
+  ]
+  for (const c of noncharacterAcceptCases) {
+    const digest = createHash('sha256')
+      .update('APS-ACTION-REF-V2\0' + canonicalizeJCS(c.input), 'utf8')
+      .digest('hex')
+    try {
+      const tsRef = computeActionRefV2(c.input)
+      if (tsRef !== digest) {
+        fail(`${c.id}: TS computeActionRefV2 digest ${tsRef} does not match the section 4.1 formula digest ${digest}`)
+      }
+    } catch (e) {
+      fail(`${c.id}: TS rejected an input expected to accept per the section 4.1 formula: ${(e as Error).message}`)
+    }
+    actionRefById.set(c.id, digest)
+    record('object', 'draft-derived')
+    cases.push({
+      id: c.id,
+      entry: 'object',
+      input: c.input,
+      expected: { result: 'accept', action_ref: digest },
+      expected_provenance: 'draft-derived',
+      draft_lines: '813-815, 204',
+      provenance_note: NONCHARACTER_ACCEPT_NOTE,
+    })
+  }
+
+  const noncharacterRejectCases: { id: string; input: Record<string, unknown> }[] = [
+    // U+FDD0, a noncharacter, appended to agent_id.
+    { id: 'AR-N41', input: base({ agent_id: BASE.agent_id + '\uFDD0' }) },
+    // U+FFFF, a noncharacter, appended to target.
+    { id: 'AR-N42', input: base({ target: BASE.target + '\uFFFF' }) },
+    // U+10FFFF, a noncharacter, surrogate pair \uDBFF\uDFFF, inside a scope
+    // element that still sorts after "commerce:read" by UTF-8 bytes.
+    { id: 'AR-N43', input: base({ scope_required: ['commerce:read', 'commerce:write' + '\uDBFF\uDFFF'] }) },
+  ]
+  for (const c of noncharacterRejectCases) {
+    let expectedOut: Record<string, unknown>
+    try {
+      const ref = computeActionRefV2(c.input)
+      fail(`${c.id}: TS accepted an input expected to reject (non_i_json): ${ref}`)
+    } catch (e) {
+      expectedOut = { result: 'reject', failure: 'non_i_json', ts_error_message: (e as Error).message }
+    }
+    record('object', 'draft-derived')
+    cases.push({
+      id: c.id,
+      entry: 'object',
+      input: c.input,
+      expected: expectedOut,
+      expected_provenance: 'draft-derived',
+      draft_lines: '813-815, 204',
+      provenance_note: NONCHARACTER_REJECT_NOTE,
+    })
+  }
+}
+
+// -------------------------------------------------------------------------
 // action_ref cases, entry "json"
 // -------------------------------------------------------------------------
 
@@ -640,6 +757,34 @@ for (const c of jsonCases) {
 }
 
 // -------------------------------------------------------------------------
+// action_ref cases, entry "json": section 4.1 rejects noncharacters (item 4).
+// -------------------------------------------------------------------------
+
+{
+  // The base valid input's JSON text, with action_type's value carrying a
+  // literal JSON \u escape for U+FFFF (a noncharacter) rather than a raw
+  // code unit, so the noncharacter survives strict JSON parsing intact.
+  const AJ_N06_RAW = JSON.stringify(base({})).replace('commerce_preflight', 'commerce_preflight\\uffff')
+  let expectedOut: Record<string, unknown>
+  try {
+    const ref = computeActionRefV2FromJson(AJ_N06_RAW)
+    fail(`AJ-N06: TS accepted a JSON document expected to reject (non_i_json): ${ref}`)
+  } catch (e) {
+    expectedOut = { result: 'reject', failure: 'non_i_json', ts_error_message: (e as Error).message }
+  }
+  record('json', 'draft-derived')
+  cases.push({
+    id: 'AJ-N06',
+    entry: 'json',
+    input_json: AJ_N06_RAW,
+    expected: expectedOut,
+    expected_provenance: 'draft-derived',
+    draft_lines: '813-815, 204',
+    provenance_note: NONCHARACTER_REJECT_NOTE,
+  })
+}
+
+// -------------------------------------------------------------------------
 // action_ref cases, entry "create"
 // -------------------------------------------------------------------------
 
@@ -697,6 +842,40 @@ for (const c of createCases) {
     expected: expectedOut,
     expected_provenance: provenance,
     draft_lines,
+  })
+}
+
+// -------------------------------------------------------------------------
+// action_ref cases, entry "create": section 4.1 rejects noncharacters
+// (item 4).
+// -------------------------------------------------------------------------
+
+{
+  const createInput = {
+    agent_id: BASE.agent_id,
+    action_type: BASE.action_type,
+    target: 'https://api.example/pay' + '\uFDEF', // U+FDEF, a noncharacter.
+    payload_ref: BASE.payload_ref,
+    scope_required: ['commerce:read'],
+    issued_at: BASE.issued_at,
+    nonce: BASE.nonce,
+  }
+  let expectedOut: Record<string, unknown>
+  try {
+    const canonical = createActionReferenceInputV2(createInput)
+    fail(`AC-N02: TS accepted a create input expected to reject (non_i_json): ${JSON.stringify(canonical)}`)
+  } catch (e) {
+    expectedOut = { result: 'reject', failure: 'non_i_json', ts_error_message: (e as Error).message }
+  }
+  record('create', 'draft-derived')
+  cases.push({
+    id: 'AC-N02',
+    entry: 'create',
+    create_input: createInput,
+    expected: expectedOut,
+    expected_provenance: 'draft-derived',
+    draft_lines: '813-815, 204',
+    provenance_note: NONCHARACTER_REJECT_NOTE,
   })
 }
 

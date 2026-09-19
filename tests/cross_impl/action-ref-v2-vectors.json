@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 section 4.1 (published text lines 751-832)",
   "generated_from": {
     "repository": "aeoess/agent-passport-system",
-    "commit": "9ba9acbb4eafc567644b0a4cc681d043cd60985d",
+    "commit": "02472e0aff190a6a83b15653a0cb6bc8a4cdd932",
     "module": "src/v2/action-reference/v2.ts",
     "generator": "tests/cross_impl/gen_action_ref_v2_vectors.mts"
   },
@@ -74,7 +74,7 @@
     },
     {
       "code": "non_i_json",
-      "meaning": "a value that is not I-JSON (unsafe integer, non-finite number, invalid JSON text)",
+      "meaning": "a value that is not I-JSON (unsafe integer, non-finite number, invalid JSON text, or a Unicode noncharacter in a string or member name at any depth, RFC 7493 section 2.1)",
       "draft_lines": "814, 804-805"
     },
     {
@@ -97,15 +97,15 @@
     }
   ],
   "counts": {
-    "total": 81,
+    "total": 89,
     "by_entry": {
-      "payload": 12,
-      "object": 59,
-      "json": 6,
-      "create": 4
+      "payload": 13,
+      "object": 64,
+      "json": 7,
+      "create": 5
     },
     "by_expected_provenance": {
-      "draft-derived": 58,
+      "draft-derived": 66,
       "ts-conformant-regression": 23
     }
   },
@@ -305,6 +305,21 @@
       },
       "expected_provenance": "draft-derived",
       "draft_lines": "819-821"
+    },
+    {
+      "id": "PR-N04",
+      "entry": "payload",
+      "input": {
+        "note": "x🿾"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "non_i_json",
+        "ts_error_message": "$.note: noncharacter"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "813-815, 204",
+      "provenance_note": "draft-pidlisnyi-aps-03 lines 813-815 require a verifier to reject an object carrying a non-I-JSON value; read with line 204 (JCS runs only over validated I-JSON) and RFC 7493 section 2.1, an I-JSON string or member name must not contain a Unicode noncharacter (U+FDD0 through U+FDEF, or any code point whose low 16 bits are FFFE or FFFF). This rejection applies at every section 4.1 entry point: object, JSON text, create and payload."
     },
     {
       "id": "AR-P01",
@@ -1722,6 +1737,129 @@
       "provenance_note": "RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; minute 58 is not minute 59."
     },
     {
+      "id": "AR-P21",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK�",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "4f4f7ad8a3f605439d320628672785dc17a5d65c7c39c595dbc38f2c77a59d61"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "813-815, 204",
+      "provenance_note": "U+FFFD and U+1F600 are ordinary code points, not Unicode noncharacters, so RFC 7493 section 2.1 admits them and this input is accepted. The expected digest is computed from the section 4.1 formula (APS-ACTION-REF-V2, one zero byte, JCS of the input object) with canonicalizeJCS and checked against computeActionRefV2, the same method the file uses for its other draft-derived digests."
+    },
+    {
+      "id": "AR-P22",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments😀",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "304af5ee9145af8df1bd2b8f5b1c0c2a55b2f832cdac76831f9416100ab49efc"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "813-815, 204",
+      "provenance_note": "U+FFFD and U+1F600 are ordinary code points, not Unicode noncharacters, so RFC 7493 section 2.1 admits them and this input is accepted. The expected digest is computed from the section 4.1 formula (APS-ACTION-REF-V2, one zero byte, JCS of the input object) with canonicalizeJCS and checked against computeActionRefV2, the same method the file uses for its other draft-derived digests."
+    },
+    {
+      "id": "AR-N41",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK﷐",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "non_i_json",
+        "ts_error_message": "$.agent_id: noncharacter"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "813-815, 204",
+      "provenance_note": "draft-pidlisnyi-aps-03 lines 813-815 require a verifier to reject an object carrying a non-I-JSON value; read with line 204 (JCS runs only over validated I-JSON) and RFC 7493 section 2.1, an I-JSON string or member name must not contain a Unicode noncharacter (U+FDD0 through U+FDEF, or any code point whose low 16 bits are FFFE or FFFF). This rejection applies at every section 4.1 entry point: object, JSON text, create and payload."
+    },
+    {
+      "id": "AR-N42",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments￿",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "non_i_json",
+        "ts_error_message": "$.target: noncharacter"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "813-815, 204",
+      "provenance_note": "draft-pidlisnyi-aps-03 lines 813-815 require a verifier to reject an object carrying a non-I-JSON value; read with line 204 (JCS runs only over validated I-JSON) and RFC 7493 section 2.1, an I-JSON string or member name must not contain a Unicode noncharacter (U+FDD0 through U+FDEF, or any code point whose low 16 bits are FFFE or FFFF). This rejection applies at every section 4.1 entry point: object, JSON text, create and payload."
+    },
+    {
+      "id": "AR-N43",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write􏿿"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "non_i_json",
+        "ts_error_message": "$.scope_required[1]: noncharacter"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "813-815, 204",
+      "provenance_note": "draft-pidlisnyi-aps-03 lines 813-815 require a verifier to reject an object carrying a non-I-JSON value; read with line 204 (JCS runs only over validated I-JSON) and RFC 7493 section 2.1, an I-JSON string or member name must not contain a Unicode noncharacter (U+FDD0 through U+FDEF, or any code point whose low 16 bits are FFFE or FFFF). This rejection applies at every section 4.1 entry point: object, JSON text, create and payload."
+    },
+    {
       "id": "AJ-P01",
       "entry": "json",
       "input_json": "{\"nonce\": \"00112233445566778899aabbccddeeff\", \"issued_at\": \"2026-04-08T12:00:00.000Z\", \"scope_required\": [\"commerce:read\",\"commerce:write\"], \"payload_ref\": \"9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf\", \"target\": \"https://api.example/payments\", \"action_type\": \"commerce_preflight\", \"agent_id\": \"did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK\", \"profile\": \"aps-action-ref-v2\"}",
@@ -1792,6 +1930,19 @@
       "expected_provenance": "ts-conformant-regression",
       "draft_lines": "814, 804-805",
       "provenance_note": "The draft text rejects this document but admits two failure classes here (a non-I-JSON value, or an unknown member). The TypeScript SDK reports non_i_json, and this case pins that class."
+    },
+    {
+      "id": "AJ-N06",
+      "entry": "json",
+      "input_json": "{\"profile\":\"aps-action-ref-v2\",\"agent_id\":\"did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK\",\"action_type\":\"commerce_preflight\\uffff\",\"target\":\"https://api.example/payments\",\"payload_ref\":\"9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf\",\"scope_required\":[\"commerce:read\",\"commerce:write\"],\"issued_at\":\"2026-04-08T12:00:00.000Z\",\"nonce\":\"00112233445566778899aabbccddeeff\"}",
+      "expected": {
+        "result": "reject",
+        "failure": "non_i_json",
+        "ts_error_message": "$.action_type: noncharacter"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "813-815, 204",
+      "provenance_note": "draft-pidlisnyi-aps-03 lines 813-815 require a verifier to reject an object carrying a non-I-JSON value; read with line 204 (JCS runs only over validated I-JSON) and RFC 7493 section 2.1, an I-JSON string or member name must not contain a Unicode noncharacter (U+FDD0 through U+FDEF, or any code point whose low 16 bits are FFFE or FFFF). This rejection applies at every section 4.1 entry point: object, JSON text, create and payload."
     },
     {
       "id": "AC-P01",
@@ -1920,6 +2071,29 @@
       },
       "expected_provenance": "draft-derived",
       "draft_lines": "794-796, 814, 822-824"
+    },
+    {
+      "id": "AC-N02",
+      "entry": "create",
+      "create_input": {
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/pay﷯",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read"
+        ],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "non_i_json",
+        "ts_error_message": "$.target: noncharacter"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "813-815, 204",
+      "provenance_note": "draft-pidlisnyi-aps-03 lines 813-815 require a verifier to reject an object carrying a non-I-JSON value; read with line 204 (JCS runs only over validated I-JSON) and RFC 7493 section 2.1, an I-JSON string or member name must not contain a Unicode noncharacter (U+FDD0 through U+FDEF, or any code point whose low 16 bits are FFFE or FFFF). This rejection applies at every section 4.1 entry point: object, JSON text, create and payload."
     }
   ]
 }
