@@ -14,11 +14,12 @@ fail-closed difference from the TypeScript SDK's ``Number.isInteger`` check,
 kept because Python happens to be able to tell the difference, not because
 the draft asks for it.
 
-The one exception is ``_has_non_i_json_value`` below, which uses
-``isinstance`` on purpose: its job is to catch a value that only an
-in-memory Python caller (never JSON.parse or json.loads) could produce, so
-it must recognize a subclass of dict, list or str as the object, array or
-string it is impersonating, not let the subclass slip past unexamined.
+``_has_non_i_json_value`` below applies the same exact-type rule to the
+whole record, recursively: the values it checks are exactly the values RFC
+8785 JCS canonicalizes and Ed25519 signs, so a dict, list or str subclass
+(``collections.OrderedDict``, a tuple, a custom str subclass, and so on) is
+not plain JSON data and is rejected wherever it appears, not walked as the
+object, array or string it merely resembles.
 
 No timestamp in this module is ever parsed with ``datetime``: canonical
 timestamps are validated and compared as strings, using integer calendar
@@ -115,64 +116,107 @@ def _is_surrogate_or_noncharacter(code_point: int) -> bool:
     )
 
 
+class _LeaveContainer:
+    """Internal marker: pop a dict's or list's id() off the walk's path.
+
+    Pushed onto the stack right after the walk enters a dict or list, and
+    popped back off (removing that container's id from ``path_ids``) once
+    every item queued for it has been processed. This is what distinguishes
+    a cycle from a container merely reachable twice: while a container's
+    subtree is still being walked, its id stays in ``path_ids``, so meeting
+    it again before this marker comes back around is a cycle; once this
+    marker is reached, the id is gone, so meeting that same container again
+    through a different, non-overlapping branch is walked again as fresh.
+    """
+
+    __slots__ = ("container_id",)
+
+    def __init__(self, container_id: int) -> None:
+        self.container_id = container_id
+
+
 def _has_non_i_json_value(value) -> bool:
-    """True if value, or anything nested inside it, is not I-JSON.
+    """True if value, or anything nested inside it, is not plain JSON data.
 
-    RFC 7493 section 2.1 (I-JSON) forbids a surrogate or a noncharacter code
-    point in a string, and RFC 8259 admits only finite numbers; anything
-    that is not a string, a finite number, a bool, null, an object or an
-    array is not JSON at all. This walks the whole value looking for a
-    violation of any of that, at any depth, including inside a nested object
-    whose own "profile" field names a profile this package does not support
-    (an unsupported profile does not stop this walk from covering the rest
-    of that object).
+    The values this checks are exactly the values RFC 8785 JCS canonicalizes
+    and Ed25519 signs, so every one of them is tested by its exact runtime
+    type, never by what it merely behaves like, can be iterated as, or can
+    be read through: a value counts as an object, an array, a string, a
+    number or a boolean only when ``type(v) is dict``, ``type(v) is list``,
+    ``type(v) is str``, ``type(v) is int``/``type(v) is float``, or
+    ``type(v) is bool`` says so. A dict, list or str subclass
+    (``collections.OrderedDict``, a tuple, a custom str subclass, and so on)
+    is not plain JSON data and stops the walk right there, exactly as a set
+    or a bytes object does; the walk never falls back to isinstance and
+    never reads such a value as the object, array or string it resembles.
+    A dict's own keys are held to the same rule: a key is only ever examined
+    as a string when ``type(key) is str``.
 
-    Because this can be handed an arbitrary in-memory Python value rather
-    than only the output of json.loads, it uses isinstance rather than this
-    module's usual exact-type checks: a dict subclass such as
-    collections.OrderedDict is still walked as an object (and every one of
-    its keys must be a str instance, itself checked for a surrogate or
-    noncharacter), a list or a tuple is walked as an array, and a str
-    subclass is still checked as a string. A float that is NaN or infinite
-    is not I-JSON. A value of any other type at all, other than int, float,
-    bool or None, for example a set or a bytes object, is not I-JSON either
-    and stops the walk right there.
+    A string is not plain JSON data if it contains a UTF-16 surrogate or an
+    RFC 7493 section 2.1 noncharacter code point (checked per string, at any
+    depth, including inside a nested object whose own "profile" field names
+    a profile this package does not support: an unsupported profile does
+    not stop this walk from covering the rest of that object). A float is
+    not plain JSON data unless it is finite. An int is not plain JSON data
+    if converting it to float overflows (``float(value)`` raising
+    ``OverflowError``): every JSON number this package signs is
+    canonicalized as an IEEE 754 double, so an integer literal too large for
+    that (for example a 400-digit number, which an unbounded-precision JSON
+    parser would otherwise decode exactly) is rejected here rather than
+    signed as a value no other implementation would derive the same bytes
+    from. ``None`` is plain JSON data (JSON null).
 
-    The walk is iterative, using an explicit stack rather than recursion,
-    and tracks the id() of every dict, list or tuple it has already queued
-    so a value holding a reference cycle terminates instead of looping
-    forever. It never raises.
+    The walk is iterative, using an explicit stack rather than recursion. It
+    tracks, in ``path_ids``, the id() of every dict or list currently on the
+    walk's own path from the root, pushing a ``_LeaveContainer`` marker right
+    after entering one and discarding its id when that marker is popped back
+    off: a container that contains itself at any depth (its id is still on
+    the path when the walk reaches it again) is not plain JSON data, while a
+    container reachable twice without a cycle is walked again, fresh, once
+    its first occurrence's marker has cleared its id. It never raises.
     """
 
     def is_ill_formed_string(text) -> bool:
         return any(_is_surrogate_or_noncharacter(ord(ch)) for ch in text)
 
-    stack = [value]
-    seen_container_ids: set[int] = set()
+    stack: list = [value]
+    path_ids: set[int] = set()
     while stack:
         current = stack.pop()
-        if isinstance(current, str):
+        if type(current) is _LeaveContainer:
+            path_ids.discard(current.container_id)
+            continue
+        if type(current) is str:
             if is_ill_formed_string(current):
                 return True
-        elif isinstance(current, dict):
+        elif type(current) is dict:
             identity = id(current)
-            if identity in seen_container_ids:
-                continue
-            seen_container_ids.add(identity)
+            if identity in path_ids:
+                return True
+            path_ids.add(identity)
+            stack.append(_LeaveContainer(identity))
             for key, item in current.items():
-                if not isinstance(key, str) or is_ill_formed_string(key):
+                if type(key) is not str or is_ill_formed_string(key):
                     return True
                 stack.append(item)
-        elif isinstance(current, (list, tuple)):
+        elif type(current) is list:
             identity = id(current)
-            if identity in seen_container_ids:
-                continue
-            seen_container_ids.add(identity)
+            if identity in path_ids:
+                return True
+            path_ids.add(identity)
+            stack.append(_LeaveContainer(identity))
             stack.extend(current)
-        elif isinstance(current, float):
+        elif type(current) is bool:
+            pass
+        elif type(current) is int:
+            try:
+                float(current)
+            except OverflowError:
+                return True
+        elif type(current) is float:
             if not math.isfinite(current):
                 return True
-        elif isinstance(current, bool) or isinstance(current, int) or current is None:
+        elif current is None:
             pass
         else:
             return True
@@ -258,8 +302,8 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
     # by UNSUPPORTED_VERSION, and otherwise UNSUPPORTED_VERSION alone.
     record_type_value = top.get("record_type")
     version_value = top.get("version")
-    if record_type_value == AUTHORITY_DELEGATION_RECORD_TYPE and type(version_value) is str and (
-        version_value != AUTHORITY_DELEGATION_VERSION
+    if type(record_type_value) is str and record_type_value == AUTHORITY_DELEGATION_RECORD_TYPE and (
+        type(version_value) is str and version_value != AUTHORITY_DELEGATION_VERSION
     ):
         unsupported: list[AuthorityFailure] = []
         if _has_non_i_json_value(top):

@@ -1055,6 +1055,30 @@ class _NoncharacterStr(str):
     string built as a subclass instance rather than a plain str."""
 
 
+class _RecordTypeAlias(str):
+    """A str subclass equal by content to the v1 record_type, used to check
+    that validate_authority_delegation_shape's recognised-type branch tests
+    record_type by exact type, not merely by ==."""
+
+
+class _SubjectAliasKey(str):
+    """A str subclass whose own character data is "subjectX" but that
+    compares and hashes exactly as the plain string "subject", so a Python
+    dict lookup or a set-equality check (as _exact_keys performs) treats it
+    as interchangeable with "subject" while an encoder that reads a key's
+    character data directly, as RFC 8785 JCS does, would use "subjectX" for
+    the member name instead."""
+
+    def __new__(cls):
+        return str.__new__(cls, "subjectX")
+
+    def __eq__(self, other):
+        return str.__eq__("subject", other)
+
+    def __hash__(self):
+        return str.__hash__("subject")
+
+
 def _bare_valid_record(authority: dict) -> dict:
     """A record with correctly formatted (but not cryptographically real)
     delegation_id, signature and nonce fields, for exercising the shape and
@@ -1129,6 +1153,138 @@ class TestNonIJsonValuesAnywhereInRecord:
         record = issue_authority_delegation(_root_body(nonce="00" * 16), seed)
         result = _verify_one(record, public_key)
         assert result.state == "valid"
+
+
+class TestDictKeyTypeMustBeExactStr:
+    """Round 2 of the requirement text: a dict key is examined as a field
+    name only when type(key) is str, never merely when it compares and
+    hashes as one. Without that, a key built to compare and hash as
+    "subject" while holding different character data would pass both
+    _exact_keys's set comparison and a plain top["subject"] lookup, making
+    the record look like an ordinary valid v1 body with every field
+    present, and a canonicalizer that reads the key's own character data
+    (as RFC 8785 JCS does) would sign a member name the schema check never
+    saw."""
+
+    def test_key_that_compares_as_subject_but_reads_as_subjectx_is_schema_invalid(self):
+        record = _bare_valid_record(_authority())
+        alias = _SubjectAliasKey()
+        assert alias == "subject" and hash(alias) == hash("subject")
+        record[alias] = record.pop("subject")
+
+        result = _verify_one(record, "unused")
+
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID"]
+
+
+class TestContainerTypeItselfMustBeExact:
+    """Round 2 of the requirement text applied completely: a tuple, an
+    OrderedDict or a str subclass is not plain JSON data because of its own
+    runtime type, not only because of what it might hold. Each value below
+    is otherwise an unremarkable scope grants value (one valid-looking
+    grant), which isolates the container-type check itself from the
+    noncharacter-content case TestNonIJsonValuesAnywhereInRecord already
+    covers above. Each is placed (a) inside a v1 facet, (b) inside a facet
+    with an unsupported profile, and (c) inside a record whose version is
+    "2.0", reproducing the same combined-failure-list shape a noncharacter
+    already produces in those same three places."""
+
+    _BAD_VALUES = [
+        pytest.param(("commerce:checkout",), id="tuple"),
+        pytest.param(OrderedDict([("commerce:checkout", True)]), id="ordereddict"),
+        pytest.param(_NoncharacterStr("commerce:checkout"), id="str-subclass"),
+    ]
+
+    @pytest.mark.parametrize("bad_value", _BAD_VALUES)
+    def test_inside_a_v1_facet_is_schema_invalid_from_two_sources(self, bad_value):
+        authority = _authority(scope={"profile": "aps-hierarchical-v1", "grants": bad_value})
+        record = _bare_valid_record(authority)
+
+        result = _verify_one(record, "unused")
+
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "SCHEMA_INVALID"]
+
+    @pytest.mark.parametrize("bad_value", _BAD_VALUES)
+    def test_inside_an_unsupported_profile_facet_combines_with_unsupported_profile(self, bad_value):
+        authority = _authority(scope={"profile": "custom-unsupported-v9", "grants": bad_value})
+        record = _bare_valid_record(authority)
+
+        result = _verify_one(record, "unused")
+
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
+
+    @pytest.mark.parametrize("bad_value", _BAD_VALUES)
+    def test_inside_a_record_with_unknown_version_combines_with_unsupported_version(self, bad_value):
+        authority = _authority(scope={"profile": "aps-hierarchical-v1", "grants": bad_value})
+        record = _bare_valid_record(authority)
+        record["version"] = "2.0"
+
+        result = _verify_one(record, "unused")
+
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_VERSION"]
+
+
+class TestCyclicContainerIsNotPlainJsonData:
+    """A container that contains itself at any depth is not plain JSON
+    data, and the walk must terminate rather than loop forever. Placed
+    inside a facet with an unsupported profile, so the result also shows
+    the cycle combines with UNSUPPORTED_PROFILE the same way a noncharacter
+    does there, and the overall state stays "invalid" (a SCHEMA_INVALID
+    code is present, so it is never "unsupported")."""
+
+    def test_cycle_inside_an_unsupported_profile_facet_is_schema_invalid(self):
+        grants: list = []
+        grants.append(grants)
+        authority = _authority(scope={"profile": "custom-unsupported-v9", "grants": grants})
+        record = _bare_valid_record(authority)
+
+        result = _verify_one(record, "unused")
+
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
+
+
+class TestIntegerMagnitudeMustFitADouble:
+    """An integer this package will canonicalize as a JSON number must
+    itself survive conversion to an IEEE 754 double: float(v) raising
+    OverflowError is round 2's test for that. Placed inside a record whose
+    version is unrecognised, so it is reached only by the record-wide walk,
+    never by any version="1.0" facet-specific integer check, and the wire
+    form is exercised through parse_authority_delegation_json directly,
+    since json.loads decodes an arbitrarily large integer literal exactly
+    (unlike JSON.parse, which would already have turned it into Infinity)."""
+
+    def _probe_with_depth_remaining(self, value) -> dict:
+        body = _root_body(version="2.0", authority=_authority(depth={"remaining": value}))
+        return {**body, "nonce": "0" * 32, "delegation_id": "sha256:" + "0" * 64, "signature": "0" * 128}
+
+    def test_a_400_digit_integer_is_schema_invalid_and_unsupported_version(self):
+        probe = self._probe_with_depth_remaining(10**400)
+
+        failures = validate_authority_delegation_shape(probe)
+
+        assert [item.code for item in failures] == ["SCHEMA_INVALID", "UNSUPPORTED_VERSION"]
+
+    def test_a_300_digit_integer_stays_unsupported_version_only(self):
+        probe = self._probe_with_depth_remaining(10**300)
+
+        failures = validate_authority_delegation_shape(probe)
+
+        assert [item.code for item in failures] == ["UNSUPPORTED_VERSION"]
+
+    def test_parse_authority_delegation_json_reports_the_verifiers_first_code(self):
+        probe = self._probe_with_depth_remaining(10**400)
+        direct_failures = validate_authority_delegation_shape(probe)
+        wire_text = json.dumps(probe)
+
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            parse_authority_delegation_json(wire_text)
+
+        assert exc_info.value.code == direct_failures[0].code
 
 
 class TestSecond60OnlyAtLastMomentOfMonth:
@@ -1270,6 +1426,21 @@ class TestRecordTypeVersionAndFacetProfiles:
         failures = validate_authority_delegation_shape(self._probe(record_type=7))
         assert [item.code for item in failures] == ["SCHEMA_INVALID"]
         assert failures[0].message == "record_type and version must be strings"
+
+    @pytest.mark.parametrize("version", ["2.0", "1.0"])
+    def test_record_type_str_subclass_is_schema_invalid_regardless_of_version(self, version):
+        # A str subclass equal by content to the v1 record_type must not
+        # take the recognised-type-with-unknown-version fast path (which
+        # would otherwise skip this record straight to UNSUPPORTED_VERSION
+        # alone): the branch tests record_type by exact type, so this record
+        # falls through to the ordinary body checks, where the record-wide
+        # walk and the record_type/version type check each report
+        # SCHEMA_INVALID, regardless of which version string is present.
+        probe = self._probe(record_type=_RecordTypeAlias("aps:authority-delegation:v1"), version=version)
+
+        failures = validate_authority_delegation_shape(probe)
+
+        assert [item.code for item in failures] == ["SCHEMA_INVALID", "SCHEMA_INVALID"]
 
     def test_recognised_type_with_unknown_version_skips_exact_keys_and_facet_checks(self):
         probe = self._probe(version="2.0")
