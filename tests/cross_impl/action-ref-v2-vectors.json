@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 section 4.1 (published text lines 751-832)",
   "generated_from": {
     "repository": "aeoess/agent-passport-system",
-    "commit": "c47b97b95642ea5bb6c19bee2bf795144b09fe1c",
+    "commit": "221131d0cc7da9b7f903409439bbf11a8e88caf1",
     "module": "src/v2/action-reference/v2.ts",
     "generator": "tests/cross_impl/gen_action_ref_v2_vectors.mts"
   },
@@ -54,7 +54,7 @@
     },
     {
       "code": "bad_timestamp",
-      "meaning": "issued_at not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid calendar instant",
+      "meaning": "issued_at not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid calendar instant; second 00-60 is accepted (60 lexically, per RFC 3339)",
       "draft_lines": "796-797, 815"
     },
     {
@@ -94,22 +94,18 @@
     {
       "case": "scope_required = []",
       "reason": "draft lines 798-800 let a profile permit an empty scope_required array, but the input object names no profile, so the default is not determined by the text."
-    },
-    {
-      "case": "issued_at with second 60 (leap second, for example \"2016-12-31T23:59:60.000Z\")",
-      "reason": "RFC 3339 permits a leap second, APS says \"UTC timestamp with exactly three fractional digits\", and the text does not say whether leap seconds are admissible."
     }
   ],
   "counts": {
-    "total": 75,
+    "total": 77,
     "by_entry": {
       "payload": 12,
-      "object": 53,
+      "object": 55,
       "json": 6,
       "create": 4
     },
     "by_expected_provenance": {
-      "draft-derived": 52,
+      "draft-derived": 54,
       "ts-conformant-regression": 23
     }
   },
@@ -1565,6 +1561,64 @@
       },
       "expected_provenance": "draft-derived",
       "draft_lines": "757"
+    },
+    {
+      "id": "AR-P17",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2016-12-31T23:59:60.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "970594ab1ede3ececd07231e045f2764fc1b5cefad1017df556f98d41ab5a5eb"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "807-808",
+      "provenance_note": "RFC 3339 admits second 60 for a leap second and section 4.1 names RFC 3339; a validator cannot consult the leap-second table, so second 60 is accepted lexically. The expected digest is computed from the section 4.1 formula (APS-ACTION-REF-V2, one zero byte, JCS of the input object) with canonicalizeJCS, not taken from computeActionRefV2.",
+      "ts_behaviour": {
+        "behaviour": "rejects",
+        "message": "issued_at: expected canonical UTC milliseconds",
+        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
+      }
+    },
+    {
+      "id": "AR-P18",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [
+          "commerce:read",
+          "commerce:write"
+        ],
+        "issued_at": "2026-04-08T12:00:60.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "87b24dc0fb1b8ccd6e4cb71dfcc329169cfa184a9291b0ee8cf48be93a44b2b4"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "807-808",
+      "provenance_note": "RFC 3339 admits second 60 for a leap second and section 4.1 names RFC 3339; a validator cannot consult the leap-second table, so second 60 is accepted lexically. The expected digest is computed from the section 4.1 formula (APS-ACTION-REF-V2, one zero byte, JCS of the input object) with canonicalizeJCS, not taken from computeActionRefV2.",
+      "ts_behaviour": {
+        "behaviour": "rejects",
+        "message": "issued_at: expected canonical UTC milliseconds",
+        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
+      }
     },
     {
       "id": "AJ-P01",

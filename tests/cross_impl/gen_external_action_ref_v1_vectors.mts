@@ -81,7 +81,7 @@ const FAILURE_CODES = [
     code: 'bad_timestamp',
     meaning:
       'timestamp not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid RFC 3339 date and time (month 01-12, ' +
-      'day existing in the month, hour 00-23, minute 00-59, second 00-59; second 60 is withheld)',
+      'day existing in the month, hour 00-23, minute 00-59, second 00-60, 60 accepted lexically per RFC 3339)',
     draft_lines: '866-871',
   },
   {
@@ -95,14 +95,7 @@ const FAILURE_DRAFT_LINES: Record<string, string> = Object.fromEntries(
   FAILURE_CODES.map((row) => [row.code, row.draft_lines]),
 )
 
-const WITHHELD = [
-  {
-    case: 'timestamp with second 60 (leap second, "2016-12-31T23:59:60.000Z")',
-    reason:
-      'RFC 3339 permits it and the draft does not say whether it is admissible. The TypeScript SDK accepts it ' +
-      'lexically.',
-  },
-]
+const WITHHELD: { case: string; reason: string }[] = []
 
 const EXPECTED_PROVENANCE_VALUES = {
   'draft-derived':
@@ -183,6 +176,7 @@ interface AcceptCase {
   id: string
   input: Record<string, unknown>
   anchor?: string
+  provenance?: Provenance
   provenance_note?: string
 }
 
@@ -195,6 +189,9 @@ const NO_NORMALIZATION_NOTE =
   'EX-P05 uses scope "café:read" with the é decomposed (e + combining acute accent, U+0301); EX-P06 ' +
   'uses the same scope with the é precomposed (U+00E9). Their digests must differ from each other, because ' +
   'the external form applies no Unicode normalization (draft lines 873-876).'
+const LEAP_SECOND_NOTE =
+  'RFC 3339 admits second 60 and section 4.2 names RFC 3339; accepted lexically. The TypeScript SDK at ' +
+  'the pinned commit gives this digest.'
 
 const acceptCases: AcceptCase[] = [
   {
@@ -221,6 +218,8 @@ const acceptCases: AcceptCase[] = [
   { id: 'EX-P07', input: base({ agent_id: 'did:example:\u{1F600}', action_type: 'quote" backslash\\ ctrl\u0007' }) },
   { id: 'EX-P08', input: base({ timestamp: '2028-02-29T23:59:59.999Z' }) },
   { id: 'EX-P09', input: base({ timestamp: '0000-01-01T00:00:00.000Z' }) },
+  { id: 'EX-P10', input: base({ timestamp: '2016-12-31T23:59:60.000Z' }), provenance: 'draft-derived', provenance_note: LEAP_SECOND_NOTE },
+  { id: 'EX-P11', input: base({ timestamp: '2026-04-08T12:00:60.000Z' }), provenance: 'draft-derived', provenance_note: LEAP_SECOND_NOTE },
 ]
 
 const digestById = new Map<string, string>()
@@ -236,7 +235,7 @@ for (const c of acceptCases) {
     fail(`${c.id}: TS digest ${digest} does not match the pinned anchor ${c.anchor}`)
   }
   digestById.set(c.id, digest)
-  const provenance: Provenance = 'ts-conformant-regression'
+  const provenance: Provenance = c.provenance ?? 'ts-conformant-regression'
   counts.total++
   counts.accept++
   counts.by_expected_provenance[provenance]++

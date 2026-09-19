@@ -39,13 +39,11 @@ agent-passport-system ``src/core/external-action-ref.ts``) on every valid
 input in the vector set is checked by
 tests/cross_impl/external-action-ref-v1-vectors.json.
 
-Known divergences: the TypeScript SDK accepts calendar-invalid timestamps
-(month 13, day 30 of February, hour 24, minute 60), accepts a leap second
-(second 60), accepts an array-wrapped timestamp because its format check
-tests ``String(value)``, and hashes non-string ``action_type``, ``agent_id``
-and ``scope`` values; it rejects a numeric timestamp. This helper rejects
-all of these. Its leap-second rejection is provisional because the draft
-does not say whether leap seconds are admissible.
+Known divergences: since agent-passport-system 221131d0 the TypeScript
+computeExternalActionRefV1 rejects non-string fields, array-wrapped and
+calendar-invalid timestamps, and accepts second 60, as this helper does;
+the remaining difference is that the TypeScript helper also accepts a
+``Date`` object, which this helper does not.
 """
 
 from __future__ import annotations
@@ -60,19 +58,19 @@ from .receipt_core.jcs import IJsonValidationError, strict_jcs
 EXTERNAL_ACTION_REF_V1_LABEL = "action-ref-v1-jcs-sha256"
 
 # Exactly RFC 3339 UTC at millisecond precision: four-digit year, calendar
-# month 01-12, calendar day 01-31, hour 00-23, minute 00-59, second 00-59,
-# exactly three fractional-second digits, literal uppercase Z. RFC 3339 also
-# allows second 60 (a leap second); this pattern rejects it, and that
-# rejection is provisional because the draft does not say whether leap
-# seconds are admissible. Anchored by re.fullmatch, so no leading/trailing
-# anchors are needed in the pattern itself. This still admits a day that
-# does not exist in a given month (for
+# month 01-12, calendar day 01-31, hour 00-23, minute 00-59, second 00-60,
+# exactly three fractional-second digits, literal uppercase Z. Second 60 (a
+# leap second) is accepted lexically: RFC 3339 admits it, and a validator
+# cannot consult the leap-second table to know whether one actually
+# occurred at a given UTC instant. Anchored by re.fullmatch, so no
+# leading/trailing anchors are needed in the pattern itself. This still
+# admits a day that does not exist in a given month (for
 # example day 30 of February); that is caught separately by
 # _is_valid_calendar_day, because a fixed-width regex alone cannot encode
 # "day <= 28, 29, 30, or 31 depending on month and leap year".
 _TIMESTAMP_RE = re.compile(
     r"[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])"
-    r"T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]\.[0-9]{3}Z"
+    r"T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)\.[0-9]{3}Z"
 )
 
 # Days per month in the proleptic Gregorian calendar, non-leap year,
