@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 section 4.1 (published text lines 751-832)",
   "generated_from": {
     "repository": "aeoess/agent-passport-system",
-    "commit": "221131d0cc7da9b7f903409439bbf11a8e88caf1",
+    "commit": "c339b39cb67ff633ea41ea4a62cd14161b365890",
     "module": "src/v2/action-reference/v2.ts",
     "generator": "tests/cross_impl/gen_action_ref_v2_vectors.mts"
   },
@@ -1586,9 +1586,8 @@
       "draft_lines": "807-808",
       "provenance_note": "RFC 3339 admits second 60 for a leap second and section 4.1 names RFC 3339; a validator cannot consult the leap-second table, so second 60 is accepted lexically. The expected digest is computed from the section 4.1 formula (APS-ACTION-REF-V2, one zero byte, JCS of the input object) with canonicalizeJCS, not taken from computeActionRefV2.",
       "ts_behaviour": {
-        "behaviour": "rejects",
-        "message": "issued_at: expected canonical UTC milliseconds",
-        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
+        "behaviour": "accepts",
+        "action_ref": "970594ab1ede3ececd07231e045f2764fc1b5cefad1017df556f98d41ab5a5eb"
       }
     },
     {
@@ -1615,9 +1614,8 @@
       "draft_lines": "807-808",
       "provenance_note": "RFC 3339 admits second 60 for a leap second and section 4.1 names RFC 3339; a validator cannot consult the leap-second table, so second 60 is accepted lexically. The expected digest is computed from the section 4.1 formula (APS-ACTION-REF-V2, one zero byte, JCS of the input object) with canonicalizeJCS, not taken from computeActionRefV2.",
       "ts_behaviour": {
-        "behaviour": "rejects",
-        "message": "issued_at: expected canonical UTC milliseconds",
-        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
+        "behaviour": "accepts",
+        "action_ref": "87b24dc0fb1b8ccd6e4cb71dfcc329169cfa184a9291b0ee8cf48be93a44b2b4"
       }
     },
     {
