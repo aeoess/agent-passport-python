@@ -16,8 +16,10 @@ not null with PARENT_MISMATCH.
 _assert_bare_body below rejects a body that is not a dict, before either
 issuing function does anything else with it; that check is a property of
 this Python implementation, not a claim about what the TypeScript SDK does
-for a non-object body. It also rejects a body that already carries an own
-"delegation_id" or "signature" member, of any value. Draft section 3.1
+for a non-object body. It also rejects a body whose own top-level keys are
+not exactly str, before testing for those two members at all, and a body
+that already carries an own "delegation_id" or "signature" member, of any
+value. Draft section 3.1
 (lines 484-490) computes delegation_id and signature from a body without
 those two members, so such a body would yield a record whose delegation_id
 does not recompute from itself; section 3.6 (lines 695-704) enforces
@@ -46,11 +48,18 @@ from .types import AuthorityDelegationError, AuthorityFailure
 
 
 def _assert_bare_body(body) -> None:
-    """Reject a body that is not a dict, or that already carries an id or a signature.
+    """Reject a body that is not a dict, that carries a non-string top-level
+    key, or that already carries an id or a signature.
 
     See the module docstring: the not-a-dict check is a property of this
-    Python implementation only. The delegation_id/signature check matches
-    the TypeScript SDK's issueAuthorityDelegation and
+    Python implementation only. The key-type check runs before the two
+    membership tests below, precisely so that a caller-supplied key built to
+    hash like "delegation_id" or "signature" while raising from its own
+    __eq__ cannot make ``"delegation_id" in body`` raise instead of this
+    function returning a coded refusal: ``for key in body`` reads back the
+    keys a dict already holds without hashing or comparing any of them
+    again, so this check cannot itself raise. The delegation_id/signature
+    check matches the TypeScript SDK's issueAuthorityDelegation and
     issueSubAuthorityDelegation, which perform the same check (draft section
     3.1 lines 484-490; section 3.6 lines 695-704).
     """
@@ -58,6 +67,14 @@ def _assert_bare_body(body) -> None:
         raise AuthorityDelegationError(
             "SCHEMA_INVALID",
             (AuthorityFailure(code="SCHEMA_INVALID", message="delegation body must be an object"),),
+        )
+    if any(type(key) is not str for key in body):
+        raise AuthorityDelegationError(
+            "SCHEMA_INVALID",
+            (AuthorityFailure(
+                code="SCHEMA_INVALID",
+                message="delegation body must be an object with string keys",
+            ),),
         )
     if "delegation_id" in body or "signature" in body:
         raise AuthorityDelegationError(

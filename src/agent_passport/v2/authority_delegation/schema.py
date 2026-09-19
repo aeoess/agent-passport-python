@@ -271,6 +271,56 @@ def _has_non_i_json_value(value) -> bool:
     return False
 
 
+def _has_non_str_key(value) -> bool:
+    """True if a dict anywhere in value carries a key whose type is not exactly str.
+
+    This runs before validate_authority_delegation_shape does anything else
+    with the record: a Python dict lookup (``top.get(...)``, the exact-keys
+    set comparison, a facet's own ``.get(...)``) hashes the probe key and,
+    only on a hash collision, compares it against whatever key is already
+    stored in that slot. A caller-supplied key built to hash like a real
+    field name (for instance "record_type" or "profile") while raising from
+    its own ``__eq__`` can therefore make an ordinary lookup raise instead of
+    returning a defined result. This walk finds such a key first, so the
+    function can return a coded SCHEMA_INVALID failure before any of that
+    happens.
+
+    The walk is iterative, using an explicit stack rather than recursion, and
+    it only ever descends into a value whose type is exactly dict or exactly
+    list, exactly like _has_non_i_json_value below. It reads each dict's own
+    keys with ``for key, item in current.items()``, which returns the keys a
+    dict already holds without hashing or comparing any of them again, so
+    this walk cannot itself raise from a hostile ``__eq__`` or ``__hash__``.
+    A container already visited is not visited again, which is the only
+    reason for that bookkeeping: it keeps the walk from looping forever on a
+    self-referential dict or list. Deciding whether a cycle itself makes the
+    record invalid is _has_non_i_json_value's job, run afterward, once this
+    walk has already found every dict lookup in the rest of this function
+    safe to perform.
+    """
+    stack: list = [value]
+    seen: set[int] = set()
+    while stack:
+        current = stack.pop()
+        if type(current) is dict:
+            identity = id(current)
+            if identity in seen:
+                continue
+            seen.add(identity)
+            for key, item in current.items():
+                if type(key) is not str:
+                    return True
+                stack.append(item)
+        elif type(current) is list:
+            identity = id(current)
+            if identity in seen:
+                continue
+            seen.add(identity)
+            for item in current:
+                stack.append(item)
+    return False
+
+
 def _utf8_len(value: str) -> int:
     return len(value.encode("utf-8", "surrogatepass"))
 
@@ -340,6 +390,18 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
     top = _record(value)
     if top is None:
         return [_failure("SCHEMA_INVALID", "delegation must be an exact closed v1 object")]
+
+    # Every dict lookup below, starting with the very next line, hashes a
+    # fixed literal key and, on a collision, compares it against whatever key
+    # is already stored in that slot. This walk finds a non-str key first, so
+    # a caller-supplied key that hashes like a real field name while raising
+    # from its own __eq__ gets a coded SCHEMA_INVALID failure here rather
+    # than an exception out of top.get, the exact-keys comparison, or a
+    # facet's own .get.
+    if _has_non_str_key(top):
+        return [_failure(
+            "SCHEMA_INVALID", "record must be I-JSON: no unpaired surrogates, noncharacters, or non-JSON values",
+        )]
 
     # A record whose record_type names the v1 type and whose version is some
     # other string is unsupported outright: it is not judged by the v1 body
