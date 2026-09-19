@@ -201,24 +201,27 @@ def _has_non_i_json_value(value) -> bool:
     walked clean makes the cost linear in the number of distinct containers
     and their members instead.
 
-    A string reached more than once is checked only the first time. Unlike a
-    dict or a list, a string is never pushed back onto the stack as its own
-    exit signal, so there is no path/clean distinction for it: once a
-    string's id() has been checked and found well formed, it is recorded in
+    A string reached more than once is checked only the first time, whether
+    it is reached as a value or as a dict key. Unlike a dict or a list, a
+    string is never pushed back onto the stack as its own exit signal, so
+    there is no path/clean distinction for it: once a string's id() has
+    been checked and found well formed, it is recorded in
     ``checked_strings``, and any later reference to that same object, found
     anywhere else in the record, skips the character scan entirely (a string
     cannot contain itself, so there is no cycle to detect the way a
     container needs one). pickle keeps a repeated str as one object
     referenced from every slot that held it, so a value held by 10,000
-    references to the same 100,000-character string used to cost one full
-    scan of that string per reference, because a string is not a container
-    and so never earned the container id() memo above; remembering the id()
-    of every string already checked makes the cost linear in the number of
-    distinct string objects and their combined length instead. This is safe
-    for the same reason the container memo above is: every string this walk
-    has ever seen is still reachable from ``value``, the record this call
-    was given, for the whole call, so no id() it records can be reused by an
-    unrelated string before the walk finishes.
+    references to the same 100,000-character string, or 10,000 dicts that
+    all use that same string as a key, used to cost one full scan of that
+    string per reference, because a string is not a container and so never
+    earned the container id() memo above; remembering the id() of every
+    string already checked, key or value, makes the cost of this walk
+    linear in the number of distinct string objects and their combined
+    length instead. This is safe for the same reason the container memo
+    above is: every string this walk has ever seen is still reachable from
+    ``value``, the record this call was given, for the whole call, so no
+    id() it records can be reused by an unrelated string before the walk
+    finishes.
 
     That exit signal is kept out of band, never mixed into the stack as a
     value that could be confused with one from the record. Every stack entry
@@ -265,8 +268,13 @@ def _has_non_i_json_value(value) -> bool:
             path_ids.add(identity)
             stack.append((identity, True))
             for key, item in current.items():
-                if type(key) is not str or is_ill_formed_string(key):
+                if type(key) is not str:
                     return True
+                key_identity = id(key)
+                if key_identity not in checked_strings:
+                    if is_ill_formed_string(key):
+                        return True
+                    checked_strings.add(key_identity)
                 stack.append((item, False))
         elif type(current) is list:
             identity = id(current)
