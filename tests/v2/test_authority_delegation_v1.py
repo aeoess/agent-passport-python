@@ -1689,6 +1689,52 @@ class TestNonIJsonWalkRevisitsEachDistinctStringOnce:
         assert [item.code for item in result.failures] == ["UNSUPPORTED_PROFILE"]
 
 
+class TestNonIJsonWalkRevisitsEachDistinctKeyStringOnce:
+    """The same id() memo covers a string reached as a dict key. pickle
+    keeps a key string shared by many dicts as one object, so 10,000 dicts
+    each keyed by the same 100,000-character string used to cost one full
+    scan of that string per dict, about a minute, even after string values
+    were memoised. Each distinct key string is now scanned once, while a
+    distinct key string with identical content is still checked on its
+    own."""
+
+    def test_one_key_string_shared_by_10000_dicts_in_an_unsupported_version_record_is_fast(self):
+        shared_key = "k" * 100_000
+        body = _root_body(version="2.0", authority=_authority())
+        body["extra"] = [{shared_key: None} for _ in range(10_000)]
+
+        start = time.perf_counter()
+        failures = validate_authority_delegation_shape(body)
+        elapsed = time.perf_counter() - start
+
+        assert elapsed < 1.0, f"took {elapsed:.3f}s"
+        assert [item.code for item in failures] == ["UNSUPPORTED_VERSION"]
+
+    def test_one_key_string_shared_by_10000_dicts_in_an_unsupported_scope_facet_is_fast(self):
+        shared_key = "k" * 100_000
+        grants = [{shared_key: None} for _ in range(10_000)]
+        authority = _authority(scope={"profile": "custom-unsupported-v9", "grants": grants})
+        record = _bare_valid_record(authority)
+
+        start = time.perf_counter()
+        result = _verify_one(record, "unused")
+        elapsed = time.perf_counter() - start
+
+        assert elapsed < 1.0, f"took {elapsed:.3f}s"
+        assert result.state == "unsupported"
+        assert [item.code for item in result.failures] == ["UNSUPPORTED_PROFILE"]
+
+    def test_an_ill_formed_key_is_still_found_after_a_clean_key_with_the_same_content_is_memoised(self):
+        clean_key = "k" * 1_000
+        ill_formed_key = "k" * 999 + "\ufdd0"
+        body = _root_body(version="2.0", authority=_authority())
+        body["extra"] = [{clean_key: None}, {clean_key: None}, {ill_formed_key: None}]
+
+        failures = validate_authority_delegation_shape(body)
+
+        assert [item.code for item in failures] == ["SCHEMA_INVALID", "UNSUPPORTED_VERSION"]
+
+
 class TestIntegerMagnitudeMustFitADouble:
     """An integer this package will canonicalize as a JSON number must
     itself survive conversion to an IEEE 754 double: float(v) raising
