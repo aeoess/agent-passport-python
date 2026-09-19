@@ -57,7 +57,8 @@ class InMemoryAuthorityBudgetLedger:
                 or not is_canonical_quantity(amount_string)
             ):
                 return BudgetOperationResult(ok=False, code="CONFLICT")
-            if type(verified_chain) not in (list, tuple):
+            # Identity tests, never a tuple membership test: see verify.py.
+            if type(verified_chain) is not list and type(verified_chain) is not tuple:
                 return BudgetOperationResult(ok=False, code="CONFLICT")
             # Provisional: the draft does not state a maximum chain length.
             # This 256-record limit is kept identical to the TypeScript SDK
