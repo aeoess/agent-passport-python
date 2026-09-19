@@ -269,6 +269,124 @@ class _Chain:
         return root_record.get("delegation_id") == self.root["delegation_id"]
 
 
+class TestCallbackWritesCannotChangeTheChecksThatFollow:
+    """trust_root and resolve_revocation are handed a copy of the record, and
+    every phase after them reads this function's own copy of the chain. A
+    callback that writes to what it is given must not change the attenuation,
+    linkage or validity checks that run afterwards, and must not leave the
+    caller's record altered."""
+
+    @staticmethod
+    def _narrow_root_and_widening_child():
+        """A root whose scope is narrow, and a separately signed child that
+        widens it. Signed through the canonical helpers, so the child exists
+        at all: the child issuer would refuse to mint it."""
+        principal_seed, principal_pub = _keypair()
+        agent_seed, agent_pub = _keypair()
+        root = issue_authority_delegation(
+            _root_body(
+                issued_at="2026-01-01T00:00:00.000Z",
+                authority=_authority(
+                    scope={"profile": "aps-hierarchical-v1", "grants": ["commerce:checkout"]},
+                    time={"not_before": "2026-01-01T00:00:00.000Z", "not_after": "2026-01-02T00:00:00.000Z"},
+                ),
+            ),
+            principal_seed,
+        )
+        child_body = {
+            "record_type": "aps:authority-delegation:v1",
+            "version": "1.0",
+            "parent_delegation_id": root["delegation_id"],
+            "issuer": "did:example:agent-a",
+            "subject": "did:example:agent-b",
+            "verification_method": "did:example:agent-a#key-1",
+            "issued_at": "2026-01-01T00:05:00.000Z",
+            "nonce": "0" * 32,
+            "authority": _authority(
+                scope={"profile": "aps-hierarchical-v1", "grants": ["payments:*"]},
+                depth={"remaining": 1},
+                time={"not_before": "2026-01-01T00:10:00.000Z", "not_after": "2026-01-01T00:20:00.000Z"},
+            ),
+        }
+        delegation_id = compute_authority_delegation_id_for_write(child_body)
+        signature = sign_authority_delegation({**child_body, "delegation_id": delegation_id}, agent_seed)
+        child = {**child_body, "delegation_id": delegation_id, "signature": signature}
+        keys = {
+            ("did:example:principal", "did:example:principal#key-1"): principal_pub,
+            ("did:example:agent-a", "did:example:agent-a#key-1"): agent_pub,
+        }
+
+        def resolve_verification_key(issuer, verification_method, issued_at):
+            return keys.get((issuer, verification_method))
+
+        return root, child_body, child, agent_seed, resolve_verification_key
+
+    def test_a_mutating_trust_root_cannot_widen_the_parent(self):
+        root, _body, child, _seed, resolve_key = self._narrow_root_and_widening_child()
+
+        def verify(trust_root):
+            return verify_authority_delegation_chain(
+                [root, child],
+                now="2026-01-01T00:15:00.000Z",
+                resolve_verification_key=resolve_key,
+                trust_root=trust_root,
+                resolve_revocation=lambda delegation: "active",
+            )
+
+        honest = verify(lambda record: True)
+        assert honest.state == "invalid"
+        assert [item.code for item in honest.failures] == ["SCOPE_WIDENING"]
+
+        def mutating_trust_root(record):
+            record["authority"]["scope"] = {"profile": "aps-hierarchical-v1", "grants": ["*"]}
+            return True
+
+        before = copy.deepcopy(root)
+        mutated = verify(mutating_trust_root)
+        assert mutated.state == "invalid"
+        assert [item.code for item in mutated.failures] == ["SCOPE_WIDENING"]
+        assert root == before
+
+    def test_a_mutating_revocation_resolver_cannot_widen_the_parent_at_issuance(self):
+        root, body, _child, agent_seed, resolve_key = self._narrow_root_and_widening_child()
+        body = {k: v for k, v in body.items() if k != "nonce"}
+
+        def mutating_resolver(parent_record):
+            parent_record["authority"]["scope"] = {"profile": "aps-hierarchical-v1", "grants": ["*"]}
+            return "active"
+
+        before = copy.deepcopy(root)
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            issue_sub_authority_delegation(
+                root, body, agent_seed,
+                now="2026-01-01T00:05:00.000Z",
+                resolve_verification_key=resolve_key,
+                resolve_revocation=mutating_resolver,
+            )
+        assert exc_info.value.code == "SCOPE_WIDENING"
+        assert root == before
+
+    def test_a_callback_is_not_handed_the_callers_own_record(self):
+        chain = _Chain()
+        seen = {}
+
+        def recording_trust_root(root_record):
+            seen["arg"] = root_record
+            return chain.trust_root(root_record)
+
+        result = verify_authority_delegation_chain(
+            [chain.root, chain.child],
+            now="2026-01-01T00:15:00.000Z",
+            resolve_verification_key=chain.resolve_verification_key,
+            trust_root=recording_trust_root,
+            resolve_revocation=lambda delegation: "active",
+        )
+
+        assert result.state == "valid"
+        assert seen["arg"] == chain.root
+        assert seen["arg"] is not chain.root
+
+
 class TestPhaseOrder:
     def test_validity_runs_before_revocation_for_all_members(self):
         chain = _Chain()
