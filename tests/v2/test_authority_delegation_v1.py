@@ -10,7 +10,9 @@ generation, float/bool rejection, the phase order of chain verification, resolve
 edge cases, budget ledger thread-safety, the no-wall-clock rule, the parse-level
 size and number-token rules, canonical-pattern anchoring, non-string dict keys,
 fixed-width hex checks, the bare-body refusal, revocation type-exactness, scope
-grant redundancy performance, and the child issuer's `now` checks.
+grant redundancy and narrowing performance, the child issuer's `now` checks,
+and I-JSON well-formedness for in-memory Python values other than the exact
+str/dict/list json.loads produces.
 """
 
 from __future__ import annotations
@@ -22,6 +24,7 @@ import re
 import secrets
 import threading
 import time
+from collections import OrderedDict
 from pathlib import Path
 
 import pytest
@@ -36,6 +39,7 @@ from agent_passport.v2.authority_delegation import (
     issue_sub_authority_delegation,
     parse_authority_delegation_json,
     scope_grant_covers,
+    scope_narrows,
     validate_authority_delegation_shape,
     verify_authority_delegation_chain,
 )
@@ -475,7 +479,11 @@ class TestNonStringDictKey:
         result = _verify_one(record, public_key)  # must not raise
 
         assert result.state == "invalid"
-        assert [item.code for item in result.failures] == ["SCHEMA_INVALID"]
+        # The whole-record I-JSON walk and the depth facet's own exact-keys
+        # check both independently reject the non-str key 1, so two SCHEMA_INVALID
+        # failures are expected here, not exactly one.
+        assert result.failures
+        assert all(item.code == "SCHEMA_INVALID" for item in result.failures)
 
 
 class TestSpacedHexKeyRejected:
@@ -705,6 +713,92 @@ class TestGrantsAreCanonicalPerformance:
         assert elapsed < 1.0, f"took {elapsed:.3f}s"
 
 
+def _pairwise_reference_scope_narrows(parent, child) -> bool:
+    """The straightforward O(len(parent) * len(child)) pairwise definition,
+    kept only in this test as the oracle scope_narrows is checked against."""
+    return all(any(scope_grant_covers(parent_grant, grant) for parent_grant in parent) for grant in child)
+
+
+_SCOPE_NARROWS_POOL = ("a", "ab", "b", "commerce", "travel", "checkout", "x1", "y-2", "AA", "z9")
+
+
+def _make_canonical_grant_list(rng: random.Random) -> list:
+    """A random valid, sorted, irredundant grant list.
+
+    Built by generating a candidate set from a vocabulary that deliberately
+    includes both "a" and "ab" (so some generated pairs pit "a:*" against
+    the unrelated exact grant "ab:x", a shared-character-not-shared-segment
+    case), then dropping anything a remaining candidate already covers.
+    This uses the library's own scope_grant_covers and is_valid_scope_grant
+    as ground truth for constructing the fixture; those are not the
+    function under test here.
+    """
+    candidates = set()
+    for _ in range(rng.randint(0, 8)):
+        if rng.random() < 0.12:
+            candidates.add("*")
+            continue
+        depth = rng.randint(1, 3)
+        segments = [rng.choice(_SCOPE_NARROWS_POOL) for _ in range(depth)]
+        if rng.random() < 0.5:
+            segments.append("*")
+        candidates.add(":".join(segments))
+    valid = [grant for grant in candidates if is_valid_scope_grant(grant)]
+    kept = [
+        grant for grant in valid
+        if not any(scope_grant_covers(other, grant) for other in valid if other != grant)
+    ]
+    return sorted(kept)
+
+
+class TestScopeNarrowsMatchesPairwiseReference:
+    """scope_narrows was rewritten from the pairwise O(len(parent) *
+    len(child)) scan to a linear one (a trusted root and two children with
+    50,000 grants each used to take 59 seconds to verify). This checks the
+    rewrite against a straightforward pairwise reference implementation
+    over many deterministically generated pairs of already-canonical grant
+    lists, including the bare "*", nested wildcards, and grants whose
+    strings share a character but not a segment."""
+
+    def test_matches_reference_over_2000_generated_canonical_pairs(self):
+        rng = random.Random(20260920)
+        for case_index in range(2000):
+            parent = _make_canonical_grant_list(rng)
+            child = _make_canonical_grant_list(rng)
+            assert grants_are_canonical(parent)
+            assert grants_are_canonical(child)
+            fast = scope_narrows(parent, child)
+            reference = _pairwise_reference_scope_narrows(parent, child)
+            assert fast == reference, (
+                f"case {case_index}: parent={parent!r} child={child!r} -> fast={fast} reference={reference}"
+            )
+
+    def test_shared_character_not_shared_segment_is_not_covered(self):
+        # "ab" shares its leading character with "a" but is a different,
+        # unrelated single segment: "a:*" must not cover "ab:x".
+        assert scope_narrows(["a:*"], ["ab:x"]) is False
+        assert _pairwise_reference_scope_narrows(["a:*"], ["ab:x"]) is False
+
+    def test_bare_wildcard_parent_covers_everything(self):
+        assert scope_narrows(["*"], ["anything:at:all", "commerce:*"]) is True
+
+    def test_bare_wildcard_child_requires_bare_wildcard_parent(self):
+        assert scope_narrows(["commerce:*"], ["*"]) is False
+
+
+class TestScopeNarrowsPerformance:
+    def test_50000_exact_grants_each_side_compare_under_one_second(self):
+        parent = [f"seg{i:06d}" for i in range(50000)]
+        child = [f"seg{i:06d}" for i in range(50000)]
+
+        start = time.perf_counter()
+        result = scope_narrows(parent, child)
+        elapsed = time.perf_counter() - start
+
+        assert result is True
+        assert elapsed < 1.0, f"took {elapsed:.3f}s"
+
+
 class TestIssueSubAuthorityDelegationNow:
     """issue_sub_authority_delegation requires the parent to be currently
     valid at the issuer-supplied `now`, independently of the child's own
@@ -869,3 +963,84 @@ class TestIssueChildRefuseVectorsRaiseExpectedCode:
         assert exc_info.value.code == expected_code, (
             f"{case['id']}: expected {expected_code}, got {exc_info.value.code}"
         )
+
+
+class _NoncharacterStr(str):
+    """A str subclass, used to check that the I-JSON walk still examines a
+    string built as a subclass instance rather than a plain str."""
+
+
+def _bare_valid_record(authority: dict) -> dict:
+    """A record with correctly formatted (but not cryptographically real)
+    delegation_id, signature and nonce fields, for exercising the shape and
+    chain-verification checks directly without going through issuance
+    (which would itself refuse a body whose scope facet is already
+    invalid, before this test ever got to see the walk's behaviour)."""
+    return {
+        "record_type": "aps:authority-delegation:v1",
+        "version": "1.0",
+        "delegation_id": "sha256:" + "0" * 64,
+        "parent_delegation_id": None,
+        "issuer": "did:example:principal",
+        "subject": "did:example:agent-a",
+        "verification_method": "did:example:principal#key-1",
+        "issued_at": "2026-01-01T00:00:00.000Z",
+        "nonce": "00" * 16,
+        "authority": authority,
+        "signature": "0" * 128,
+    }
+
+
+class TestNonIJsonValuesAnywhereInRecord:
+    """The record-wide I-JSON walk must catch a surrogate, a noncharacter,
+    or a value that is not JSON at all, wherever it is nested in the
+    record, including inside a facet whose own profile this package does
+    not support and so never examines further itself, and must recognize a
+    dict, list or str subclass the same way it recognizes the exact builtin
+    type."""
+
+    def _record_with_scope_grants(self, grants_value) -> dict:
+        authority = _authority(scope={"profile": "custom-unsupported-v9", "grants": grants_value})
+        return _bare_valid_record(authority)
+
+    def test_tuple_containing_a_noncharacter_is_invalid(self):
+        record = self._record_with_scope_grants(("x", "y" + "﷐"))
+        result = _verify_one(record, "unused")
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
+
+    def test_ordereddict_key_containing_a_noncharacter_is_invalid(self):
+        record = self._record_with_scope_grants(OrderedDict([("segment" + "﷐", "value")]))
+        result = _verify_one(record, "unused")
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
+
+    def test_str_subclass_containing_a_noncharacter_is_invalid(self):
+        record = self._record_with_scope_grants(_NoncharacterStr("bad" + "﷐"))
+        result = _verify_one(record, "unused")
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
+
+    def test_set_value_is_invalid(self):
+        record = self._record_with_scope_grants({"a", "b"})
+        result = _verify_one(record, "unused")
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
+
+    def test_bytes_value_is_invalid(self):
+        record = self._record_with_scope_grants(b"bytes")
+        result = _verify_one(record, "unused")
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
+
+    def test_nan_float_value_is_invalid(self):
+        record = self._record_with_scope_grants(float("nan"))
+        result = _verify_one(record, "unused")
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
+
+    def test_a_valid_root_is_unaffected(self):
+        seed, public_key = _keypair()
+        record = issue_authority_delegation(_root_body(nonce="00" * 16), seed)
+        result = _verify_one(record, public_key)
+        assert result.state == "valid"

@@ -14,6 +14,12 @@ fail-closed difference from the TypeScript SDK's ``Number.isInteger`` check,
 kept because Python happens to be able to tell the difference, not because
 the draft asks for it.
 
+The one exception is ``_has_non_i_json_value`` below, which uses
+``isinstance`` on purpose: its job is to catch a value that only an
+in-memory Python caller (never JSON.parse or json.loads) could produce, so
+it must recognize a subclass of dict, list or str as the object, array or
+string it is impersonating, not let the subclass slip past unexamined.
+
 No timestamp in this module is ever parsed with ``datetime``: canonical
 timestamps are validated and compared as strings, using integer calendar
 arithmetic for the day-of-month bound.
@@ -21,6 +27,7 @@ arithmetic for the day-of-month bound.
 
 from __future__ import annotations
 
+import math
 import re
 
 from .scope import grants_are_canonical
@@ -106,46 +113,67 @@ def _is_surrogate_or_noncharacter(code_point: int) -> bool:
     )
 
 
-def _has_ill_formed_string(value) -> bool:
-    """True if any dict key or str value anywhere inside value is not I-JSON.
+def _has_non_i_json_value(value) -> bool:
+    """True if value, or anything nested inside it, is not I-JSON.
 
     RFC 7493 section 2.1 (I-JSON) forbids a surrogate or a noncharacter code
-    point in a string. This walks the whole value looking for one, in every
-    dict key and every str found at any depth, including inside a nested
-    object whose own "profile" field names a profile this package does not
-    support (an unsupported profile does not stop this walk from covering
-    the rest of that object). The walk is iterative, using an explicit stack
-    rather than recursion, and tracks the id() of every dict and list it
-    has already queued so a value holding a reference cycle terminates
-    instead of looping forever. It never raises: any value that is not a
-    str, dict or list is simply not walked into.
+    point in a string, and RFC 8259 admits only finite numbers; anything
+    that is not a string, a finite number, a bool, null, an object or an
+    array is not JSON at all. This walks the whole value looking for a
+    violation of any of that, at any depth, including inside a nested object
+    whose own "profile" field names a profile this package does not support
+    (an unsupported profile does not stop this walk from covering the rest
+    of that object).
+
+    Because this can be handed an arbitrary in-memory Python value rather
+    than only the output of json.loads, it uses isinstance rather than this
+    module's usual exact-type checks: a dict subclass such as
+    collections.OrderedDict is still walked as an object (and every one of
+    its keys must be a str instance, itself checked for a surrogate or
+    noncharacter), a list or a tuple is walked as an array, and a str
+    subclass is still checked as a string. A float that is NaN or infinite
+    is not I-JSON. A value of any other type at all, other than int, float,
+    bool or None, for example a set or a bytes object, is not I-JSON either
+    and stops the walk right there.
+
+    The walk is iterative, using an explicit stack rather than recursion,
+    and tracks the id() of every dict, list or tuple it has already queued
+    so a value holding a reference cycle terminates instead of looping
+    forever. It never raises.
     """
 
-    def is_ill_formed(text: str) -> bool:
+    def is_ill_formed_string(text) -> bool:
         return any(_is_surrogate_or_noncharacter(ord(ch)) for ch in text)
 
     stack = [value]
     seen_container_ids: set[int] = set()
     while stack:
         current = stack.pop()
-        if type(current) is str:
-            if is_ill_formed(current):
+        if isinstance(current, str):
+            if is_ill_formed_string(current):
                 return True
-        elif type(current) is dict:
+        elif isinstance(current, dict):
             identity = id(current)
             if identity in seen_container_ids:
                 continue
             seen_container_ids.add(identity)
             for key, item in current.items():
-                if type(key) is str and is_ill_formed(key):
+                if not isinstance(key, str) or is_ill_formed_string(key):
                     return True
                 stack.append(item)
-        elif type(current) is list:
+        elif isinstance(current, (list, tuple)):
             identity = id(current)
             if identity in seen_container_ids:
                 continue
             seen_container_ids.add(identity)
             stack.extend(current)
+        elif isinstance(current, float):
+            if not math.isfinite(current):
+                return True
+        elif isinstance(current, bool) or isinstance(current, int) or current is None:
+            pass
+        else:
+            return True
     return False
 
 
@@ -205,9 +233,9 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
     )):
         return [_failure("SCHEMA_INVALID", "delegation must be an exact closed v1 object")]
 
-    if _has_ill_formed_string(top):
+    if _has_non_i_json_value(top):
         failures.append(_failure(
-            "SCHEMA_INVALID", "record strings must be I-JSON: no unpaired surrogates or noncharacters",
+            "SCHEMA_INVALID", "record must be I-JSON: no unpaired surrogates, noncharacters, or non-JSON values",
         ))
 
     # Provisional: a record_type or version that is not a string at all (an

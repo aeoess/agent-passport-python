@@ -822,8 +822,8 @@ rootOnlyInvalid('AD-N-S61', 'subject with a trailing noncharacter (U+10FFFF)', '
   pushChainCase({
     id: 'AD-N-S62', title: 'Unsupported scope profile with a trailing noncharacter (U+FFFF)', chain: [forceSign(body, 'principal')],
     expectedState: 'invalid', expectedCodes: ['SCHEMA_INVALID', 'UNSUPPORTED_PROFILE'], expectedIndex: 0,
-    lines: 'L204 with RFC 7493 section 2.1',
-    note: 'The record is not I-JSON, so it cannot be valid whatever its profile; the SDK also reports the unknown profile.',
+    lines: 'L204 with RFC 7493 section 2.1, L580-581',
+    note: "The record is not I-JSON (L204, RFC 7493 section 2.1), which the first step of the section 3.3 order, closed schema and canonical values (L580-581), rejects before any profile is considered; the SDK also reports the unknown profile.",
   })
 }
 
@@ -846,6 +846,7 @@ rootOnlyUnsupported('AD-N-U06', 'Unsupported values profile', 'An unsupported fa
     lines: 'L512-514, L590', note: "C1's own scope profile is unsupported at the shape level, independent of the parent/child comparison.",
   })
 }
+rootOnlyInvalid('AD-N-U09', 'Unsupported reversibility profile, otherwise valid content', 'L590, L512-514', 'The content is valid under v1, so the case is a single fault; withholding AD-N-U07 had left no vector with an unsupported reversibility profile.', 'UNSUPPORTED_PROFILE', (b) => { b.authority.reversibility = { profile: 'aps-tci-v2', ceiling: 'compensable' } }, 'unsupported')
 
 // -------------------------------------------------------------------------
 // Chain cases, negative: signature, identifier and key resolution
@@ -1632,8 +1633,8 @@ const description =
 
 const provenance_definitions = {
   'draft-derived':
-    'the expected state, outcome or rejection follows from the draft text (with RFC 3339 or RFC 7493 where ' +
-    'cited); TypeScript output was not consulted to decide it.',
+    "the expected state, outcome or rejection follows from the draft text, directly or by an analogy the case's " +
+    'derivation note states, with RFC 3339 or RFC 7493 where cited; TypeScript output was not consulted to decide it.',
   'ts-conformant-regression':
     'the expected bytes were computed by the TypeScript reference for a construction whose TypeScript ' +
     'implementation was found to follow the draft (delegation_id and signature, draft section 3.1), and are recomputed ' +
@@ -1663,7 +1664,7 @@ const conventions = {
 }
 
 const withheld = [
-  { topic: 'Multi-fault chains', reason: 'The draft does not say which failure decides when several steps fail. Only single-fault chains are included; AD-N-H01, AD-N-H02 and AD-N-H10 carry an unavoidable later fault and each case explains why the order does not matter for it.' },
+  { topic: 'Multi-fault chains', reason: 'The draft does not say which failure decides when several steps fail. Only single-fault chains are included; AD-N-H01, AD-N-H02, AD-N-H10 and AD-N-S62 carry an unavoidable later fault and each case explains why the order does not matter for it. For AD-N-S62, the I-JSON failure belongs to the first step of the section 3.3 order (closed schema and canonical values), so it is decided before the unsupported profile it also carries.' },
   { topic: "A root whose time.not_before predates its issued_at", reason: 'L536-537 states the rule for a child; whether it binds a root is an open question.' },
   { topic: 'Values the draft admits that the TypeScript schema rejects by a grammar the draft does not state', reason: 'A spend unit outside ^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$, and JSON number spellings such as 2.0 or 1e2 in wire input; whether the draft admits them is an open question.' },
   { topic: 'A non-string record_type or version', reason: 'Whether that is unsupported or invalid is not determined by the draft.' },

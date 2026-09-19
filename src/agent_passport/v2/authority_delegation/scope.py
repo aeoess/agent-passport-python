@@ -88,4 +88,44 @@ def grants_are_canonical(grants) -> bool:
 
 
 def scope_narrows(parent, child) -> bool:
-    return all(any(scope_grant_covers(parent_grant, grant) for parent_grant in parent) for grant in child)
+    """True when every grant in child is covered by some grant in parent.
+
+    Linear in len(parent) + len(child) * segments, instead of the pairwise
+    O(len(parent) * len(child)) scan the definition above suggests: parent is
+    put in a set once. A child grant g is then covered exactly when "*" is
+    in the set (it covers everything), or g itself is in the set (an exact
+    grant covers only itself, and an identical wildcard covers itself too),
+    or the string formed by joining the first m segments of g's own prefix,
+    followed by ":*", is in the set for some m from 1 up to the number of
+    segments in g's prefix (g's prefix is g with a trailing ":*" removed, if
+    it has one). This is the same reasoning grants_are_canonical's
+    redundancy check uses for one list against itself, applied here to two
+    different lists instead.
+
+    This equals the pairwise scope_grant_covers definition above only for a
+    parent and a child grant list that have each already passed
+    grants_are_canonical (valid, strictly sorted, irredundant grants).
+    compare_authority, the only caller that reaches this function from the
+    chain verifier, is never invoked before both authority vectors' scope
+    facets have passed schema validation, so that precondition always holds
+    on that path. Called directly with an unvalidated or malformed grant
+    list, this function is not specified to agree with the pairwise
+    definition.
+    """
+    parent_set = set(parent)
+    if "*" in parent_set:
+        return True
+    for grant in child:
+        if grant in parent_set:
+            continue
+        prefix = grant[:-2] if grant.endswith(":*") else grant
+        segments = prefix.split(":")
+        covered = False
+        for m in range(1, len(segments) + 1):
+            candidate = ":".join(segments[:m]) + ":*"
+            if candidate in parent_set:
+                covered = True
+                break
+        if not covered:
+            return False
+    return True
