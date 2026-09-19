@@ -1092,3 +1092,70 @@ class TestSecond60OnlyAtLastMomentOfMonth:
     )
     def test_seconds_00_to_59_are_unchanged(self, timestamp):
         assert is_canonical_timestamp(timestamp) is True
+
+
+class TestRootNotBeforeMayPredateIssuedAt:
+    """draft-pidlisnyi-aps-03 spec addendum item 3: the check that
+    time.not_before cannot predate issued_at binds a delegated child only
+    (draft section 3.2 lines 536-537, "A child's not_before MUST NOT predate
+    its issued_at"). A record whose parent_delegation_id is null is a root
+    and is exempt from that check; the window must still be non-empty, and a
+    child must still be issued inside its parent's window."""
+
+    def test_backdated_root_verifies_valid(self):
+        seed, public_key = _keypair()
+        body = _root_body(
+            authority=_authority(
+                time={"not_before": "2025-12-31T00:00:00.000Z", "not_after": "2026-01-02T00:00:00.000Z"},
+            ),
+        )
+        record = issue_authority_delegation(body, seed)
+
+        result = _verify_one(record, public_key)
+
+        assert result.state == "valid"
+        assert result.failures == ()
+
+    def test_issue_authority_delegation_accepts_a_backdated_root(self):
+        seed, _ = _keypair()
+        body = _root_body(
+            authority=_authority(
+                time={"not_before": "2025-12-31T00:00:00.000Z", "not_after": "2026-01-02T00:00:00.000Z"},
+            ),
+        )
+
+        record = issue_authority_delegation(body, seed)  # must not raise
+
+        assert record["authority"]["time"]["not_before"] == "2025-12-31T00:00:00.000Z"
+
+    def test_child_with_not_before_before_its_issued_at_stays_invalid_at_index_1(self):
+        chain = _Chain()
+        bad_child = copy.deepcopy(chain.child)
+        # The child's own issued_at is 2026-01-01T00:05:00.000Z; back its
+        # not_before up before that, keeping the window non-empty.
+        bad_child["authority"]["time"]["not_before"] = "2026-01-01T00:00:00.000Z"
+
+        result = verify_authority_delegation_chain(
+            [chain.root, bad_child],
+            now="2026-01-01T00:15:00.000Z",
+            resolve_verification_key=chain.resolve_verification_key,
+            trust_root=chain.trust_root,
+            resolve_revocation=lambda delegation: "active",
+        )
+
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID"]
+        assert result.failures[0].index == 1
+
+    def test_root_with_an_empty_time_window_stays_schema_invalid(self):
+        body = _root_body(
+            authority=_authority(
+                time={"not_before": "2026-01-02T00:00:00.000Z", "not_after": "2026-01-02T00:00:00.000Z"},
+            ),
+        )
+        probe = {**body, "nonce": "0" * 32, "delegation_id": "sha256:" + "0" * 64, "signature": "0" * 128}
+
+        failures = validate_authority_delegation_shape(probe)
+
+        assert [item.code for item in failures] == ["SCHEMA_INVALID"]
+        assert failures[0].message == "time window must be non-empty"

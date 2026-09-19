@@ -33,8 +33,7 @@ each documented at the function it affects:
 
 Separately, a small number of choices are kept identical to the TypeScript
 SDK in places where the draft states no rule of its own, each marked
-provisional at the point it applies: whether a root's time.not_before may
-not predate its own issued_at; the grammar required of a bounded spend's
+provisional at the point it applies: the grammar required of a bounded spend's
 unit; rejecting a wire number token with a fraction or exponent even where
 it denotes an integer; treating a non-string record_type or version as
 unsupported rather than invalid; treating a facet whose profile is missing or
