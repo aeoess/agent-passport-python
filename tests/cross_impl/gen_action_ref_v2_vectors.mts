@@ -90,7 +90,7 @@ const FAILURE_CODES = [
   { code: 'not_string', meaning: 'a string field holds a non-string (number, null, array, object)', draft_lines: '789-799' },
   { code: 'empty_string', meaning: 'a string field or a scope element is ""', draft_lines: '798-799' },
   { code: 'bad_hex', meaning: 'payload_ref not 64 lowercase hex, or nonce not 32 lowercase hex', draft_lines: '793-794, 797-798, 815' },
-  { code: 'bad_timestamp', meaning: 'issued_at not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid calendar instant; second 00-60 is accepted (60 lexically, per RFC 3339)', draft_lines: '796-797, 815' },
+  { code: 'bad_timestamp', meaning: 'issued_at not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid calendar instant; second 60 is valid only at 23:59 on the last day of its month (RFC 3339 section 5.7 and Appendix D), every other second-60 value is invalid', draft_lines: '796-797, 815' },
   { code: 'scope_not_array', meaning: 'scope_required is not an array', draft_lines: '794' },
   { code: 'scope_not_canonical', meaning: 'scope array not NFC, not sorted by UTF-8 bytes, or not duplicate-free', draft_lines: '794-796, 814, 822-824' },
   { code: 'lone_surrogate', meaning: 'a string contains an unpaired UTF-16 surrogate', draft_lines: '819-821' },
@@ -392,12 +392,15 @@ for (const c of objectCases) {
 
 // -------------------------------------------------------------------------
 // action_ref cases, entry "object": issued_at with second 60 (leap second).
-// RFC 3339 admits it lexically and section 4.1 names RFC 3339, so the draft
-// text itself accepts these, independent of what the TypeScript SDK's own
-// computeActionRefV2 does. The expected digest therefore comes straight
-// from the section 4.1 formula (domain tag + canonicalizeJCS), not from
-// calling computeActionRefV2, which currently rejects a leap second (see
-// ts_behaviour below); it does not decide the expected result here.
+// RFC 3339 section 5.7 admits second 60 only at 23:59 on the last day of
+// its month (Appendix D writes it "YYYY-MM-DDT23:59:60Z"), and section 4.1
+// names RFC 3339, so the draft text itself accepts these, independent of
+// what the TypeScript SDK's own computeActionRefV2 does. The expected
+// digest therefore comes straight from the section 4.1 formula (domain tag
+// + canonicalizeJCS), not from calling computeActionRefV2; it does not
+// decide the expected result here. (AR-P18, the accepted case at hour 12,
+// moved out of this list once RFC 3339 section 5.7 was applied: see AR-N38
+// below.)
 // -------------------------------------------------------------------------
 
 const canonicalJcsModuleUrl = new URL('src/core/canonical-jcs.ts', `file://${tsRepo}/`).href
@@ -406,14 +409,15 @@ const { canonicalizeJCS } = (await import(canonicalJcsModuleUrl)) as {
 }
 
 const LEAP_SECOND_PROVENANCE_NOTE =
-  'RFC 3339 admits second 60 for a leap second and section 4.1 names RFC 3339; a validator cannot ' +
-  'consult the leap-second table, so second 60 is accepted lexically. The expected digest is computed ' +
-  'from the section 4.1 formula (APS-ACTION-REF-V2, one zero byte, JCS of the input object) with ' +
+  'RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month, ' +
+  'in UTC ("Z"); this issued_at meets that rule, so it is valid. The expected digest is computed from ' +
+  'the section 4.1 formula (APS-ACTION-REF-V2, one zero byte, JCS of the input object) with ' +
   'canonicalizeJCS, not taken from computeActionRefV2.'
 
-const leapSecondCases: { id: string; input: Record<string, unknown> }[] = [
+const leapSecondCases: { id: string; input: Record<string, unknown>; draftLines?: string }[] = [
   { id: 'AR-P17', input: base({ issued_at: '2016-12-31T23:59:60.000Z' }) },
-  { id: 'AR-P18', input: base({ issued_at: '2026-04-08T12:00:60.000Z' }) },
+  { id: 'AR-P19', input: base({ issued_at: '2026-06-30T23:59:60.000Z' }), draftLines: '796-797' },
+  { id: 'AR-P20', input: base({ issued_at: '2028-02-29T23:59:60.000Z' }), draftLines: '796-797' },
 ]
 
 for (const c of leapSecondCases) {
@@ -444,9 +448,64 @@ for (const c of leapSecondCases) {
     input: c.input,
     expected: { result: 'accept', action_ref: digest },
     expected_provenance: 'draft-derived',
-    draft_lines: '807-808',
+    draft_lines: c.draftLines ?? '807-808',
     provenance_note: LEAP_SECOND_PROVENANCE_NOTE,
     ts_behaviour: tsBehaviour,
+  })
+}
+
+// -------------------------------------------------------------------------
+// action_ref cases, entry "object": second 60 rejected outside 23:59 on a
+// month's last day. AR-N38 was AR-P18 (an accepted leap-second case) before
+// RFC 3339 section 5.7 was applied to this surface: hour 12 is neither the
+// hour nor the minute of a leap second, so it is now a rejection. AR-N39
+// and AR-N40 add two further ways a :60 value can miss the rule (wrong day,
+// wrong minute). All three are draft-derived from the RFC 3339 section 5.7
+// / Appendix D rule cited in their provenance_note.
+// -------------------------------------------------------------------------
+
+const secondSixtyRejectCases: { id: string; input: Record<string, unknown>; note: string }[] = [
+  {
+    id: 'AR-N38',
+    input: base({ issued_at: '2026-04-08T12:00:60.000Z' }),
+    note:
+      'This case was AR-P18, an accepted leap-second case, before RFC 3339 section 5.7 was applied here: ' +
+      'RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month, and ' +
+      '12:00:60 is neither hour 23 nor minute 59, so it is now a rejection.',
+  },
+  {
+    id: 'AR-N39',
+    input: base({ issued_at: '2026-06-29T23:59:60.000Z' }),
+    note:
+      'RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; ' +
+      'June 2026 has 30 days, so the 29th is not the last day of that month.',
+  },
+  {
+    id: 'AR-N40',
+    input: base({ issued_at: '2016-12-31T23:58:60.000Z' }),
+    note:
+      'RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; ' +
+      'minute 58 is not minute 59.',
+  },
+]
+
+for (const c of secondSixtyRejectCases) {
+  let expectedOut: Record<string, unknown>
+  try {
+    const ref = computeActionRefV2(c.input)
+    fail(`${c.id}: TS accepted an input expected to reject (bad_timestamp): ${ref}`)
+  } catch (e) {
+    expectedOut = { result: 'reject', failure: 'bad_timestamp', ts_error_message: (e as Error).message }
+  }
+  record('object', 'draft-derived')
+  cases.push({
+    id: c.id,
+    entry: 'object',
+    input: c.input,
+    expected: expectedOut,
+    expected_provenance: 'draft-derived',
+    draft_lines: '796-797',
+    provenance_note: c.note,
   })
 }
 
