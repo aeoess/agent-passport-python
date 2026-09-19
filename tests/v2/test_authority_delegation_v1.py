@@ -129,9 +129,9 @@ class TestNonceGeneration:
 
 
 class TestIssuedRecordSharesNoMutableObjectWithTheCallersBody:
-    """Round 5B of the requirement text. Both issuers used to return a
-    record built out of the caller's own nested "authority" dicts and
-    lists, because the internal nonce step only shallow-copied the body's
+    """Both issuers used to return a record built out of the caller's own
+    nested "authority" dicts and lists, because the internal nonce step
+    only shallow-copied the body's
     top level. A caller that mutated one of those nested objects after
     issuance (its own body template, reused for a later issuance, say)
     would silently change an already-issued record out from under it. Both
@@ -542,11 +542,12 @@ class TestNonStringDictKey:
         result = _verify_one(record, public_key)  # must not raise
 
         assert result.state == "invalid"
-        # The whole-record I-JSON walk and the depth facet's own exact-keys
-        # check both independently reject the non-str key 1, so two SCHEMA_INVALID
-        # failures are expected here, not exactly one.
-        assert result.failures
-        assert all(item.code == "SCHEMA_INVALID" for item in result.failures)
+        # The record-wide non-str-key walk that now runs before any dict
+        # lookup finds the non-str key 1 first and returns a single
+        # SCHEMA_INVALID failure at once, never reaching the depth facet's
+        # own exact-keys check or the I-JSON walk that used to also reject
+        # this same key independently.
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID"]
 
 
 class TestSpacedHexKeyRejected:
@@ -1247,10 +1248,10 @@ class TestNonIJsonValuesAnywhereInRecord:
 
 
 class TestDictKeyTypeMustBeExactStr:
-    """Round 2 of the requirement text: a dict key is examined as a field
-    name only when type(key) is str, never merely when it compares and
-    hashes as one. Without that, a key built to compare and hash as
-    "subject" while holding different character data would pass both
+    """A dict key is examined as a field name only when type(key) is str,
+    never merely when it compares and hashes as one. Without that, a key
+    built to compare and hash as "subject" while holding different
+    character data would pass both
     _exact_keys's set comparison and a plain top["subject"] lookup, making
     the record look like an ordinary valid v1 body with every field
     present, and a canonicalizer that reads the key's own character data
@@ -1269,10 +1270,159 @@ class TestDictKeyTypeMustBeExactStr:
         assert [item.code for item in result.failures] == ["SCHEMA_INVALID"]
 
 
+class _HashCollidingKey:
+    """A dict key that hashes exactly like a given field name and raises
+    from its own __eq__ once armed, so a lookup on that field name that
+    reaches a hash collision with this key raises instead of returning a
+    defined result. Never armed during its own insertion into a fresh
+    dict: inserting a new key whose hash matches an existing key's hash
+    does trigger one equality check against that existing key, but the
+    existing key here is always a plain str, whose own __eq__ returns
+    NotImplemented for a non-str operand before Python falls back to this
+    key's reflected __eq__, so armed must still be False at that point."""
+
+    def __init__(self, name: str) -> None:
+        self._hash = hash(name)
+        self.armed = False
+
+    def __hash__(self) -> int:
+        return self._hash
+
+    def __eq__(self, other) -> bool:
+        if self.armed:
+            raise RuntimeError("hostile __eq__")
+        return self is other
+
+
+def _record_with_hostile_key(colliding_with: str) -> dict:
+    """A structurally valid, signed-looking record carrying one extra key
+    that hashes exactly like colliding_with. "record_type" places it at
+    the top level, colliding with the record's own record_type member;
+    "profile" places it nested inside authority.scope, colliding with that
+    facet's own profile member."""
+    authority = _rich_authority()
+    record = _bare_valid_record(authority)
+    key = _HashCollidingKey(colliding_with)
+    if colliding_with == "record_type":
+        record[key] = "extra"
+    else:
+        record["authority"]["scope"][key] = "extra"
+    key.armed = True
+    return record
+
+
+def _body_with_hostile_key(colliding_with: str) -> dict:
+    """The same extra key as _record_with_hostile_key, on an unsigned
+    issuance body (no delegation_id or signature members, as issue.py
+    requires) built from _root_body."""
+    body = _root_body(authority=_rich_authority())
+    key = _HashCollidingKey(colliding_with)
+    if colliding_with == "record_type":
+        body[key] = "extra"
+    else:
+        body["authority"]["scope"][key] = "extra"
+    key.armed = True
+    return body
+
+
+_HOSTILE_KEY_PLACEMENTS = [
+    pytest.param("record_type", id="top-level-record_type"),
+    pytest.param("profile", id="authority.scope-profile"),
+]
+
+
+class TestHostileKeyHashCollisionGivesDefinedResults:
+    """A key built to hash exactly like a real field name, and to raise
+    from its own __eq__, must never escape any entry point as an
+    exception: every dict lookup a hash collision with it could reach must
+    run only after this package's own non-str-key walk has already found
+    it and returned a coded failure. Checked once with the extra key at
+    the top level, colliding with record_type, and once with it nested
+    inside authority.scope, colliding with that facet's own profile
+    member, across validate_authority_delegation_shape, chain
+    verification, the budget ledger, and both issuers. A plain int key,
+    which is simply the wrong type rather than hostile, is checked
+    separately below and keeps giving the same defined results."""
+
+    @pytest.mark.parametrize("colliding_with", _HOSTILE_KEY_PLACEMENTS)
+    def test_shape_is_schema_invalid(self, colliding_with):
+        failures = validate_authority_delegation_shape(_record_with_hostile_key(colliding_with))
+        assert [item.code for item in failures] == ["SCHEMA_INVALID"]
+
+    @pytest.mark.parametrize("colliding_with", _HOSTILE_KEY_PLACEMENTS)
+    def test_verify_is_invalid_schema_invalid(self, colliding_with):
+        result = _verify_one(_record_with_hostile_key(colliding_with), "unused")
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID"]
+
+    @pytest.mark.parametrize("colliding_with", _HOSTILE_KEY_PLACEMENTS)
+    def test_ledger_reserve_is_conflict(self, colliding_with):
+        ledger = InMemoryAuthorityBudgetLedger()
+        result = ledger.reserve(
+            [_record_with_hostile_key(colliding_with)], "d" * 64, "iso4217:USD:minor", "1",
+        )
+        assert result.ok is False
+        assert result.code == "CONFLICT"
+
+    @pytest.mark.parametrize("colliding_with", _HOSTILE_KEY_PLACEMENTS)
+    def test_issue_root_raises_schema_invalid(self, colliding_with):
+        seed, _ = _keypair()
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            issue_authority_delegation(_body_with_hostile_key(colliding_with), seed)
+        assert exc_info.value.code == "SCHEMA_INVALID"
+
+    @pytest.mark.parametrize("colliding_with", _HOSTILE_KEY_PLACEMENTS)
+    def test_issue_sub_raises_schema_invalid(self, colliding_with):
+        chain = _Chain()
+        child_body = _body_with_hostile_key(colliding_with)
+        child_body.update(
+            parent_delegation_id=chain.root["delegation_id"],
+            issuer="did:example:agent-a",
+            subject="did:example:agent-b",
+            verification_method="did:example:agent-a#key-1",
+            issued_at="2026-01-01T00:05:00.000Z",
+        )
+
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            issue_sub_authority_delegation(
+                chain.root,
+                child_body,
+                chain.agent_a_seed,
+                now=child_body["issued_at"],
+                resolve_verification_key=chain.resolve_verification_key,
+                resolve_revocation=lambda delegation: "active",
+            )
+        assert exc_info.value.code == "SCHEMA_INVALID"
+
+    def test_int_key_control_gives_the_same_defined_results(self):
+        record = _bare_valid_record(_rich_authority())
+        record[1] = "extra"
+
+        failures = validate_authority_delegation_shape(record)
+        assert [item.code for item in failures] == ["SCHEMA_INVALID"]
+
+        result = _verify_one(record, "unused")
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID"]
+
+        ledger = InMemoryAuthorityBudgetLedger()
+        ledger_result = ledger.reserve([record], "e" * 64, "iso4217:USD:minor", "1")
+        assert ledger_result.ok is False
+        assert ledger_result.code == "CONFLICT"
+
+        seed, _ = _keypair()
+        body = _root_body(authority=_rich_authority())
+        body[1] = "extra"
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            issue_authority_delegation(body, seed)
+        assert exc_info.value.code == "SCHEMA_INVALID"
+
+
 class TestContainerTypeItselfMustBeExact:
-    """Round 2 of the requirement text applied completely: a tuple, an
-    OrderedDict or a str subclass is not plain JSON data because of its own
-    runtime type, not only because of what it might hold. Each value below
+    """A container's own runtime type must be exact for it to count as
+    plain JSON data, applied completely here: a tuple, an OrderedDict or a
+    str subclass is not plain JSON data because of its own runtime type,
+    not only because of what it might hold. Each value below
     is otherwise an unremarkable scope grants value (one valid-looking
     grant), which isolates the container-type check itself from the
     noncharacter-content case TestNonIJsonValuesAnywhereInRecord already
@@ -1340,8 +1490,8 @@ class TestCyclicContainerIsNotPlainJsonData:
 
 
 class TestForgedPathMarkerCannotEscapeTheWalk:
-    """Round 5 of the requirement text. The walk in schema.py's
-    _has_non_i_json_value used to track a cycle by pushing a fresh
+    """The walk in schema.py's _has_non_i_json_value used to track a cycle
+    by pushing a fresh
     _LeaveContainer instance onto its own stack right after entering a dict
     or list, and popping that instance back off, identified only by
     type(current) is _LeaveContainer, once the container's own subtree had
@@ -1397,9 +1547,9 @@ def _shared_reference_chain(depth: int) -> list:
 
 
 class TestNonIJsonWalkRevisitsEachDistinctContainerOnce:
-    """Round 5B of the requirement text. _has_non_i_json_value used to walk
-    a container again every time it was reached through another reference,
-    even off the current path, so a shared-reference structure with d
+    """_has_non_i_json_value used to walk a container again every time it
+    was reached through another reference, even off the current path, so a
+    shared-reference structure with d
     distinct containers but 2**d root-to-leaf paths took time and memory
     exponential in d. It now remembers the id() of every container already
     walked clean and skips it when reached again off the current path,
@@ -1444,8 +1594,8 @@ class TestNonIJsonWalkRevisitsEachDistinctContainerOnce:
 class TestIntegerMagnitudeMustFitADouble:
     """An integer this package will canonicalize as a JSON number must
     itself survive conversion to an IEEE 754 double: float(v) raising
-    OverflowError is round 2's test for that. Placed inside a record whose
-    version is unrecognised, so it is reached only by the record-wide walk,
+    OverflowError is what the tests below check for. Placed inside a record
+    whose version is unrecognised, so it is reached only by the record-wide walk,
     never by any version="1.0" facet-specific integer check, and the wire
     form is exercised through parse_authority_delegation_json directly,
     since json.loads decodes an arbitrarily large integer literal exactly

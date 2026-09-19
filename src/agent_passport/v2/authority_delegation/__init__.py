@@ -41,17 +41,23 @@ exponent even where it denotes an integer; the aps-hierarchical-v1 scope
 segment grammar, which is narrower than draft line 516's own requirement
 that scope grants use ASCII colon-separated segments; the
 aps-values-identifiers-v1 identifier grammar, which is narrower than draft
-line 547's own description of a profile-defined identifier; and the limits
-of 256 records per chain, 1024 UTF-8 bytes per identifier, and 1 MiB of wire
-input, none of which the draft states. record_type, version and facet
-profiles are settled, not provisional: a record_type or version that is not
-a string is invalid; a record whose record_type names the v1 type and whose
-version names some other string is unsupported and is not judged by the v1
-body schema at all; a record_type naming some other string is still judged
-by the v1 body schema, which is left open; a facet's profile that is missing
-or not a string is invalid; and a facet's profile naming an unsupported
-string is unsupported without its content being judged by the section 3.2
-value rules.
+line 547's own description of a profile-defined identifier; the limits of
+256 records per chain, 1024 UTF-8 bytes per identifier, and 1 MiB of wire
+input, none of which the draft states; and which body schema, if any, judges
+a record whose record_type names some string other than the v1 type, which
+is left open rather than settled. record_type, version and facet profiles
+are otherwise settled: a record_type or version that is not a string is
+invalid; a record whose record_type names the v1 type and whose version
+names some other string is unsupported and is not judged by the v1 body
+schema at all; a facet's profile that is missing or not a string is invalid;
+and a facet's profile naming an unsupported string is unsupported without
+its content being judged by the section 3.2 value rules. Those two settled
+outcomes, for an unknown version and for an unsupported profile, are both
+still subject to the provisional precedence, documented at
+validate_authority_delegation_shape, under which a record that is not
+I-JSON is reported SCHEMA_INVALID first: a record that fails the I-JSON
+check and also names an unknown version or an unsupported profile is
+reported invalid on SCHEMA_INVALID, not unsupported.
 """
 
 from __future__ import annotations
