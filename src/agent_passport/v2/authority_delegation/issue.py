@@ -203,6 +203,17 @@ def issue_sub_authority_delegation(
     against the parent's subject; the child's issued_at against the
     parent's validity window; and the seven-facet attenuation of the child
     under the parent.
+
+    Once the parent has passed its shape check it is copied, and every check
+    from there on reads that copy. `resolve_revocation` is handed a copy of
+    its own, never the caller's parent and never the copy the remaining
+    checks read, because the linkage, continuity, issuance-time and
+    attenuation checks all run after it: a callback that wrote to what it
+    was given would otherwise change what the child body is compared
+    against, and this function would sign a child that widens its parent,
+    which is the invalidity section 3.6 requires an issuer to refuse rather
+    than leave for a later verifier (lines 700-704). The TypeScript SDK
+    hands its revocation callback a copy for the same reason.
     """
     if not is_canonical_timestamp(now):
         raise AuthorityDelegationError(
