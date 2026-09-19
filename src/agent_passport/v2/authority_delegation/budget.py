@@ -50,7 +50,12 @@ class InMemoryAuthorityBudgetLedger:
 
     def reserve(self, verified_chain, action_ref: str, unit: str, amount_string: str) -> BudgetOperationResult:
         with self._lock:
-            if type(action_ref) is not str or not _ACTION_REF.fullmatch(action_ref) or not is_canonical_quantity(amount_string):
+            if (
+                type(action_ref) is not str
+                or not _ACTION_REF.fullmatch(action_ref)
+                or type(unit) is not str
+                or not is_canonical_quantity(amount_string)
+            ):
                 return BudgetOperationResult(ok=False, code="CONFLICT")
             if type(verified_chain) not in (list, tuple):
                 return BudgetOperationResult(ok=False, code="CONFLICT")
