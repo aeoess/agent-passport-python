@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 section 4.2 (published text lines 845-892)",
   "generated_from": {
     "repository": "aeoess/agent-passport-system",
-    "commit": "c47b97b95642ea5bb6c19bee2bf795144b09fe1c",
+    "commit": "221131d0cc7da9b7f903409439bbf11a8e88caf1",
     "module": "src/core/external-action-ref.ts",
     "generator": "tests/cross_impl/gen_external_action_ref_v1_vectors.mts"
   },
@@ -276,9 +276,8 @@
       "expected_provenance": "draft-derived",
       "draft_lines": "866-871",
       "ts_behaviour": {
-        "behaviour": "accepts",
-        "external_action_ref": "51c52abf72bc70066a037bc00606571aa712cca75551ae8f605049f60f403bda",
-        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
+        "behaviour": "rejects",
+        "message": "computeExternalActionRefV1: timestamp must be RFC 3339 UTC with three fractional digits and a Z suffix (YYYY-MM-DDTHH:MM:SS.mmmZ), got \"2026-13-01T00:00:00.000Z\""
       }
     },
     {
@@ -296,9 +295,8 @@
       "expected_provenance": "draft-derived",
       "draft_lines": "866-871",
       "ts_behaviour": {
-        "behaviour": "accepts",
-        "external_action_ref": "426a3a10990f2ed4e391d405255846b0e58a8452bf36a80322d8614ee13bfbdf",
-        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
+        "behaviour": "rejects",
+        "message": "computeExternalActionRefV1: timestamp names a day that does not exist in that month, got \"2026-02-30T00:00:00.000Z\""
       }
     },
     {
@@ -316,9 +314,8 @@
       "expected_provenance": "draft-derived",
       "draft_lines": "866-871",
       "ts_behaviour": {
-        "behaviour": "accepts",
-        "external_action_ref": "75b93ad591463b88a71fd6a746bc131c72f99af907440a095f7f6ae11d5d4955",
-        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
+        "behaviour": "rejects",
+        "message": "computeExternalActionRefV1: timestamp must be RFC 3339 UTC with three fractional digits and a Z suffix (YYYY-MM-DDTHH:MM:SS.mmmZ), got \"2026-04-08T24:00:00.000Z\""
       }
     },
     {
@@ -336,9 +333,8 @@
       "expected_provenance": "draft-derived",
       "draft_lines": "866-871",
       "ts_behaviour": {
-        "behaviour": "accepts",
-        "external_action_ref": "8d51ae00a74a3ed70b2eef60807110d05ed7bfad3901b91f81ba3365a648dfc0",
-        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
+        "behaviour": "rejects",
+        "message": "computeExternalActionRefV1: timestamp must be RFC 3339 UTC with three fractional digits and a Z suffix (YYYY-MM-DDTHH:MM:SS.mmmZ), got \"2026-04-08T12:60:00.000Z\""
       }
     },
     {
@@ -358,9 +354,8 @@
       "expected_provenance": "draft-derived",
       "draft_lines": "859-866",
       "ts_behaviour": {
-        "behaviour": "accepts",
-        "external_action_ref": "dfd898a4623d23961e70b9435abd67c45045940196856d55c43781bfa93b6f20",
-        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
+        "behaviour": "rejects",
+        "message": "computeExternalActionRefV1: scope must be a string"
       }
     },
     {
@@ -378,9 +373,8 @@
       "expected_provenance": "draft-derived",
       "draft_lines": "859-866",
       "ts_behaviour": {
-        "behaviour": "accepts",
-        "external_action_ref": "01a704307c135da40603bdc61b2157a7e30a77f6982141cf5eb9ffc3dd812b21",
-        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
+        "behaviour": "rejects",
+        "message": "computeExternalActionRefV1: agentId must be a string"
       }
     },
     {
@@ -399,7 +393,7 @@
       "draft_lines": "859-866",
       "ts_behaviour": {
         "behaviour": "rejects",
-        "message": "computeExternalActionRefV1: timestamp must be RFC 3339 UTC with three fractional digits and a Z suffix (YYYY-MM-DDTHH:MM:SS.mmmZ), got 1747568431000"
+        "message": "computeExternalActionRefV1: timestamp must be a string or a Date"
       }
     },
     {
@@ -438,9 +432,8 @@
       "expected_provenance": "draft-derived",
       "draft_lines": "866-871",
       "ts_behaviour": {
-        "behaviour": "accepts",
-        "external_action_ref": "b00f1c16cb2f2cefdcb62cce1d9f33d930bdf141778bf56fee2b058f17404631",
-        "note": "TypeScript SDK behaviour at the pinned commit differs from the draft text"
+        "behaviour": "rejects",
+        "message": "computeExternalActionRefV1: timestamp must be a string or a Date"
       }
     }
   ]
