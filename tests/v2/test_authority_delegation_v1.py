@@ -135,9 +135,9 @@ class TestIssuedRecordSharesNoMutableObjectWithTheCallersBody:
     top level. A caller that mutated one of those nested objects after
     issuance (its own body template, reused for a later issuance, say)
     would silently change an already-issued record out from under it. Both
-    issuers now deep-copy the body before filling in the nonce, so nothing
-    in the returned record is the same object as anything in the caller's
-    body, and the issued bytes are unaffected either way."""
+    issuers now deep-copy the body after validation, in _finish_issuance, so
+    nothing in the returned record is the same object as anything in the
+    caller's body, and the issued bytes are unaffected either way."""
 
     def test_root_record_is_unaffected_by_editing_the_bodys_authority_after_issuing(self):
         seed, public_key = _keypair()
@@ -1589,6 +1589,45 @@ class TestNonIJsonWalkRevisitsEachDistinctContainerOnce:
         cyclic.append(cyclic)
 
         assert _schema_module._has_non_i_json_value([shared, cyclic]) is True
+
+
+class TestNonIJsonWalkRevisitsEachDistinctStringOnce:
+    """_has_non_i_json_value used to scan every string occurrence's code
+    points, even when the exact same str object was reached through another
+    reference, because a string is not a container and so never earned the
+    container id() memo above. pickle keeps a repeated str as one object
+    referenced from every slot that held it, so a 120 KB pickle blob holding
+    one 100,000-character string referenced 10,000 times used to cost about
+    a minute: the same string scanned once per reference rather than once
+    per distinct object. The walk now remembers the id() of every string
+    already checked clean and skips the character scan when that same
+    object is reached again, while a distinct string with identical
+    content is still checked on its own."""
+
+    def test_shared_string_referenced_10000_times_in_an_unsupported_version_record_is_fast(self):
+        shared = "a" * 100_000
+        body = _root_body(version="2.0", authority=_authority())
+        body["extra"] = [shared] * 10_000
+
+        start = time.perf_counter()
+        failures = validate_authority_delegation_shape(body)
+        elapsed = time.perf_counter() - start
+
+        assert elapsed < 1.0, f"took {elapsed:.3f}s"
+        assert [item.code for item in failures] == ["UNSUPPORTED_VERSION"]
+
+    def test_shared_string_referenced_10000_times_in_an_unsupported_scope_facet_is_fast(self):
+        shared = "a" * 100_000
+        authority = _authority(scope={"profile": "custom-unsupported-v9", "grants": [shared] * 10_000})
+        record = _bare_valid_record(authority)
+
+        start = time.perf_counter()
+        result = _verify_one(record, "unused")
+        elapsed = time.perf_counter() - start
+
+        assert elapsed < 1.0, f"took {elapsed:.3f}s"
+        assert result.state == "unsupported"
+        assert [item.code for item in result.failures] == ["UNSUPPORTED_PROFILE"]
 
 
 class TestIntegerMagnitudeMustFitADouble:

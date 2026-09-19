@@ -201,6 +201,25 @@ def _has_non_i_json_value(value) -> bool:
     walked clean makes the cost linear in the number of distinct containers
     and their members instead.
 
+    A string reached more than once is checked only the first time. Unlike a
+    dict or a list, a string is never pushed back onto the stack as its own
+    exit signal, so there is no path/clean distinction for it: once a
+    string's id() has been checked and found well formed, it is recorded in
+    ``checked_strings``, and any later reference to that same object, found
+    anywhere else in the record, skips the character scan entirely (a string
+    cannot contain itself, so there is no cycle to detect the way a
+    container needs one). pickle keeps a repeated str as one object
+    referenced from every slot that held it, so a value held by 10,000
+    references to the same 100,000-character string used to cost one full
+    scan of that string per reference, because a string is not a container
+    and so never earned the container id() memo above; remembering the id()
+    of every string already checked makes the cost linear in the number of
+    distinct string objects and their combined length instead. This is safe
+    for the same reason the container memo above is: every string this walk
+    has ever seen is still reachable from ``value``, the record this call
+    was given, for the whole call, so no id() it records can be reused by an
+    unrelated string before the walk finishes.
+
     That exit signal is kept out of band, never mixed into the stack as a
     value that could be confused with one from the record. Every stack entry
     is a ``(payload, is_exit)`` pair: a value taken from the record itself is
@@ -223,6 +242,7 @@ def _has_non_i_json_value(value) -> bool:
     stack: list[tuple] = [(value, False)]
     path_ids: set[int] = set()
     clean: set[int] = set()
+    checked_strings: set[int] = set()
     while stack:
         current, is_exit = stack.pop()
         if is_exit:
@@ -230,8 +250,12 @@ def _has_non_i_json_value(value) -> bool:
             clean.add(current)
             continue
         if type(current) is str:
+            identity = id(current)
+            if identity in checked_strings:
+                continue
             if is_ill_formed_string(current):
                 return True
+            checked_strings.add(identity)
         elif type(current) is dict:
             identity = id(current)
             if identity in path_ids:
