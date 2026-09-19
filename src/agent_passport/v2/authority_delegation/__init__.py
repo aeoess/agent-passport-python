@@ -9,16 +9,15 @@ chain verification, strict wire parsing, and the in-memory budget ledger.
 It is distinct from the legacy agent_passport.delegation module, which is a
 pre-draft compatibility surface and is not the draft-03 record described here.
 
+Both SDKs' child issuers verify the parent before signing: its shape and
+delegation_id, its signature through the caller's key resolver, its validity
+at the caller's `now`, and a revocation status of exactly "active" (draft
+section 3.6).
+
 Points that are deliberately different in behaviour from the TypeScript SDK,
 each documented at the function it affects:
 - the order chain verification decides between several simultaneous faults
   (verify.py);
-- a child issuer verifies the parent's signature, its revocation status, and
-  its validity at the issuer's own supplied `now`, before signing, none of
-  which the TypeScript SDK's issuer checks (issue.py);
-- a child issuer recomputes the parent's delegation_id against the parent's
-  own body before trusting it, rather than trusting the id field as given
-  (issue.py);
 - a missing nonce on an issuing body is filled in with 16 random bytes
   rather than required (issue.py);
 - a body that already carries delegation_id or signature is refused outright
@@ -34,12 +33,16 @@ each documented at the function it affects:
 Separately, a small number of choices are kept identical to the TypeScript
 SDK in places where the draft states no rule of its own, each marked
 provisional at the point it applies: the grammar required of a bounded spend's
-unit; rejecting a wire number token with a fraction or exponent even where
-it denotes an integer; treating a non-string record_type or version as
-unsupported rather than invalid; treating a facet whose profile is missing or
-not a string as invalid; and reporting a facet whose profile is an unknown
-string as unsupported without judging its content by the section 3.2 value
-rules. Also kept identical without being provisional,
+unit; and rejecting a wire number token with a fraction or exponent even
+where it denotes an integer. record_type, version and facet profiles are
+settled, not provisional: a record_type or version that is not a string is
+invalid; a record whose record_type names the v1 type and whose version
+names some other string is unsupported and is not judged by the v1 body
+schema at all; a record_type naming some other string is still judged by the
+v1 body schema, which is left open; a facet's profile that is missing or not
+a string is invalid; and a facet's profile naming an unsupported string is
+unsupported without its content being judged by the section 3.2 value rules.
+Also kept identical without being provisional,
 because they are implementation limits rather than draft rules: the
 aps-hierarchical-v1 scope segment grammar, the aps-values-identifiers-v1
 identifier grammar, and the limits of 256 records per chain, 1024 UTF-8 bytes

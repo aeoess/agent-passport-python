@@ -1159,3 +1159,79 @@ class TestRootNotBeforeMayPredateIssuedAt:
 
         assert [item.code for item in failures] == ["SCHEMA_INVALID"]
         assert failures[0].message == "time window must be non-empty"
+
+
+class TestRecordTypeVersionAndFacetProfiles:
+    """A record_type or version that is not a string is malformed input; a
+    recognised record_type with an unknown string version is unsupported and
+    skips the rest of the v1 body schema entirely; an unrecognised record_type
+    string is still judged by that schema; and a facet's own profile handling
+    (missing/non-string profile, unsupported profile string) is unchanged."""
+
+    def _probe(self, **overrides) -> dict:
+        body = _root_body(**overrides)
+        return {**body, "nonce": "0" * 32, "delegation_id": "sha256:" + "0" * 64, "signature": "0" * 128}
+
+    def test_version_as_a_number_is_schema_invalid(self):
+        failures = validate_authority_delegation_shape(self._probe(version=1))
+        assert [item.code for item in failures] == ["SCHEMA_INVALID"]
+        assert failures[0].message == "record_type and version must be strings"
+
+    def test_version_as_a_list_is_schema_invalid(self):
+        failures = validate_authority_delegation_shape(self._probe(version=["1.0"]))
+        assert [item.code for item in failures] == ["SCHEMA_INVALID"]
+        assert failures[0].message == "record_type and version must be strings"
+
+    def test_record_type_as_a_number_is_schema_invalid(self):
+        failures = validate_authority_delegation_shape(self._probe(record_type=7))
+        assert [item.code for item in failures] == ["SCHEMA_INVALID"]
+        assert failures[0].message == "record_type and version must be strings"
+
+    def test_recognised_type_with_unknown_version_skips_exact_keys_and_facet_checks(self):
+        probe = self._probe(version="2.0")
+        probe["extensions"] = {}
+        probe["authority"] = dict(probe["authority"])
+        probe["authority"]["risk"] = {"profile": "x", "ceiling": 1}
+
+        failures = validate_authority_delegation_shape(probe)
+
+        assert [item.code for item in failures] == ["UNSUPPORTED_VERSION"]
+
+    def test_recognised_type_with_unknown_version_skips_the_missing_nonce_member(self):
+        body = _root_body(version="1.1")
+        probe = {**body, "delegation_id": "sha256:" + "0" * 64, "signature": "0" * 128}
+        assert "nonce" not in probe
+
+        failures = validate_authority_delegation_shape(probe)
+
+        assert [item.code for item in failures] == ["UNSUPPORTED_VERSION"]
+
+    def test_recognised_type_with_unknown_version_and_a_noncharacter_reports_both_codes(self):
+        probe = self._probe(version="2.0", subject="did:example:agent-a﷐")
+
+        failures = validate_authority_delegation_shape(probe)
+
+        assert [item.code for item in failures] == ["SCHEMA_INVALID", "UNSUPPORTED_VERSION"]
+
+    def test_recognised_type_with_unknown_version_and_an_otherwise_valid_v1_body_is_unsupported(self):
+        failures = validate_authority_delegation_shape(self._probe(version="2.0"))
+        assert [item.code for item in failures] == ["UNSUPPORTED_VERSION"]
+        assert failures[0].message == "unsupported authority-delegation record_type or version"
+
+    def test_unrecognised_record_type_with_a_v1_body_is_still_judged_by_the_v1_schema(self):
+        failures = validate_authority_delegation_shape(
+            self._probe(record_type="aps:authority-delegation:v2"),
+        )
+        assert [item.code for item in failures] == ["UNSUPPORTED_VERSION"]
+
+    def test_reputation_profile_as_a_number_is_schema_invalid(self):
+        probe = self._probe(authority=_authority(reputation={"profile": 5, "ceiling": 80}))
+        failures = validate_authority_delegation_shape(probe)
+        assert [item.code for item in failures] == ["SCHEMA_INVALID"]
+
+    def test_unsupported_scope_profile_is_unsupported_profile(self):
+        probe = self._probe(
+            authority=_authority(scope={"profile": "aps-hierarchical-v2", "grants": ["commerce/checkout"]}),
+        )
+        failures = validate_authority_delegation_shape(probe)
+        assert [item.code for item in failures] == ["UNSUPPORTED_PROFILE"]
