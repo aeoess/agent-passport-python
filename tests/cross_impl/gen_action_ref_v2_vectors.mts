@@ -2,12 +2,13 @@
 // vector file (tests/cross_impl/action-ref-v2-vectors.json).
 //
 // Every case, its expected result (accept/reject), its failure code, and its
-// expected_provenance are fixed by a written vector specification. This
-// script only fills in digests and the TypeScript SDK's own error messages
-// by calling the TS reference implementation directly; it does not decide
-// any expected result itself. If the TS reference disagrees with a fixed
-// expected result, the script exits nonzero and names the offending case
-// instead of silently recording whatever TS produced.
+// expected_provenance are fixed in this script, next to the draft citation
+// each case's derivation rests on. This script only fills in digests and
+// the TypeScript SDK's own error messages by calling the TS reference
+// implementation directly; it does not decide any expected result itself.
+// If the TS reference disagrees with a fixed expected result, the script
+// exits nonzero and names the offending case instead of silently recording
+// whatever TS produced.
 //
 // The TS repository is located purely through the APS_TS_REPO environment
 // variable (a file:// URL is built from it) and the pinned commit purely
@@ -78,7 +79,7 @@ const {
 }
 
 // -------------------------------------------------------------------------
-// Fixed metadata (verbatim from the written specification, not derived, not invented)
+// Fixed metadata (verbatim, not derived, not invented)
 // -------------------------------------------------------------------------
 
 const FAILURE_CODES = [
@@ -114,15 +115,24 @@ const WITHHELD = [
 
 const EXPECTED_PROVENANCE_VALUES = {
   'draft-derived':
-    "The expected result follows from the section 4.1 text alone: every reject case without a " +
-    "provenance_note, and every payload_ref digest (computed from the draft's formula with the rfc8785 " +
-    "package).",
+    'The expected result (accept or reject, the failure code, and any digest the case carries) is fixed by ' +
+    "the section 4.1 text alone, or by the RFC 3339 or RFC 7493 provisions it incorporates, independent of " +
+    "what the TypeScript SDK's own validation decides: every reject case whose failure code the draft text " +
+    'fixes on its own, whether or not its provenance_note explains the rule; every payload_ref digest, a ' +
+    'single canonicalization step over an arbitrary I-JSON payload with no validation branches to review; ' +
+    'and every accepted object digest computed straight from the section 4.1 formula with canonicalizeJCS, ' +
+    "rather than trusted from computeActionRefV2's own accept/reject decision, which is the leap-second and " +
+    'noncharacter-accept cases and is why their provenance_note says so.',
   'ts-conformant-regression':
-    "A result from the corrected TypeScript SDK at the pinned commit, for a construction whose TypeScript " +
-    "implementation was reviewed against the draft text and found to follow it: every action_ref digest " +
-    "(including the create cases, whose canonical_input separately follows the draft's NFC and UTF-8 " +
-    "ordering rule), and the reject cases that carry a provenance_note explaining why the draft text alone " +
-    "does not fix the result.",
+    "The expected result rests on the corrected TypeScript SDK's own decision for a construction the draft " +
+    'text does not by itself fix, once that construction was reviewed against the draft and found to follow ' +
+    'it: every accepted object, json and create digest taken directly from computeActionRefV2, ' +
+    "computeActionRefV2FromJson or createActionReferenceInputV2's own validate-and-canonicalize pipeline " +
+    "(including the create cases' NFC normalization and UTF-8 ordering rule); the SDK's own integer-" +
+    "magnitude policy for a payload number the draft's I-JSON reference does not itself bound (RFC 7493 " +
+    'section 2.2 states it only as interoperability advice); and a provenance_note case where the draft ' +
+    'leaves the exact failure class open and this file pins whichever class the reviewed SDK actually ' +
+    'reports.',
 }
 
 const CROSS_CHECKS = {
@@ -165,6 +175,47 @@ function record(entry: CaseResult['entry'], provenance: Provenance): void {
   counts.total++
   counts.by_entry[entry]++
   counts.by_expected_provenance[provenance]++
+}
+
+/** True for any of the 66 Unicode noncharacters: U+FDD0 through U+FDEF, and
+ *  every code point whose low 16 bits are FFFE or FFFF (RFC 7493 section
+ *  2.1, by reference to the Unicode Standard). */
+function isNoncharacter(codePoint: number): boolean {
+  if (codePoint >= 0xfdd0 && codePoint <= 0xfdef) return true
+  const low16 = codePoint & 0xffff
+  return low16 === 0xfffe || low16 === 0xffff
+}
+
+/** Replace every literal Unicode noncharacter code point in `jsonText` with
+ *  its JSON \u escape, so the vector file this generator writes never
+ *  carries a literal noncharacter byte, only its escape. A BMP
+ *  noncharacter becomes one \uXXXX escape in lowercase hex, the same case
+ *  JSON.stringify uses for a lone surrogate; a supplementary-plane
+ *  noncharacter becomes the \uXXXX\uXXXX surrogate pair JSON.stringify
+ *  would itself emit for it. This runs on the already-serialized JSON text,
+ *  not on the document object, and only changes spelling: JSON.parse of the
+ *  result gives back exactly the same value as JSON.parse of the unescaped
+ *  text. */
+function escapeNoncharacters(jsonText: string): string {
+  let out = ''
+  for (let i = 0; i < jsonText.length; i++) {
+    const unit = jsonText.charCodeAt(i)
+    if (unit >= 0xd800 && unit <= 0xdbff && i + 1 < jsonText.length) {
+      const low = jsonText.charCodeAt(i + 1)
+      if (low >= 0xdc00 && low <= 0xdfff) {
+        const codePoint = (unit - 0xd800) * 0x400 + (low - 0xdc00) + 0x10000
+        if (isNoncharacter(codePoint)) {
+          out += `\\u${unit.toString(16).padStart(4, '0')}\\u${low.toString(16).padStart(4, '0')}`
+        } else {
+          out += jsonText[i] + jsonText[i + 1]
+        }
+        i++
+        continue
+      }
+    }
+    out += isNoncharacter(unit) ? `\\u${unit.toString(16).padStart(4, '0')}` : jsonText[i]
+  }
+  return out
 }
 
 function draftLinesForFailure(code: string): string {
@@ -266,7 +317,7 @@ for (const c of payloadCases) {
 }
 
 // -------------------------------------------------------------------------
-// payload_ref cases: section 4.1 rejects noncharacters (item 4). Every code
+// payload_ref cases: section 4.1 rejects noncharacters. Every code
 // point below is written as an explicit \u escape (a surrogate pair for a
 // supplementary-plane code point), never a literal noncharacter byte.
 // -------------------------------------------------------------------------
@@ -284,6 +335,50 @@ for (const c of payloadCases) {
   record('payload', 'draft-derived')
   cases.push({
     id: 'PR-N04',
+    entry: 'payload',
+    input: payload,
+    expected: expectedOut,
+    expected_provenance: 'draft-derived',
+    draft_lines: '813-815, 204',
+    provenance_note: NONCHARACTER_REJECT_NOTE,
+  })
+}
+
+{
+  // U+FDD0, a noncharacter, in a member name.
+  const payload = { ['k' + '\uFDD0']: 1 }
+  let expectedOut: Record<string, unknown>
+  try {
+    const ref = computePayloadRefV1(payload)
+    fail(`PR-N05: TS accepted a payload expected to reject (non_i_json): ${ref}`)
+  } catch (e) {
+    expectedOut = { result: 'reject', failure: 'non_i_json', ts_error_message: (e as Error).message }
+  }
+  record('payload', 'draft-derived')
+  cases.push({
+    id: 'PR-N05',
+    entry: 'payload',
+    input: payload,
+    expected: expectedOut,
+    expected_provenance: 'draft-derived',
+    draft_lines: '813-815, 204',
+    provenance_note: NONCHARACTER_REJECT_NOTE,
+  })
+}
+
+{
+  // U+FFFF, a noncharacter, in a nested member name.
+  const payload = { outer: { ['k' + '\uFFFF']: 1 } }
+  let expectedOut: Record<string, unknown>
+  try {
+    const ref = computePayloadRefV1(payload)
+    fail(`PR-N06: TS accepted a payload expected to reject (non_i_json): ${ref}`)
+  } catch (e) {
+    expectedOut = { result: 'reject', failure: 'non_i_json', ts_error_message: (e as Error).message }
+  }
+  record('payload', 'draft-derived')
+  cases.push({
+    id: 'PR-N06',
     entry: 'payload',
     input: payload,
     expected: expectedOut,
@@ -550,8 +645,8 @@ for (const c of secondSixtyRejectCases) {
 }
 
 // -------------------------------------------------------------------------
-// action_ref cases, entry "object": section 4.1 rejects noncharacters
-// (item 4). Draft lines 813-815 require a verifier to reject an object
+// action_ref cases, entry "object": section 4.1 rejects noncharacters.
+// Draft lines 813-815 require a verifier to reject an object
 // carrying a non-I-JSON value; read with line 204 (JCS runs only over
 // validated I-JSON) and RFC 7493 section 2.1, a noncharacter code point
 // (U+FDD0 through U+FDEF, or any code point whose low 16 bits are FFFE or
@@ -719,7 +814,7 @@ for (const c of jsonCases) {
     if (c.equalsActionRefOf) {
       const other = actionRefById.get(c.equalsActionRefOf)
       if (ref !== other) {
-        fail(`${c.id}: action_ref ${ref} does not equal ${c.equalsActionRefOf} (${other}) as the spec requires`)
+        fail(`${c.id}: action_ref ${ref} does not equal ${c.equalsActionRefOf} (${other}) as the draft requires`)
       }
     }
     expectedOut = { result: 'accept', action_ref: ref }
@@ -729,8 +824,8 @@ for (const c of jsonCases) {
     }
     const message = (e as Error).message
     if (!failure) {
-      // AJ-N05 only: the spec leaves the failure class open and asks that we
-      // record whichever class TS actually reports, STOPping only if TS
+      // AJ-N05 only: the draft leaves the failure class open here, so this
+      // records whichever class TS actually reports, STOPping only if TS
       // does not reject at all (handled by the catch itself firing).
       if (/non-finite number|non-I-JSON|IJsonValidationError|unsupported/i.test(message)) {
         failure = 'non_i_json'
@@ -757,7 +852,7 @@ for (const c of jsonCases) {
 }
 
 // -------------------------------------------------------------------------
-// action_ref cases, entry "json": section 4.1 rejects noncharacters (item 4).
+// action_ref cases, entry "json": section 4.1 rejects noncharacters.
 // -------------------------------------------------------------------------
 
 {
@@ -824,7 +919,7 @@ for (const c of createCases) {
     if (c.equalsActionRefOf) {
       const other = actionRefById.get(c.equalsActionRefOf)
       if (ref !== other) {
-        fail(`${c.id}: action_ref ${ref} does not equal ${c.equalsActionRefOf} (${other}) as the spec requires`)
+        fail(`${c.id}: action_ref ${ref} does not equal ${c.equalsActionRefOf} (${other}) as the draft requires`)
       }
     }
     expectedOut = { result: 'accept', action_ref: ref, canonical_input: canonical }
@@ -846,8 +941,7 @@ for (const c of createCases) {
 }
 
 // -------------------------------------------------------------------------
-// action_ref cases, entry "create": section 4.1 rejects noncharacters
-// (item 4).
+// action_ref cases, entry "create": section 4.1 rejects noncharacters.
 // -------------------------------------------------------------------------
 
 {
@@ -901,6 +995,6 @@ const document = {
   cases,
 }
 
-writeFileSync(outPath, JSON.stringify(document, null, 2) + '\n', 'utf8')
+writeFileSync(outPath, escapeNoncharacters(JSON.stringify(document, null, 2)) + '\n', 'utf8')
 console.log(`wrote ${cases.length} cases to ${outPath}`)
 console.log(JSON.stringify(counts, null, 2))

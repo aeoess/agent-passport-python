@@ -178,18 +178,18 @@ function forceSignWithId(body: any, delegationId: string, label: Label): any {
 }
 
 /** issueAuthorityDelegation(body, seed(label)): used for the base valid
- *  records (R, C1, C2) and their valid variants, per the spec's explicit
- *  instruction to use this TS entry point for valid records. */
+ *  records (R, C1, C2) and their valid variants, since a schema-valid record
+ *  is issued through this TS entry point rather than force-signed by hand. */
 function issue(body: any, label: Label): any {
   return AD.issueAuthorityDelegation(body, seedHex(label))
 }
 
 /** AD-N-S13 only: the mutated body cannot be canonicalized (a lone
- *  surrogate). Per the spec, its delegation_id becomes "sha256:" + 64
- *  zeros and its signature 128 zeros. Confirms the throw actually happens;
- *  STOPs if it does not, since that would mean this generator's
- *  understanding of the construction is wrong, not that TS disagrees with
- *  an expectation. */
+ *  surrogate), so its delegation_id becomes "sha256:" + 64 zeros and its
+ *  signature 128 zeros, since no canonical bytes exist for a record that
+ *  cannot be canonicalized. Confirms the throw actually happens; STOPs if it
+ *  does not, since that would mean this generator's understanding of the
+ *  construction is wrong, not that TS disagrees with an expectation. */
 function forceSignExpectingCanonicalizationFailure(body: any, label: Label, caseId: string): any {
   try {
     AD.computeAuthorityDelegationId(body)
@@ -204,8 +204,9 @@ function forceSignExpectingCanonicalizationFailure(body: any, label: Label, case
  *  forceSign), falling back to the AD-N-S13 all-zero placeholder only if
  *  canonicalization actually throws (e.g. a lone surrogate). None of these
  *  three cases' mutations are lone surrogates, so in practice this always
- *  takes the forceSign branch; the fallback exists to match what the spec
- *  says to do if that were ever not so. */
+ *  takes the forceSign branch; the fallback exists so this helper would
+ *  still produce a definite value, rather than throwing, if a future
+ *  mutation of one of these cases ever did fail to canonicalize. */
 function forceSignOrZeroPlaceholder(body: any, label: Label): any {
   try {
     AD.computeAuthorityDelegationId(body)
@@ -237,6 +238,47 @@ function deepEqual(a: unknown, b: unknown): boolean {
   const bKeys = Object.keys(bObj).sort()
   if (aKeys.length !== bKeys.length) return false
   return aKeys.every((key, i) => key === bKeys[i] && deepEqual(aObj[key], bObj[key]))
+}
+
+/** True for any of the 66 Unicode noncharacters: U+FDD0 through U+FDEF, and
+ *  every code point whose low 16 bits are FFFE or FFFF (RFC 7493 section
+ *  2.1, by reference to the Unicode Standard). */
+function isNoncharacter(codePoint: number): boolean {
+  if (codePoint >= 0xfdd0 && codePoint <= 0xfdef) return true
+  const low16 = codePoint & 0xffff
+  return low16 === 0xfffe || low16 === 0xffff
+}
+
+/** Replace every literal Unicode noncharacter code point in `jsonText` with
+ *  its JSON \u escape, so the vector file this generator writes never
+ *  carries a literal noncharacter byte, only its escape. A BMP
+ *  noncharacter becomes one \uXXXX escape in lowercase hex, the same case
+ *  JSON.stringify uses for a lone surrogate; a supplementary-plane
+ *  noncharacter becomes the \uXXXX\uXXXX surrogate pair JSON.stringify
+ *  would itself emit for it. This runs on the already-serialized JSON text
+ *  (the output of JSON.stringify(document, ...)), not on the document
+ *  object, and it only changes spelling: JSON.parse of the result gives
+ *  back exactly the same value as JSON.parse of the unescaped text. */
+function escapeNoncharacters(jsonText: string): string {
+  let out = ''
+  for (let i = 0; i < jsonText.length; i++) {
+    const unit = jsonText.charCodeAt(i)
+    if (unit >= 0xd800 && unit <= 0xdbff && i + 1 < jsonText.length) {
+      const low = jsonText.charCodeAt(i + 1)
+      if (low >= 0xdc00 && low <= 0xdfff) {
+        const codePoint = (unit - 0xd800) * 0x400 + (low - 0xdc00) + 0x10000
+        if (isNoncharacter(codePoint)) {
+          out += `\\u${unit.toString(16).padStart(4, '0')}\\u${low.toString(16).padStart(4, '0')}`
+        } else {
+          out += jsonText[i] + jsonText[i + 1]
+        }
+        i++
+        continue
+      }
+    }
+    out += isNoncharacter(unit) ? `\\u${unit.toString(16).padStart(4, '0')}` : jsonText[i]
+  }
+  return out
 }
 
 // -------------------------------------------------------------------------
@@ -630,7 +672,7 @@ pushChainCase({
     b.authority.time = { not_before: '2016-12-31T23:59:60.000Z', not_after: '2017-01-01T00:00:00.500Z' }
   }), 'agent-a')
   pushChainCase({
-    id: 'AD-P16', title: 'Leap second is lexically admissible', chain: [RL, CL],
+    id: 'AD-P16', title: 'Second 60 at 23:59 on the last day of a month', chain: [RL, CL],
     contextOverrides: { now: '2016-12-31T23:59:60.500Z' }, expectedState: 'valid',
     lines: 'L796-797 and L480-481 (RFC 3339 timestamps), RFC 3339 sections 5.1 and 5.6',
     note: '2016-12-31T23:59:60Z was an actual leap second, which RFC 3339 sections 5.6 and 5.7 admit; same-format timestamps sort as strings into time order (RFC 3339 section 5.1).',
@@ -688,10 +730,10 @@ pushChainCase({
     b.authority.time = { not_before: '2026-06-30T23:00:00.000Z', not_after: '2026-06-30T23:59:60.500Z' }
   }), 'principal')
   pushChainCase({
-    id: 'AD-P22', title: 'not_after and now both a canonical leap second', chain: [R2],
+    id: 'AD-P22', title: 'not_after and now both second 60 at 23:59 on the last day of June', chain: [R2],
     contextOverrides: { now: '2026-06-30T23:59:60.000Z' }, expectedState: 'valid',
     lines: 'RFC 3339 section 5.7 and Appendix D, L535',
-    note: "June 2026 ends on the 30th, so 23:59:60 is a canonical leap second for both not_after and now; now is inside the half-open window, one half-second before not_after.",
+    note: "June 2026 ends on the 30th, so 23:59:60 is second 60 at 23:59 on the last day of the month for both not_after and now; now is inside the half-open window, one half-second before not_after.",
   })
 }
 
@@ -876,7 +918,14 @@ rootOnlyInvalid('AD-N-S65', 'record_type is a JSON number', 'L424-426', 'A recor
 
 rootOnlyInvalid('AD-N-S66', 'issued_at second 60 on a day that is not the last day of its month', 'RFC 3339 section 5.7 and Appendix D', 'RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; June 2026 has 30 days, so the 29th is not the last day of that month.', 'NONCANONICAL_VALUE', (b) => { b.issued_at = '2026-06-29T23:59:60.000Z' })
 
-rootOnlyInvalid('AD-N-S67', 'time.not_after second 60 at minute 58 (not minute 59)', 'RFC 3339 section 5.7 and Appendix D', 'RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; minute 58 is not minute 59. issued_at and time.not_before are set to the values root RL (AD-P16) uses, with not_after replaced.', 'NONCANONICAL_VALUE', (b) => { b.issued_at = '2016-12-31T23:59:59.000Z'; b.authority.time = { not_before: '2016-12-31T23:59:59.000Z', not_after: '2016-12-31T23:58:60.000Z' } })
+pushChainCase({
+  id: 'AD-N-S67', title: 'time.not_after second 60 at minute 58 (not minute 59)',
+  chain: [forceSign(mutate(BODY_R, (b) => { b.issued_at = '2016-12-31T23:58:00.000Z'; b.authority.time = { not_before: '2016-12-31T23:58:00.000Z', not_after: '2016-12-31T23:58:60.000Z' } }), 'principal')],
+  contextOverrides: { now: '2016-12-31T23:58:30.000Z' },
+  expectedState: 'invalid', expectedCode: 'NONCANONICAL_VALUE', expectedIndex: 0,
+  lines: 'RFC 3339 section 5.7 and Appendix D',
+  note: 'RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; minute 58 is not minute 59. issued_at and time.not_before are both 2016-12-31T23:58:00.000Z and now is 2016-12-31T23:58:30.000Z, so the window is well-formed, non-empty and contains now, and the only fault is the minute on not_after.',
+})
 
 {
   const body = mutate(BODY_R, (b) => { b.version = '2.0'; b.subject = b.subject + '\uFDD0' })
@@ -927,7 +976,7 @@ rootOnlyInvalid('AD-N-U09', 'Unsupported reversibility profile, otherwise valid 
     chain: [forceSignOrZeroPlaceholder(body, 'principal')],
     expectedState: 'unsupported', expectedCode: 'UNSUPPORTED_VERSION', expectedIndex: 0,
     lines: 'L426, L512-514',
-    note: 'The record_type names the v1 type but the version is an unsupported string, so rule 4 reports it unsupported without judging the body against the v1 schema at all: the extra top-level member "extensions" and the eighth facet "risk" are never reached.',
+    note: 'The record_type names the v1 type but the version is an unsupported string, so the record is reported unsupported without being judged against the v1 body schema at all: the extra top-level member "extensions" and the eighth facet "risk" are never reached.',
   })
 }
 {
@@ -1350,6 +1399,10 @@ const ISSUE_CHILD_DEFAULT_NOW = '2026-07-18T23:00:00.000Z'
 function pushIssueChildCase(
   id: string, title: string, parent: any, body: any, signingKey: Label, context: IssueChildContext,
   expectIssue: boolean, provenance: 'draft-derived' | 'ts-conformant-regression', lines: string, note: string,
+  /** Required for a refuse case: the SDK failure code the thrown Error message must name in
+   *  parentheses, e.g. "... (REVOKED)". The generator STOPs if the message does not end with
+   *  "(" + sdkCode + ")", and the recorded expected.sdk_code is this value. Omitted for an issue case. */
+  sdkCode?: string,
 ): any {
   const contextOut = {
     keys: context.keys === 'default' ? ALL_KEY_ENTRIES : keysWithout('principal'),
@@ -1380,13 +1433,22 @@ function pushIssueChildCase(
   if (outcome.result !== expectedResult) {
     fail(`${id}: expected ${expectedResult}, TS returned ${outcome.result} (${outcome.error ?? ''})`)
   }
+  if (!expectIssue) {
+    if (!sdkCode) fail(`${id}: a refuse case must be given its expected sdk_code`)
+    const suffix = `(${sdkCode})`
+    if (!outcome.error || !outcome.error.endsWith(suffix)) {
+      fail(`${id}: expected the TypeScript error message to end with "${suffix}", got ${JSON.stringify(outcome.error)}`)
+    }
+  }
   record('issue_child', provenance)
   cases.push({
     id, kind: 'issue_child', title,
     expected_provenance: provenance,
     derivation: { lines, note },
     parent, body, signing_key: signingKey, context: contextOut,
-    expected: expectIssue ? { result: 'issue', delegation: outcome.result === 'issue' ? outcome.delegation : delegation } : { result: 'refuse' },
+    expected: expectIssue
+      ? { result: 'issue', delegation: outcome.result === 'issue' ? outcome.delegation : delegation }
+      : { result: 'refuse', sdk_code: sdkCode },
     ts_behaviour: outcome.result === 'issue'
       ? { result: 'issue', delegation_id: outcome.delegation.delegation_id }
       : { result: 'refuse', error: outcome.error },
@@ -1408,71 +1470,71 @@ pushIssueChildCase('AD-I03', 'issue_child: parent C1, body C2, key agent-b', C1,
 pushIssueChildCase('AD-I04', 'issue_child: parent R, body C1 with scope widened', R,
   mutate(BODY_C1, (b) => { b.authority.scope.grants = ['travel:*'] }), 'agent-a',
   { keys: 'default', revocation_parent: 'active' }, false, 'draft-derived',
-  'L695, L519-520', 'INV-2 (attenuation) is enforced at issuance.')
+  'L695, L519-520', 'INV-2 (attenuation) is enforced at issuance.', 'SCOPE_WIDENING')
 
 pushIssueChildCase('AD-I05', "issue_child: parent R, body C1 issued at the parent's expiry", R,
   mutate(BODY_C1, (b) => {
     b.issued_at = '2026-07-19T22:00:00.000Z'
     b.authority.time = { not_before: '2026-07-19T22:00:00.000Z', not_after: '2026-07-19T23:00:00.000Z' }
   }), 'agent-a', { keys: 'default', revocation_parent: 'active' }, false, 'draft-derived',
-  'L698-701', 'The parent has already expired at the moment of issuance.')
+  'L698-701', 'The parent has already expired at the moment of issuance.', 'ISSUED_AT_OUTSIDE_PARENT')
 
 pushIssueChildCase('AD-I06', 'issue_child: parent R, body C1 issued before the parent starts', R,
   mutate(BODY_C1, (b) => {
     b.issued_at = '2026-07-18T21:59:00.000Z'
     b.authority.time.not_before = '2026-07-18T22:00:00.000Z'
   }), 'agent-a', { keys: 'default', revocation_parent: 'active' }, false, 'draft-derived',
-  'L698-699', 'The parent is not yet valid at the moment of issuance.')
+  'L698-699', 'The parent is not yet valid at the moment of issuance.', 'ISSUED_AT_OUTSIDE_PARENT')
 
 pushIssueChildCase('AD-I07', 'issue_child: parent R revoked', R, clone(BODY_C1), 'agent-a',
   { keys: 'default', revocation_parent: 'revoked' }, false, 'draft-derived',
-  'L698-699', 'The issuer MUST refuse to issue under a revoked parent; both SDKs resolve the parent revocation status before signing.')
+  'L698-699', 'The issuer MUST refuse to issue under a revoked parent; both SDKs resolve the parent revocation status before signing.', 'REVOKED')
 
 pushIssueChildCase('AD-I08', "issue_child: parent R with its signature corrupted", { ...R, signature: flipLastHexChar(R.signature) }, clone(BODY_C1), 'agent-a',
   { keys: 'default', revocation_parent: 'active' }, false, 'draft-derived',
-  'L696-698', 'The issuer MUST verify the parent signature before signing the child; a corrupted parent signature refuses.')
+  'L696-698', 'The issuer MUST verify the parent signature before signing the child; a corrupted parent signature refuses.', 'SIGNATURE_INVALID')
 
 pushIssueChildCase('AD-I09', 'issue_child: parent R, revocation unknown', R, clone(BODY_C1), 'agent-a',
   { keys: 'default', revocation_parent: 'unknown' }, false, 'draft-derived',
-  'L589-592', 'An unknown revocation result MUST NOT be collapsed into valid, so the issuer refuses rather than treating the parent as active.')
+  'L589-592', 'An unknown revocation result MUST NOT be collapsed into valid, so the issuer refuses rather than treating the parent as active.', 'REVOCATION_UNKNOWN')
 
 pushIssueChildCase('AD-I10', 'issue_child: parent R, key resolver missing the principal entry', R, clone(BODY_C1), 'agent-a',
   { keys: 'without_principal', revocation_parent: 'active' }, false, 'draft-derived',
-  'L696-698', "The issuer MUST verify the parent's signature, which requires resolving its key; a key that cannot be resolved refuses.")
+  'L696-698', "The issuer MUST verify the parent's signature, which requires resolving its key; a key that cannot be resolved refuses.", 'KEY_RESOLUTION_FAILED')
 
 {
   const parentDepth0 = issue(mutate(BODY_R, (b) => { b.authority.depth = { remaining: 0 } }), 'principal')
   pushIssueChildCase('AD-I11', 'issue_child: parent depth 0, body depth 0', parentDepth0,
     mutate(BODY_C1, (b) => { b.parent_delegation_id = parentDepth0.delegation_id; b.authority.depth = { remaining: 0 } }),
     'agent-a', { keys: 'default', revocation_parent: 'active' }, false, 'draft-derived',
-    'L531-532', 'The parent has no remaining delegation hop.')
+    'L531-532', 'The parent has no remaining delegation hop.', 'DEPTH_EXHAUSTED')
 }
 
 pushIssueChildCase('AD-I12', 'issue_child: body parent_delegation_id names a different record', R,
   mutate(BODY_C1, (b) => { b.parent_delegation_id = flipLastHexChar(R.delegation_id) }), 'agent-a',
   { keys: 'default', revocation_parent: 'active' }, false, 'draft-derived',
-  'L583', 'The body does not name the actual parent as its parent_delegation_id.')
+  'L583', 'The body does not name the actual parent as its parent_delegation_id.', 'PARENT_MISMATCH')
 
 pushIssueChildCase('AD-I13', 'issue_child: body issuer is the parent, not the parent subject', R,
   mutate(BODY_C1, (b) => { b.issuer = 'did:example:principal'; b.verification_method = 'did:example:principal#key-1' }),
   'principal', { keys: 'default', revocation_parent: 'active' }, false, 'draft-derived',
-  'L583', "The body's issuer must equal the parent's subject.")
+  'L583', "The body's issuer must equal the parent's subject.", 'CHAIN_CONTINUITY')
 
 pushIssueChildCase('AD-I14', 'issue_child: body nonce uppercased', R,
   mutate(BODY_C1, (b) => { b.nonce = b.nonce.toUpperCase() }), 'agent-a',
   { keys: 'default', revocation_parent: 'active' }, false, 'draft-derived',
-  'L481, L462', 'nonce must be 32 lowercase hex characters even at issuance time.')
+  'L481, L462', 'nonce must be 32 lowercase hex characters even at issuance time.', 'NONCANONICAL_VALUE')
 
 pushIssueChildCase('AD-I15', "issue_child: parent R, body C1 unchanged, now at the parent's expiry", R, clone(BODY_C1), 'agent-a',
   { keys: 'default', revocation_parent: 'active', now: '2026-07-19T22:00:00.000Z' }, false, 'draft-derived',
-  'L697-701', "now is R's not_after, so the parent has expired at issuance while the child's own issued_at is still inside its window; the issuer refuses.")
+  'L697-701', "now is R's not_after, so the parent has expired at issuance while the child's own issued_at is still inside its window; the issuer refuses.", 'EXPIRED')
 
 pushIssueChildCase('AD-I16', 'issue_child: parent R, body C1 unchanged, now before the parent starts', R, clone(BODY_C1), 'agent-a',
   { keys: 'default', revocation_parent: 'active', now: '2026-07-18T21:00:00.000Z' }, false, 'draft-derived',
-  'L696-699', "now is before R's not_before, so the parent is not yet valid at issuance; the issuer refuses.")
+  'L696-699', "now is before R's not_before, so the parent is not yet valid at issuance; the issuer refuses.", 'NOT_YET_VALID')
 
 pushIssueRootCase('AD-I17', "issue_root: body R with not_before predating issued_at (AD-P21's body), key principal", clone(BODY_P21), 'principal', true, 'ts-conformant-regression',
-  'section 3.1', 'Same reasoning as AD-I01; confirms issueAuthorityDelegation also issues a root whose not_before predates its issued_at, which item 3 exempts a root from refusing.')
+  'section 3.1', "Same reasoning as AD-I01; confirms issueAuthorityDelegation also issues a root whose not_before predates its issued_at, since the not-before-must-not-predate-issued_at rule binds only a record directly delegated from a parent (draft section 3.2, lines 511 and 536-537), and a root has no parent.")
 
 // -------------------------------------------------------------------------
 // Budget cases: InMemoryAuthorityBudgetLedger reserve/dispatch/commit/cancel
@@ -1761,6 +1823,10 @@ const conventions = {
     'Every issue_child case carries context.now, default 2026-07-18T23:00:00.000Z. The Python issuer takes an ' +
     'explicit now and requires the parent to be valid at it (draft section 3.6, L696-701); so does the TypeScript ' +
     'issuer, which the generator calls with the case\'s now, key resolver and parent revocation status.',
+  sdk_code:
+    'sdk_code, where a case carries it, is the SDK failure-code vocabulary the TypeScript and Python issuers ' +
+    'share (AuthorityFailureCode in src/v2/authority-delegation/types.ts); it is not protocol vocabulary the ' +
+    'draft names.',
 }
 
 const withheld = [
@@ -1772,7 +1838,7 @@ const withheld = [
   { topic: 'Revocation records and cascade completion', reason: 'Sections 3.5 and 3.5.1: no wire format is fixed and no implementation exists.' },
   { topic: 'Implementation limits that are not draft rules', reason: 'At most 256 records per chain, 1 MiB wire input, 1024 UTF-8 bytes per identifier, and the scope segment and values identifier grammars (aps-hierarchical-v1 and aps-values-identifiers-v1 treated as profile detail).' },
   { topic: "A child whose not_before is earlier than its parent's not_before, as a single fault", reason: "Impossible: the child's not_before is not before its issued_at, which is not before the parent's not_before." },
-  { topic: "Issuer refusal when the parent's delegation_id does not match its content", reason: "The draft requires the issuer to verify the parent's signature and temporal validity (L696-698); it does not name the content address. The Python issuer checks it anyway; no vector." },
+  { topic: "Issuer refusal when the parent's delegation_id does not match its content", reason: "The draft requires the issuer to verify the parent's signature and temporal validity (L696-698); it does not name the content address. Both the Python and TypeScript issuers recompute the parent's delegation_id and refuse with ID_MISMATCH when it does not match; no vector, because the draft names only signature and temporal validity, not the content address." },
 ]
 
 const document = {
@@ -1787,6 +1853,6 @@ const document = {
   counts,
 }
 
-writeFileSync(outPath, JSON.stringify(document, null, 2) + '\n', 'utf8')
+writeFileSync(outPath, escapeNoncharacters(JSON.stringify(document, null, 2)) + '\n', 'utf8')
 console.log(`wrote ${cases.length} cases to ${outPath}`)
 console.log(JSON.stringify(counts, null, 2))

@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6",
   "generated_from": {
     "repository": "agent-passport-system",
-    "commit": "ab3555cea97c7757fb0df3117ecd122c704f6ad6"
+    "commit": "5d596fd7fb0b28fc6431dc101ac6f1ddc48f0e62"
   },
   "provenance_definitions": {
     "draft-derived": "the expected state, outcome or rejection follows from the draft text, directly or by an analogy the case's derivation note states, with RFC 3339 or RFC 7493 where cited; TypeScript output was not consulted to decide it.",
@@ -51,7 +51,8 @@
     "trust": "context.trust of {\"mode\":\"table\",\"trusted_root_ids\":[...]} accepts the chain head exactly when its delegation_id is listed; {\"mode\":\"unavailable\"} means the trust policy raises.",
     "revocation": "context.revocation of {\"default\":..., \"by_index\":{\"<i>\":...}} means the revocation resolver returns the value for the chain member at index i when by_index names it, else the default; \"unavailable\" means the resolver raises.",
     "default_context": "Unless a case overrides an item: now is 2026-07-18T23:00:00.000Z; keys carries all five labels; trust is {\"mode\":\"table\",\"trusted_root_ids\":[<the chain's first record's delegation_id as written, even when a case corrupts it>]}; revocation default is \"active\".",
-    "issue_child_now": "Every issue_child case carries context.now, default 2026-07-18T23:00:00.000Z. The Python issuer takes an explicit now and requires the parent to be valid at it (draft section 3.6, L696-701); so does the TypeScript issuer, which the generator calls with the case's now, key resolver and parent revocation status."
+    "issue_child_now": "Every issue_child case carries context.now, default 2026-07-18T23:00:00.000Z. The Python issuer takes an explicit now and requires the parent to be valid at it (draft section 3.6, L696-701); so does the TypeScript issuer, which the generator calls with the case's now, key resolver and parent revocation status.",
+    "sdk_code": "sdk_code, where a case carries it, is the SDK failure-code vocabulary the TypeScript and Python issuers share (AuthorityFailureCode in src/v2/authority-delegation/types.ts); it is not protocol vocabulary the draft names."
   },
   "cases": [
     {
@@ -2477,7 +2478,7 @@
     {
       "id": "AD-P16",
       "kind": "chain",
-      "title": "Leap second is lexically admissible",
+      "title": "Second 60 at 23:59 on the last day of a month",
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L796-797 and L480-481 (RFC 3339 timestamps), RFC 3339 sections 5.1 and 5.6",
@@ -3235,11 +3236,11 @@
     {
       "id": "AD-P22",
       "kind": "chain",
-      "title": "not_after and now both a canonical leap second",
+      "title": "not_after and now both second 60 at 23:59 on the last day of June",
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "RFC 3339 section 5.7 and Appendix D, L535",
-        "note": "June 2026 ends on the 30th, so 23:59:60 is a canonical leap second for both not_after and now; now is inside the half-open window, one half-second before not_after."
+        "note": "June 2026 ends on the 30th, so 23:59:60 is second 60 at 23:59 on the last day of the month for both not_after and now; now is inside the half-open window, one half-second before not_after."
       },
       "chain": [
         {
@@ -10125,7 +10126,7 @@
           "record_type": "aps:authority-delegation:v1",
           "version": "1.0",
           "parent_delegation_id": null,
-          "issuer": "did:example:principal﷐",
+          "issuer": "did:example:principal\ufdd0",
           "subject": "did:example:agent-a",
           "verification_method": "did:example:principal#key-1",
           "issued_at": "2026-07-18T22:00:00.000Z",
@@ -10200,7 +10201,7 @@
             "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
           },
           {
-            "issuer": "did:example:principal﷐",
+            "issuer": "did:example:principal\ufdd0",
             "verification_method": "did:example:principal#key-1",
             "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
           }
@@ -10245,7 +10246,7 @@
           "version": "1.0",
           "parent_delegation_id": null,
           "issuer": "did:example:principal",
-          "subject": "did:example:agent-a􏿿",
+          "subject": "did:example:agent-a\udbff\udfff",
           "verification_method": "did:example:principal#key-1",
           "issued_at": "2026-07-18T22:00:00.000Z",
           "nonce": "00112233445566778899aabbccddeeff",
@@ -10365,7 +10366,7 @@
           "nonce": "00112233445566778899aabbccddeeff",
           "authority": {
             "scope": {
-              "profile": "aps-hierarchical-v2￿",
+              "profile": "aps-hierarchical-v2\uffff",
               "grants": [
                 "commerce:*",
                 "travel:book"
@@ -10925,7 +10926,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "RFC 3339 section 5.7 and Appendix D",
-        "note": "RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; minute 58 is not minute 59. issued_at and time.not_before are set to the values root RL (AD-P16) uses, with not_after replaced."
+        "note": "RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; minute 58 is not minute 59. issued_at and time.not_before are both 2016-12-31T23:58:00.000Z and now is 2016-12-31T23:58:30.000Z, so the window is well-formed, non-empty and contains now, and the only fault is the minute on not_after."
       },
       "chain": [
         {
@@ -10935,7 +10936,7 @@
           "issuer": "did:example:principal",
           "subject": "did:example:agent-a",
           "verification_method": "did:example:principal#key-1",
-          "issued_at": "2016-12-31T23:59:59.000Z",
+          "issued_at": "2016-12-31T23:58:00.000Z",
           "nonce": "00112233445566778899aabbccddeeff",
           "authority": {
             "scope": {
@@ -10955,7 +10956,7 @@
               "remaining": 2
             },
             "time": {
-              "not_before": "2016-12-31T23:59:59.000Z",
+              "not_before": "2016-12-31T23:58:00.000Z",
               "not_after": "2016-12-31T23:58:60.000Z"
             },
             "reputation": {
@@ -10974,12 +10975,12 @@
               "ceiling": "compensable"
             }
           },
-          "delegation_id": "sha256:90a1b594bf5536be82b2be339dac10e3c9a1bb46e1a615f1c86720c3e4bfe5e3",
-          "signature": "ef7a386f87e492015a958bd22d92c698ec85feef7b3d4c2ed765c0a6c7e338ccc1a4dd1a3428428e0e3d246f4ae4f300c8e26adb3601f120204516ffc7b16d05"
+          "delegation_id": "sha256:51b9ddcd61e31dde201359323f6ba592901d1da95544a6afdf6456d18a6ba78a",
+          "signature": "a18ea251e5e14986623ed81d18472865a67c1cdbd8490c22274a52816ca5695ca8879b7eee21a97aa62c184d07edec61965f453548fb3fdc1a2c87cadc5ee205"
         }
       ],
       "context": {
-        "now": "2026-07-18T23:00:00.000Z",
+        "now": "2016-12-31T23:58:30.000Z",
         "keys": [
           {
             "issuer": "did:example:principal",
@@ -11010,7 +11011,7 @@
         "trust": {
           "mode": "table",
           "trusted_root_ids": [
-            "sha256:90a1b594bf5536be82b2be339dac10e3c9a1bb46e1a615f1c86720c3e4bfe5e3"
+            "sha256:51b9ddcd61e31dde201359323f6ba592901d1da95544a6afdf6456d18a6ba78a"
           ]
         },
         "revocation": {
@@ -11047,7 +11048,7 @@
           "version": "2.0",
           "parent_delegation_id": null,
           "issuer": "did:example:principal",
-          "subject": "did:example:agent-a﷐",
+          "subject": "did:example:agent-a\ufdd0",
           "verification_method": "did:example:principal#key-1",
           "issued_at": "2026-07-18T22:00:00.000Z",
           "nonce": "00112233445566778899aabbccddeeff",
@@ -12229,7 +12230,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L426, L512-514",
-        "note": "The record_type names the v1 type but the version is an unsupported string, so rule 4 reports it unsupported without judging the body against the v1 schema at all: the extra top-level member \"extensions\" and the eighth facet \"risk\" are never reached."
+        "note": "The record_type names the v1 type but the version is an unsupported string, so the record is reported unsupported without being judged against the v1 body schema at all: the extra top-level member \"extensions\" and the eighth facet \"risk\" are never reached."
       },
       "chain": [
         {
@@ -19173,7 +19174,8 @@
         "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
-        "result": "refuse"
+        "result": "refuse",
+        "sdk_code": "SCOPE_WIDENING"
       },
       "ts_behaviour": {
         "result": "refuse",
@@ -19320,7 +19322,8 @@
         "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
-        "result": "refuse"
+        "result": "refuse",
+        "sdk_code": "ISSUED_AT_OUTSIDE_PARENT"
       },
       "ts_behaviour": {
         "result": "refuse",
@@ -19467,7 +19470,8 @@
         "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
-        "result": "refuse"
+        "result": "refuse",
+        "sdk_code": "ISSUED_AT_OUTSIDE_PARENT"
       },
       "ts_behaviour": {
         "result": "refuse",
@@ -19614,7 +19618,8 @@
         "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
-        "result": "refuse"
+        "result": "refuse",
+        "sdk_code": "REVOKED"
       },
       "ts_behaviour": {
         "result": "refuse",
@@ -19761,7 +19766,8 @@
         "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
-        "result": "refuse"
+        "result": "refuse",
+        "sdk_code": "SIGNATURE_INVALID"
       },
       "ts_behaviour": {
         "result": "refuse",
@@ -19908,7 +19914,8 @@
         "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
-        "result": "refuse"
+        "result": "refuse",
+        "sdk_code": "REVOCATION_UNKNOWN"
       },
       "ts_behaviour": {
         "result": "refuse",
@@ -20050,7 +20057,8 @@
         "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
-        "result": "refuse"
+        "result": "refuse",
+        "sdk_code": "KEY_RESOLUTION_FAILED"
       },
       "ts_behaviour": {
         "result": "refuse",
@@ -20197,7 +20205,8 @@
         "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
-        "result": "refuse"
+        "result": "refuse",
+        "sdk_code": "DEPTH_EXHAUSTED"
       },
       "ts_behaviour": {
         "result": "refuse",
@@ -20344,7 +20353,8 @@
         "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
-        "result": "refuse"
+        "result": "refuse",
+        "sdk_code": "PARENT_MISMATCH"
       },
       "ts_behaviour": {
         "result": "refuse",
@@ -20491,7 +20501,8 @@
         "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
-        "result": "refuse"
+        "result": "refuse",
+        "sdk_code": "CHAIN_CONTINUITY"
       },
       "ts_behaviour": {
         "result": "refuse",
@@ -20638,11 +20649,12 @@
         "now": "2026-07-18T23:00:00.000Z"
       },
       "expected": {
-        "result": "refuse"
+        "result": "refuse",
+        "sdk_code": "NONCANONICAL_VALUE"
       },
       "ts_behaviour": {
         "result": "refuse",
-        "error": "authority delegation body invalid: NONCANONICAL_VALUE: nonce must be 32 lowercase hex characters"
+        "error": "authority delegation body invalid: nonce must be 32 lowercase hex characters (NONCANONICAL_VALUE)"
       }
     },
     {
@@ -20785,7 +20797,8 @@
         "now": "2026-07-19T22:00:00.000Z"
       },
       "expected": {
-        "result": "refuse"
+        "result": "refuse",
+        "sdk_code": "EXPIRED"
       },
       "ts_behaviour": {
         "result": "refuse",
@@ -20932,7 +20945,8 @@
         "now": "2026-07-18T21:00:00.000Z"
       },
       "expected": {
-        "result": "refuse"
+        "result": "refuse",
+        "sdk_code": "NOT_YET_VALID"
       },
       "ts_behaviour": {
         "result": "refuse",
@@ -20946,7 +20960,7 @@
       "expected_provenance": "ts-conformant-regression",
       "derivation": {
         "lines": "section 3.1",
-        "note": "Same reasoning as AD-I01; confirms issueAuthorityDelegation also issues a root whose not_before predates its issued_at, which item 3 exempts a root from refusing."
+        "note": "Same reasoning as AD-I01; confirms issueAuthorityDelegation also issues a root whose not_before predates its issued_at, since the not-before-must-not-predate-issued_at rule binds only a record directly delegated from a parent (draft section 3.2, lines 511 and 536-537), and a root has no parent."
       },
       "body": {
         "record_type": "aps:authority-delegation:v1",
@@ -24658,7 +24672,7 @@
     },
     {
       "topic": "Issuer refusal when the parent's delegation_id does not match its content",
-      "reason": "The draft requires the issuer to verify the parent's signature and temporal validity (L696-698); it does not name the content address. The Python issuer checks it anyway; no vector."
+      "reason": "The draft requires the issuer to verify the parent's signature and temporal validity (L696-698); it does not name the content address. Both the Python and TypeScript issuers recompute the parent's delegation_id and refuse with ID_MISMATCH when it does not match; no vector, because the draft names only signature and temporal validity, not the content address."
     }
   ],
   "counts": {
