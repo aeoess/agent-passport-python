@@ -926,17 +926,6 @@ rootOnlyInvalid('AD-N-S59', 'spend per_action with a trailing line feed', 'L524-
 // surrogate pair that decodes to a noncharacter is still rejected.
 rootOnlyInvalid('AD-N-S61', 'subject with a trailing noncharacter (U+10FFFF)', 'L204 with RFC 7493 section 2.1', 'Every string in the record must be I-JSON; a valid surrogate pair decoding to a noncharacter is still rejected.', 'SCHEMA_INVALID', (b) => { b.subject = b.subject + '\u{10FFFF}' })
 
-{
-  // U+FFFF is a noncharacter (the last code point of the BMP).
-  const body = mutate(BODY_R, (b) => { b.authority.scope.profile = 'aps-hierarchical-v2' + '\uFFFF' })
-  pushChainCase({
-    id: 'AD-N-S62', title: 'Unsupported scope profile with a trailing noncharacter (U+FFFF)', chain: [forceSign(body, 'principal')],
-    expectedState: 'invalid', expectedCodes: ['SCHEMA_INVALID', 'UNSUPPORTED_PROFILE'], expectedIndex: 0,
-    lines: 'L204 with RFC 7493 section 2.1, L580-581',
-    note: "The record is not I-JSON (L204, RFC 7493 section 2.1), which the first step of the section 3.3 order, closed schema and canonical values (L580-581), rejects before any profile is considered; the SDK also reports the unknown profile.",
-  })
-}
-
 rootOnlyInvalid('AD-N-S63', 'version is the JSON number 1', 'L426', 'A version that is not a string is malformed input.', 'SCHEMA_INVALID', (b) => { b.version = 1 })
 rootOnlyInvalid('AD-N-S64', 'version wrapped in an array', 'L426', 'A version that is not a string is malformed input, the same as AD-N-S63; here it is an array containing the correct value instead of a bare number.', 'SCHEMA_INVALID', (b) => { b.version = ['1.0'] })
 rootOnlyInvalid('AD-N-S65', 'record_type is a JSON number', 'L424-426', 'A record_type that is not a string is malformed input, treated like a non-string version.', 'SCHEMA_INVALID', (b) => { b.record_type = 7 })
@@ -1905,7 +1894,7 @@ const conventions = {
 }
 
 const withheld = [
-  { topic: 'Multi-fault chains', reason: 'Every chain negative changes exactly one thing in an otherwise valid chain. In AD-N-S08, AD-N-S09, AD-N-S10, AD-N-S11, AD-N-S12, AD-N-S13, AD-N-S53, AD-N-S55, AD-N-S56, AD-N-S62, AD-N-U08, AD-N-H01, AD-N-H02 and AD-N-H10, that one change necessarily fails more than one check; each of those cases\' own note names the other checks it cannot avoid also failing. A chain built from two independent faults is withheld instead, because the draft does not settle which failure decides when two unrelated checks fail together. That includes the precedence inside one record between an I-JSON failure and an unknown version (formerly AD-N-S68, which paired an unsupported version with a non-I-JSON subject and is now removed).' },
+  { topic: 'Multi-fault chains', reason: 'Every chain negative changes exactly one thing in an otherwise valid chain. In AD-N-S08, AD-N-S09, AD-N-S10, AD-N-S11, AD-N-S12, AD-N-S13, AD-N-S53, AD-N-S55, AD-N-S56, AD-N-U08, AD-N-H01, AD-N-H02 and AD-N-H10, that one change necessarily fails more than one check; each of those cases\' own note names the other checks it cannot avoid also failing. Chains built from two independent faults are withheld instead, because the draft does not settle which failure decides when two unrelated checks fail together. That includes the precedence inside one record between an I-JSON failure and an unknown version (formerly AD-N-S68, which paired an unsupported version with a non-I-JSON subject and is now removed) or an unsupported facet profile (formerly AD-N-S62, which paired an unsupported scope profile with a non-I-JSON record and is now removed).' },
   { topic: 'Values the draft admits that the TypeScript schema rejects by a grammar the draft does not state', reason: 'A spend unit outside ^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$, and JSON number spellings such as 2.0 or 1e2 in wire input; whether the draft admits them is an open question.' },
   { topic: 'An unknown record_type string: reported unsupported and still judged by the v1 schema', reason: 'A record_type naming some other string is unsupported (UNSUPPORTED_VERSION) but is still judged by the v1 body schema, unlike a recognised record_type paired with an unknown version, which is not. No rule states whether it should be judged.' },
   { topic: 'Key-resolution outcome structure', reason: 'not found, ambiguous, malformed, unreachable, unsupported scheme (L360-369): an open question.' },
