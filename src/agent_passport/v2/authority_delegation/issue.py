@@ -30,6 +30,7 @@ issuing anything.
 
 from __future__ import annotations
 
+import copy
 import secrets
 
 from .canonical import (
@@ -78,7 +79,12 @@ def _with_nonce(body: dict) -> dict:
     Here a body without "nonce" gets one generated as 32 lowercase hex
     characters (secrets.token_hex(16)); a body that already carries "nonce"
     keeps it unchanged, which lets test vectors pin an exact byte value. The
-    caller's dict is never mutated: this always returns a new copy.
+    caller's dict is never mutated: this always returns a new top-level copy.
+    It is deliberately shallow, because the body has not been validated yet:
+    a deep copy here would recurse into, and call copy hooks on, whatever an
+    unvalidated body holds. The deep copy that keeps an issued record from
+    sharing nested objects with the caller's body happens in
+    _finish_issuance, after validation.
     """
     copied = dict(body)
     if "nonce" not in copied:
@@ -101,6 +107,11 @@ def _finish_issuance(body: dict, private_key: str) -> dict:
     in exactly one place. Neither issuer's own checks live here; each calls
     this only after it has completed them.
     """
+    # Both issuers call this only after the body has passed validation, so it
+    # holds plain JSON data of exact types and bounded depth. Deep-copying it
+    # here means the returned record shares no mutable object with the
+    # caller's body; the bytes signed are unchanged.
+    body = copy.deepcopy(body)
     delegation_id = compute_authority_delegation_id_for_write(body)
     unsigned = {**body, "delegation_id": delegation_id}
     signature = sign_authority_delegation(unsigned, private_key)

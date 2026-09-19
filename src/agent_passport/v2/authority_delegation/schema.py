@@ -181,9 +181,25 @@ def _has_non_i_json_value(value) -> bool:
     walk's own path from the root, pushing an exit signal right after
     entering one and discarding its id when that signal is popped back off:
     a container that contains itself at any depth (its id is still on the
-    path when the walk reaches it again) is not plain JSON data, while a
-    container reachable twice without a cycle is walked again, fresh, once
-    its first occurrence's exit signal has cleared its id.
+    path when the walk reaches it again) is not plain JSON data.
+
+    A container reached a second time off the current path (through a
+    second reference held elsewhere in the record, not through a cycle) is
+    not walked again: once a container's own exit signal has popped with no
+    failure found anywhere in its subtree, its id() is recorded in
+    ``clean``, and any later reference to that same object, found while its
+    id is not on the current path, is accepted without visiting its members
+    a second time. This is safe only because every container this walk
+    still holds a reference to (on the stack, or nested inside a container
+    still on the stack) stays alive for the whole call, so no id() can be
+    reused by an unrelated object before the walk finishes with it. Without
+    this, a record built from repeated sharing (``node_i = [node_(i-1),
+    node_(i-1)]``, plain JSON, no cycle) has as many distinct containers as
+    its depth but a number of root-to-leaf paths that doubles with every
+    level, and re-walking every reference from scratch costs time and
+    memory exponential in that depth; remembering each container already
+    walked clean makes the cost linear in the number of distinct containers
+    and their members instead.
 
     That exit signal is kept out of band, never mixed into the stack as a
     value that could be confused with one from the record. Every stack entry
@@ -206,10 +222,12 @@ def _has_non_i_json_value(value) -> bool:
 
     stack: list[tuple] = [(value, False)]
     path_ids: set[int] = set()
+    clean: set[int] = set()
     while stack:
         current, is_exit = stack.pop()
         if is_exit:
             path_ids.discard(current)
+            clean.add(current)
             continue
         if type(current) is str:
             if is_ill_formed_string(current):
@@ -218,6 +236,8 @@ def _has_non_i_json_value(value) -> bool:
             identity = id(current)
             if identity in path_ids:
                 return True
+            if identity in clean:
+                continue
             path_ids.add(identity)
             stack.append((identity, True))
             for key, item in current.items():
@@ -228,6 +248,8 @@ def _has_non_i_json_value(value) -> bool:
             identity = id(current)
             if identity in path_ids:
                 return True
+            if identity in clean:
+                continue
             path_ids.add(identity)
             stack.append((identity, True))
             for item in current:
