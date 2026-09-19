@@ -1,14 +1,20 @@
 # Copyright (c) 2026 Tymofii Pidlisnyi
 # SPDX-License-Identifier: Apache-2.0
-"""Native APS action_ref: the content-addressed request identity.
+"""Pre-draft-03 compatibility digest computed by the legacy compute_action_ref.
 
-action_ref = SHA-256 over the RFC 8785 (JCS) canonicalization of exactly
-{agentId, actionType, scopeRequired, timestamp}, per draft-pidlisnyi-aps-03
-section 4.1. Before canonicalization, each scope string is normalized to
-Unicode NFC and, when scopeRequired is a list, the list is sorted by Unicode
-code point on a copy (Python's default str ordering IS code-point order).
-No case folding: scopes differing only in case are distinct. The timestamp
-is normalized to second precision UTC with the literal Z designator.
+This is a pre-draft-03 compatibility digest, kept for existing callers. It
+must never be presented as an action_ref or as action-ref-v1-jcs-sha256. The
+draft-03 native action reference is agent_passport.compute_action_ref_v2,
+and the section 4.2 external correlation form is
+agent_passport.compute_external_action_ref_v1.
+
+This digest is a SHA-256 over the RFC 8785 (JCS) canonicalization of exactly
+{agentId, actionType, scopeRequired, timestamp}. Before canonicalization,
+each scope string is normalized to Unicode NFC and, when scopeRequired is a
+list, the list is sorted by Unicode code point on a copy (Python's default
+str ordering IS code-point order). No case folding: scopes differing only in
+case are distinct. The timestamp is normalized to second precision UTC with
+the literal Z designator.
 
 Byte parity with the TypeScript reference (computeActionRef,
 agent-passport-system src/core/action-ref.ts) and the Go implementation
@@ -33,8 +39,8 @@ from .canonical import canonicalize_jcs
 class DuplicateScopeRequiredError(ValueError):
     """scopeRequired holds two elements that are equal after NFC normalization.
 
-    Spec section 4.1 defines scope_required as a duplicate-free array, so a
-    duplicated array has no canonical form and is rejected rather than
+    This digest's scope_required contract requires a duplicate-free array, so
+    a duplicated array has no canonical form and is rejected rather than
     deduplicated: an equality key must not map distinct inputs onto one value
     silently.
 
@@ -58,10 +64,10 @@ class DuplicateScopeRequiredError(ValueError):
         self.reason = reason
 
 
-# The shape the legacy action_ref timestamp must have before it is parsed.
+# The shape the legacy digest's timestamp must have before it is parsed.
 # `datetime.fromisoformat` is a convenience parser, not RFC 3339: it takes a
 # space in place of the date-time separator and rolls hour 24 into the next
-# day. Both produced an action_ref that the TypeScript normalizer, tightened
+# day. Both produced a digest that the TypeScript normalizer, tightened
 # at 2f9aeeb, refuses to recompute, so a Python producer could mint a content
 # address no TypeScript verifier could reproduce.
 #
@@ -87,7 +93,7 @@ def _normalize_timestamp(ts: str) -> str:
     The TS reference does new Date(ts).toISOString() then strips the
     fractional-seconds component, which truncates within the second.
 
-    Every input that produced an action_ref before still produces the same
+    Every input that produced a digest before still produces the same
     one. What is refused is the set that never had a TypeScript counterpart:
     a space separator and hour 24.
     """
@@ -103,21 +109,21 @@ def _normalize_timestamp(ts: str) -> str:
     if int(ts[11:13]) > 23:
         raise ValueError(
             f"compute_action_ref: invalid timestamp {ts!r}; hour 24 denotes the "
-            "next day's 00:00:00 and would give one instant two action_refs"
+            "next day's 00:00:00 and would give one instant two digests"
         )
     try:
         dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
     except (ValueError, TypeError) as exc:
         raise ValueError(f"compute_action_ref: invalid timestamp {ts!r}") from exc
     if dt.tzinfo is None:
-        # Reject naive timestamps. Spec 4.1 requires an explicit UTC designator
-        # ('Z'), and the TS reference parses an offsetless string as LOCAL time,
-        # so assuming UTC here would silently produce a different action_ref for
-        # the same input across implementations. Fail closed on non-conforming
-        # input instead of guessing a zone.
+        # Reject naive timestamps. This digest requires an explicit UTC
+        # designator ('Z'), and the TS reference parses an offsetless string
+        # as LOCAL time, so assuming UTC here would silently produce a
+        # different digest for the same input across implementations.
+        # Fail closed on non-conforming input instead of guessing a zone.
         raise ValueError(
             f"compute_action_ref: timestamp {ts!r} must carry an explicit UTC "
-            "offset or 'Z' (spec 4.1); naive timestamps are non-conforming"
+            "offset or 'Z'; naive timestamps are non-conforming"
         )
     dt = dt.astimezone(timezone.utc).replace(microsecond=0)
     # Explicit zero-padded formatting; strftime('%Y') zero-pads platform-
@@ -137,9 +143,10 @@ def _canonicalize_scope_required(scope_required):
     the strict-JCS null-preservation contract and legacy behavior for
     out-of-spec input both match the TS reference.
 
-    Spec 4.1 defines scope_required as a duplicate-free array. Duplicates are
-    detected AFTER normalization, so two spellings that collide only under NFC
-    (U+00E9 and "e" + U+0301) reject as well. Rejection rather than dedupe:
+    scope_required is a duplicate-free array under this digest's contract.
+    Duplicates are detected AFTER normalization, so two spellings that
+    collide only under NFC (U+00E9 and "e" + U+0301) reject as well.
+    Rejection rather than dedupe:
     silently collapsing ["a","a"] to ["a"] would map two distinct inputs onto
     one identity with no error, and would change the identity previously
     computed for the duplicated input. Valid lists are byte-unchanged.
@@ -164,18 +171,24 @@ def _canonicalize_scope_required(scope_required):
 
 
 def compute_action_ref(agent_id, action_type, scope_required, timestamp) -> str:
-    """Compute the native APS action_ref (lowercase hex SHA-256).
+    """Compute the pre-draft-03 compatibility digest (lowercase hex SHA-256).
 
-    Preimage keys are exactly the spec's camelCase names: agentId,
+    This is a pre-draft-03 compatibility digest, kept for existing callers.
+    It must never be presented as an action_ref or as
+    action-ref-v1-jcs-sha256. The draft-03 native action reference is
+    agent_passport.compute_action_ref_v2, and the section 4.2 external
+    correlation form is agent_passport.compute_external_action_ref_v1.
+
+    Preimage keys are exactly this digest's camelCase names: agentId,
     actionType, scopeRequired, timestamp. scopeRequired may be a single
-    scope string, a list of scope strings (the section 4.1 form), or None
-    (preserved as null in the canonical bytes).
+    scope string, a list of scope strings, or None (preserved as null in the
+    canonical bytes).
 
     Raises DuplicateScopeRequiredError when a list scopeRequired holds two
     elements equal after NFC normalization. The raise happens inside
     canonicalization, before the digest is computed, so a duplicated list can
-    never present as an identity mismatch downstream: there is no action_ref
-    to compare in the first place.
+    never present as an identity mismatch downstream: there is no digest
+    value to compare in the first place.
 
     Not the attribution reference: see compute_attribution_action_ref in
     v2/attribution_primitive/construct.py for the {agentId, actionType,

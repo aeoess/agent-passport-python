@@ -1,0 +1,425 @@
+{
+  "name": "action-ref-v1-jcs-sha256 (section 4.2 external correlation form) vectors",
+  "draft": "draft-pidlisnyi-aps-03 section 4.2 (published text lines 845-892)",
+  "generated_from": {
+    "repository": "aeoess/agent-passport-system",
+    "commit": "c47b97b95642ea5bb6c19bee2bf795144b09fe1c",
+    "module": "src/core/external-action-ref.ts",
+    "generator": "tests/cross_impl/gen_external_action_ref_v1_vectors.mts"
+  },
+  "expected_provenance_values": {
+    "draft-derived": "The expected value follows directly from the requirement text: the failure-code table for every reject case, and the section 4.2 construction formula (external_action_ref = lowercase-hex(SHA-256(canonicalize(input_object)))), computed with strict RFC 8785 JCS and no domain-separation tag, for the digest on every accept case. It holds independent of whether the TypeScript reference implementation is marked conformant for this construction.",
+    "ts-conformant-regression": "The expected value is the digest produced by the TypeScript reference implementation (computeExternalActionRefV1) at the pinned commit, for every accept case. Three of these (EX-P01..EX-P03) are additionally pinned as byte matches against independent ecosystem implementations outside this project (see provenance_note on each); the rest are the TS reference's own output, recorded as a cross-implementation regression value and independently cross-checked against an rfc8785-based recomputation (see tests/cross_impl/crosscheck_external_action_ref_v1_vectors.py) rather than trusted outright."
+  },
+  "failure_codes": [
+    {
+      "code": "not_string",
+      "meaning": "a field is not a string (number, null, array, object)",
+      "draft_lines": "859-866"
+    },
+    {
+      "code": "bad_timestamp",
+      "meaning": "timestamp not exactly YYYY-MM-DDTHH:MM:SS.sssZ, or not a valid RFC 3339 date and time (month 01-12, day existing in the month, hour 00-23, minute 00-59, second 00-59)",
+      "draft_lines": "866-871"
+    },
+    {
+      "code": "lone_surrogate",
+      "meaning": "a string contains an unpaired UTF-16 surrogate (no UTF-8 encoding exists for the canonicalized JSON)",
+      "draft_lines": "855-857"
+    }
+  ],
+  "withheld": [
+    {
+      "case": "timestamp with second 60 (leap second, \"2016-12-31T23:59:60.000Z\")",
+      "reason": "RFC 3339 permits it and the draft does not say whether it is admissible. The TypeScript SDK accepts it lexically."
+    }
+  ],
+  "ts_behaviour_note": "ts_behaviour on a reject case records what the TypeScript reference implementation actually does on that input, observed by calling it directly at the pinned commit. It is not a conformance claim: this file does not assert the TypeScript SDK is verified against section 4.2, only reports its behaviour next to the spec's own answer. \"accepts\" means TS returned a digest where the spec requires a rejection; \"rejects\" means TS threw, and the accompanying message is the TypeScript SDK's own error text (SDK vocabulary, not protocol vocabulary).",
+  "counts": {
+    "total": 21,
+    "accept": 9,
+    "reject": 12,
+    "by_expected_provenance": {
+      "draft-derived": 12,
+      "ts-conformant-regression": 9
+    }
+  },
+  "cases": [
+    {
+      "id": "EX-P01",
+      "input": {
+        "action_type": "payment.send",
+        "agent_id": "pioneer-agent-001",
+        "scope": "mycelium:payment",
+        "timestamp": "2026-05-24T10:30:00.000Z"
+      },
+      "expected": {
+        "result": "accept",
+        "external_action_ref": "584bc79bb11ce3af5058b3da84d03f85e4aa464a175bd4f913aeb82a22cef60f"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "852-857",
+      "provenance_note": "The TS test suite pins 584bc79bb11ce3af5058b3da84d03f85e4aa464a175bd4f913aeb82a22cef60f as a byte match against an independent ecosystem implementation (argentum-core)."
+    },
+    {
+      "id": "EX-P02",
+      "input": {
+        "action_type": "oracle.signal",
+        "agent_id": "nexus-agent-xa12.onrender.com",
+        "scope": "BTC",
+        "timestamp": "2025-05-18T11:40:31.000Z"
+      },
+      "expected": {
+        "result": "accept",
+        "external_action_ref": "fdd7f810499f06be24355ca8e2bfb8c4b965cc80c838f41fa074683443d89f5a"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "852-857",
+      "provenance_note": "Anchor fdd7f810499f06be24355ca8e2bfb8c4b965cc80c838f41fa074683443d89f5a (action-ref-verify vector 0001)."
+    },
+    {
+      "id": "EX-P03",
+      "input": {
+        "action_type": "oracle.signal",
+        "agent_id": "test-negative-zero.example.com",
+        "scope": "BTC",
+        "timestamp": "2025-01-01T00:00:00.000Z"
+      },
+      "expected": {
+        "result": "accept",
+        "external_action_ref": "d7a591f6afb04565baca3ef862324b692bfb7be731aa53d98f3814bb3cb6bdb0"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "852-857",
+      "provenance_note": "Anchor d7a591f6afb04565baca3ef862324b692bfb7be731aa53d98f3814bb3cb6bdb0 (action-ref-verify vector 0006)."
+    },
+    {
+      "id": "EX-P04",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": "2026-04-08T12:00:00.000Z"
+      },
+      "expected": {
+        "result": "accept",
+        "external_action_ref": "560f1463cf4d1b4f754a4f536a41df6e6c576dd249c6a887a0c7b1f773145941"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "852-857"
+    },
+    {
+      "id": "EX-P05",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "café:read",
+        "timestamp": "2026-04-08T12:00:00.000Z"
+      },
+      "expected": {
+        "result": "accept",
+        "external_action_ref": "228cd7abb99001979deac916af8690be9a0faebc78d5480ea242995b80ce7729"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "852-857",
+      "provenance_note": "EX-P05 uses scope \"café:read\" with the é decomposed (e + combining acute accent, U+0301); EX-P06 uses the same scope with the é precomposed (U+00E9). Their digests must differ from each other, because the external form applies no Unicode normalization (draft lines 873-876)."
+    },
+    {
+      "id": "EX-P06",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "café:read",
+        "timestamp": "2026-04-08T12:00:00.000Z"
+      },
+      "expected": {
+        "result": "accept",
+        "external_action_ref": "c0beb658a8ed27b52e475b6ad5a6daafe7452325a96925437ebfe928959f0727"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "852-857",
+      "provenance_note": "EX-P05 uses scope \"café:read\" with the é decomposed (e + combining acute accent, U+0301); EX-P06 uses the same scope with the é precomposed (U+00E9). Their digests must differ from each other, because the external form applies no Unicode normalization (draft lines 873-876)."
+    },
+    {
+      "id": "EX-P07",
+      "input": {
+        "action_type": "quote\" backslash\\ ctrl",
+        "agent_id": "did:example:😀",
+        "scope": "commerce:write",
+        "timestamp": "2026-04-08T12:00:00.000Z"
+      },
+      "expected": {
+        "result": "accept",
+        "external_action_ref": "f10298980622adf5517a53e7c933d0ce1e6d384ee52366046218be44c730e136"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "852-857"
+    },
+    {
+      "id": "EX-P08",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": "2028-02-29T23:59:59.999Z"
+      },
+      "expected": {
+        "result": "accept",
+        "external_action_ref": "d4c5f23facab070836a0cf225a24187a5c327e1cef5cfaea4851cfb305a68b2f"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "852-857"
+    },
+    {
+      "id": "EX-P09",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": "0000-01-01T00:00:00.000Z"
+      },
+      "expected": {
+        "result": "accept",
+        "external_action_ref": "3e258f35bff1c34811bc1707335be764aa2d95ebdc907b31e9afb67e673b2428"
+      },
+      "expected_provenance": "ts-conformant-regression",
+      "draft_lines": "852-857"
+    },
+    {
+      "id": "EX-N01",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": "2025-05-18T11:40:31Z"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "866-871",
+      "ts_behaviour": {
+        "behaviour": "rejects",
+        "message": "computeExternalActionRefV1: timestamp must be RFC 3339 UTC with three fractional digits and a Z suffix (YYYY-MM-DDTHH:MM:SS.mmmZ), got \"2025-05-18T11:40:31Z\""
+      }
+    },
+    {
+      "id": "EX-N02",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": "2025-05-18T11:40:31.000000Z"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "866-871",
+      "ts_behaviour": {
+        "behaviour": "rejects",
+        "message": "computeExternalActionRefV1: timestamp must be RFC 3339 UTC with three fractional digits and a Z suffix (YYYY-MM-DDTHH:MM:SS.mmmZ), got \"2025-05-18T11:40:31.000000Z\""
+      }
+    },
+    {
+      "id": "EX-N03",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": "2025-05-18T11:40:31.000+00:00"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "866-871",
+      "ts_behaviour": {
+        "behaviour": "rejects",
+        "message": "computeExternalActionRefV1: timestamp must be RFC 3339 UTC with three fractional digits and a Z suffix (YYYY-MM-DDTHH:MM:SS.mmmZ), got \"2025-05-18T11:40:31.000+00:00\""
+      }
+    },
+    {
+      "id": "EX-N04",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": "2025-05-18t11:40:31.000z"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "866-871",
+      "ts_behaviour": {
+        "behaviour": "rejects",
+        "message": "computeExternalActionRefV1: timestamp must be RFC 3339 UTC with three fractional digits and a Z suffix (YYYY-MM-DDTHH:MM:SS.mmmZ), got \"2025-05-18t11:40:31.000z\""
+      }
+    },
+    {
+      "id": "EX-N05",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": "2026-13-01T00:00:00.000Z"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "866-871",
+      "ts_behaviour": {
+        "behaviour": "accepts",
+        "external_action_ref": "51c52abf72bc70066a037bc00606571aa712cca75551ae8f605049f60f403bda",
+        "note": "differs from the draft text; TS not changed in this job"
+      }
+    },
+    {
+      "id": "EX-N06",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": "2026-02-30T00:00:00.000Z"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "866-871",
+      "ts_behaviour": {
+        "behaviour": "accepts",
+        "external_action_ref": "426a3a10990f2ed4e391d405255846b0e58a8452bf36a80322d8614ee13bfbdf",
+        "note": "differs from the draft text; TS not changed in this job"
+      }
+    },
+    {
+      "id": "EX-N07",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": "2026-04-08T24:00:00.000Z"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "866-871",
+      "ts_behaviour": {
+        "behaviour": "accepts",
+        "external_action_ref": "75b93ad591463b88a71fd6a746bc131c72f99af907440a095f7f6ae11d5d4955",
+        "note": "differs from the draft text; TS not changed in this job"
+      }
+    },
+    {
+      "id": "EX-N08",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": "2026-04-08T12:60:00.000Z"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "bad_timestamp"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "866-871",
+      "ts_behaviour": {
+        "behaviour": "accepts",
+        "external_action_ref": "8d51ae00a74a3ed70b2eef60807110d05ed7bfad3901b91f81ba3365a648dfc0",
+        "note": "differs from the draft text; TS not changed in this job"
+      }
+    },
+    {
+      "id": "EX-N09",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": [
+          "commerce:write"
+        ],
+        "timestamp": "2026-04-08T12:00:00.000Z"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "not_string"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "859-866",
+      "ts_behaviour": {
+        "behaviour": "accepts",
+        "external_action_ref": "dfd898a4623d23961e70b9435abd67c45045940196856d55c43781bfa93b6f20",
+        "note": "differs from the draft text; TS not changed in this job"
+      }
+    },
+    {
+      "id": "EX-N10",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": 123,
+        "scope": "commerce:write",
+        "timestamp": "2026-04-08T12:00:00.000Z"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "not_string"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "859-866",
+      "ts_behaviour": {
+        "behaviour": "accepts",
+        "external_action_ref": "01a704307c135da40603bdc61b2157a7e30a77f6982141cf5eb9ffc3dd812b21",
+        "note": "differs from the draft text; TS not changed in this job"
+      }
+    },
+    {
+      "id": "EX-N11",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "commerce:write",
+        "timestamp": 1747568431000
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "not_string"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "859-866",
+      "ts_behaviour": {
+        "behaviour": "rejects",
+        "message": "computeExternalActionRefV1: timestamp must be RFC 3339 UTC with three fractional digits and a Z suffix (YYYY-MM-DDTHH:MM:SS.mmmZ), got 1747568431000"
+      }
+    },
+    {
+      "id": "EX-N12",
+      "input": {
+        "action_type": "commerce_preflight",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "scope": "\ud800",
+        "timestamp": "2026-04-08T12:00:00.000Z"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "lone_surrogate"
+      },
+      "expected_provenance": "draft-derived",
+      "draft_lines": "855-857",
+      "ts_behaviour": {
+        "behaviour": "rejects",
+        "message": "canonicalizeJCS: string contains an unpaired UTF-16 high surrogate; a lone surrogate has no valid UTF-8 encoding and RFC 8785 requires rejection"
+      }
+    }
+  ]
+}
