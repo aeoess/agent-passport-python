@@ -22,6 +22,16 @@ under a different code; values nested beyond this implementation's
 recursion limit are rejected with ``nesting_limit``. Canonicalization goes
 through the strict new-write I-JSON JCS in
 :mod:`agent_passport.receipt_core.jcs`, not the legacy canonicalizer.
+
+Also rejects Unicode noncharacters (U+FDD0 through U+FDEF, and every code
+point whose low 16 bits are 0xFFFE or 0xFFFF) in any object key or string
+value, at any depth, on the section 4.1 input object and on the payload
+passed to :func:`compute_payload_ref_v1` (draft-pidlisnyi-aps-03 section
+4.1, lines 813-815; RFC 7493 section 2.1). That check is local to this
+module (see ``_check_no_noncharacters`` below, run after the shared strict
+I-JSON check) because the shared helper, :func:`agent_passport.receipt_core.jcs.assert_i_json`,
+does not reject noncharacters and is not changed here: it is also used by
+receipt-core, and this port must not alter its behaviour.
 """
 
 from __future__ import annotations
@@ -122,6 +132,98 @@ def _classify_i_json_error(message: str) -> str:
     return "non_i_json"
 
 
+# The 66 Unicode noncharacters: U+FDD0 through U+FDEF, and U+xFFFE/U+xFFFF for
+# each of the 17 planes. Not an RFC 7493 term; this module rejects them under
+# the section 4.1 I-JSON requirement (draft-pidlisnyi-aps-03 lines 813-815;
+# RFC 7493 section 2.1) even though the shared strict I-JSON helper in
+# receipt_core/jcs.py does not, per this module's docstring above.
+_NONCHARACTER_LOW_16 = frozenset({0xFFFE, 0xFFFF})
+
+
+def _is_noncharacter(code_point: int) -> bool:
+    """True for one of the 66 Unicode noncharacter code points."""
+    if 0xFDD0 <= code_point <= 0xFDEF:
+        return True
+    return (code_point & 0xFFFF) in _NONCHARACTER_LOW_16
+
+
+class _NoncharacterWalkExit:
+    """Sentinel pushed onto :func:`_check_no_noncharacters`'s stack to mark
+    leaving a list or dict.
+
+    Carries the container's ``id()`` so the walk can drop it from
+    ``ancestors`` on the way out, the same enter/leave bracketing
+    :func:`agent_passport.receipt_core.jcs.assert_i_json` does recursively
+    with its own ``ancestors`` set. An instance of this class can never be
+    confused with a real value from the input: by the time this walk runs,
+    the strict I-JSON check has already limited every value in the tree to
+    ``None``, ``bool``, ``str``, ``int``, ``float``, ``list`` or ``dict``.
+    """
+
+    __slots__ = ("identity",)
+
+    def __init__(self, identity: int) -> None:
+        self.identity = identity
+
+
+def _check_no_noncharacters(root: object) -> None:
+    """Iteratively walk `root`, raising :class:`ActionReferenceError` with
+    code ``non_i_json`` if any dict key or str value, at any depth, contains
+    a noncharacter code point (see :func:`_is_noncharacter`).
+
+    Non-recursive: an explicit list is used as a stack instead of function
+    recursion, so this cannot exhaust the interpreter stack on deep input.
+    Cycle-safe: entering a list or dict records its ``id()`` in `ancestors`
+    and pushes a :class:`_NoncharacterWalkExit` sentinel that removes it
+    again once every child has been pushed, so a value that refers back to
+    one of its own containers is recognized and not walked a second time,
+    rather than looping forever. This assumes `root` already passed the
+    shared strict I-JSON check (called before this in every caller below),
+    so the only container types it needs to handle are `list` and `dict`,
+    and every dict key is already known to be a `str`.
+    """
+    ancestors: set[int] = set()
+    stack: list[object] = [root]
+    while stack:
+        item = stack.pop()
+        if type(item) is _NoncharacterWalkExit:
+            ancestors.discard(item.identity)
+            continue
+        if type(item) is str:
+            for char in item:
+                if _is_noncharacter(ord(char)):
+                    raise ActionReferenceError(
+                        f"value contains noncharacter U+{ord(char):04X}",
+                        "non_i_json",
+                    )
+            continue
+        if type(item) is list:
+            identity = id(item)
+            if identity in ancestors:
+                continue
+            ancestors.add(identity)
+            stack.append(_NoncharacterWalkExit(identity))
+            stack.extend(cast(list, item))
+            continue
+        if type(item) is dict:
+            identity = id(item)
+            if identity in ancestors:
+                continue
+            ancestors.add(identity)
+            stack.append(_NoncharacterWalkExit(identity))
+            for key, value in cast(dict, item).items():
+                if type(key) is str:
+                    for char in key:
+                        if _is_noncharacter(ord(char)):
+                            raise ActionReferenceError(
+                                f"object key contains noncharacter U+{ord(char):04X}",
+                                "non_i_json",
+                            )
+                stack.append(value)
+            continue
+        # None, bool, int, float: no characters to check.
+
+
 def _is_leap_year(year: int) -> bool:
     """Proleptic Gregorian leap-year rule. Year 0000 is a leap year (0 % 400 == 0)."""
     return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
@@ -158,12 +260,14 @@ def validate_action_reference_input_v2(candidate: object) -> None:
        then no member outside that set (else ``unknown_member``).
     3. The whole value is I-JSON (else ``non_i_json``, or ``lone_surrogate``
        for an unpaired UTF-16 surrogate specifically).
-    4. ``profile`` equals :data:`ACTION_REF_V2_PROFILE` (else ``wrong_profile``).
-    5. ``agent_id``, ``action_type``, ``target`` are non-empty strings (else
+    4. No object key or string value, at any depth, contains a Unicode
+       noncharacter (else ``non_i_json``; see the module docstring).
+    5. ``profile`` equals :data:`ACTION_REF_V2_PROFILE` (else ``wrong_profile``).
+    6. ``agent_id``, ``action_type``, ``target`` are non-empty strings (else
        ``not_string`` / ``empty_string``).
-    6. ``payload_ref`` is a string matching 64 lowercase hex characters (else
+    7. ``payload_ref`` is a string matching 64 lowercase hex characters (else
        ``not_string`` / ``bad_hex``).
-    7. ``scope_required`` is an array (else ``scope_not_array``). An empty
+    8. ``scope_required`` is an array (else ``scope_not_array``). An empty
        array is rejected with ``empty_scope_required``. This is provisional:
        section 4.1 lets a profile permit an empty array but does not say what
        a verifier with no profile does, and until that is ruled this function,
@@ -171,14 +275,14 @@ def validate_action_reference_input_v2(candidate: object) -> None:
        (else ``not_string`` / ``empty_string``), already in NFC, and the array
        strictly increasing by the lexicographic order of UTF-8 encodings, with
        no duplicate (else ``scope_not_canonical``). Nothing is normalized here.
-    8. ``issued_at`` is a string matching the canonical RFC 3339 UTC
+    9. ``issued_at`` is a string matching the canonical RFC 3339 UTC
        millisecond form, naming a day that exists in that month under the
        proleptic Gregorian calendar (else ``not_string`` / ``bad_timestamp``).
        A second of 60 is valid only at 23:59 on the last day of its month
        (RFC 3339 section 5.7; Appendix D's ``YYYY-MM-DDT23:59:60Z``); every
        other second-60 timestamp is ``bad_timestamp``.
-    9. ``nonce`` is a string matching 32 lowercase hex characters (else
-       ``not_string`` / ``bad_hex``).
+    10. ``nonce`` is a string matching 32 lowercase hex characters (else
+        ``not_string`` / ``bad_hex``).
     """
     if type(candidate) is not dict:
         raise ActionReferenceError("action reference input: expected an object", "not_object")
@@ -205,6 +309,8 @@ def validate_action_reference_input_v2(candidate: object) -> None:
     except IJsonValidationError as exc:
         message = str(exc)
         raise ActionReferenceError(message, _classify_i_json_error(message)) from exc
+
+    _check_no_noncharacters(obj)
 
     if obj["profile"] != ACTION_REF_V2_PROFILE:
         raise ActionReferenceError(
@@ -316,8 +422,9 @@ def compute_payload_ref_v1(payload: object) -> str:
     `payload` is the exact JSON value presented for authorization and
     dispatch, not the action reference input object. Raises
     :class:`ActionReferenceError` with code ``lone_surrogate`` for an
-    unpaired UTF-16 surrogate, or ``non_i_json`` for any other I-JSON
-    violation (an unsafe integer, a non-finite number, and so on).
+    unpaired UTF-16 surrogate, ``non_i_json`` for any other I-JSON violation
+    (an unsafe integer, a non-finite number, a Unicode noncharacter in a key
+    or string value at any depth, and so on).
     """
     try:
         canonical = strict_jcs(payload)
@@ -329,6 +436,7 @@ def compute_payload_ref_v1(payload: object) -> str:
     except IJsonValidationError as exc:
         message = str(exc)
         raise ActionReferenceError(message, _classify_i_json_error(message)) from exc
+    _check_no_noncharacters(payload)
     return hashlib.sha256(PAYLOAD_REF_V1_DOMAIN + canonical.encode("utf-8")).hexdigest()
 
 

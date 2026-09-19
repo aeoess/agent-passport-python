@@ -318,6 +318,71 @@ def test_empty_scope_required():
     _expect_code(doc, "empty_scope_required")
 
 
+# ── Item 4: section 4.1 rejects noncharacters ───────────────────────────────
+# (draft-pidlisnyi-aps-03 lines 813-815 and 204; RFC 7493 section 2.1)
+
+
+def test_rejects_agent_id_noncharacter_u_fdd0():
+    doc = _base()
+    doc["agent_id"] = doc["agent_id"] + "\U0000fdd0"
+    _expect_code(doc, "non_i_json")
+
+
+def test_rejects_target_noncharacter_u_ffff():
+    doc = _base()
+    doc["target"] = doc["target"] + "\U0000ffff"
+    _expect_code(doc, "non_i_json")
+
+
+def test_rejects_scope_required_element_noncharacter_u_10ffff():
+    doc = _base()
+    # Still sorted after "commerce:read": the noncharacter must be caught
+    # before, or regardless of, the scope canonical-order check.
+    doc["scope_required"] = ["commerce:read", "commerce:write" + "\U0010ffff"]
+    _expect_code(doc, "non_i_json")
+
+
+def test_rejects_payload_noncharacter_u_1fffe():
+    with pytest.raises(ActionReferenceError) as exc_info:
+        compute_payload_ref_v1({"note": "x" + "\U0001fffe"})
+    assert exc_info.value.code == "non_i_json"
+
+
+def test_json_path_rejects_action_type_noncharacter_written_as_escape():
+    doc = _base()
+    clean = json.dumps(doc)
+    with_noncharacter = clean.replace(
+        '"commerce_preflight"', '"commerce_preflight\\uffff"'
+    )
+    assert with_noncharacter != clean
+    with pytest.raises(ActionReferenceError) as exc_info:
+        parse_action_reference_input_v2(with_noncharacter)
+    assert exc_info.value.code == "non_i_json"
+
+
+def test_create_rejects_target_noncharacter_u_fdef():
+    kwargs = _create_kwargs()
+    kwargs["target"] = "https://api.example/pay" + "\U0000fdef"
+    with pytest.raises(ActionReferenceError) as exc_info:
+        create_action_reference_input_v2(scope_required=["commerce:read"], **kwargs)
+    assert exc_info.value.code == "non_i_json"
+
+
+def test_accepts_agent_id_with_replacement_character_not_a_noncharacter():
+    # U+FFFD is the replacement character, not a noncharacter.
+    doc = _base()
+    doc["agent_id"] = doc["agent_id"] + "\U0000fffd"
+    ref = compute_action_ref_v2(doc)
+    assert re.fullmatch(r"[0-9a-f]{64}", ref)
+
+
+def test_accepts_target_with_a_supplementary_plane_character():
+    doc = _base()
+    doc["target"] = doc["target"] + "\U0001f600"
+    ref = compute_action_ref_v2(doc)
+    assert re.fullmatch(r"[0-9a-f]{64}", ref)
+
+
 # ── Cross-language pinned digest ────────────────────────────────────────────
 
 
