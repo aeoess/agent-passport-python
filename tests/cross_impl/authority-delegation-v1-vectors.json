@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6",
   "generated_from": {
     "repository": "agent-passport-system",
-    "commit": "67284ec97024249115434cddfe2c5e51738b6202"
+    "commit": "1ef19591855dcef152a5136211a38be3067e627a"
   },
   "provenance_definitions": {
     "draft-derived": "the expected state, outcome or rejection follows from the draft text, directly or by an analogy the case's derivation note states, with RFC 3339 or RFC 7493 where cited; TypeScript output was not consulted to decide it.",
@@ -10341,122 +10341,6 @@
         "state": "invalid",
         "codes": [
           "SCHEMA_INVALID"
-        ],
-        "index": 0
-      }
-    },
-    {
-      "id": "AD-N-S62",
-      "kind": "chain",
-      "title": "Unsupported scope profile with a trailing noncharacter (U+FFFF)",
-      "expected_provenance": "draft-derived",
-      "derivation": {
-        "lines": "L204 with RFC 7493 section 2.1, L580-581",
-        "note": "The record is not I-JSON (L204, RFC 7493 section 2.1), which the first step of the section 3.3 order, closed schema and canonical values (L580-581), rejects before any profile is considered; the SDK also reports the unknown profile."
-      },
-      "chain": [
-        {
-          "record_type": "aps:authority-delegation:v1",
-          "version": "1.0",
-          "parent_delegation_id": null,
-          "issuer": "did:example:principal",
-          "subject": "did:example:agent-a",
-          "verification_method": "did:example:principal#key-1",
-          "issued_at": "2026-07-18T22:00:00.000Z",
-          "nonce": "00112233445566778899aabbccddeeff",
-          "authority": {
-            "scope": {
-              "profile": "aps-hierarchical-v2\uffff",
-              "grants": [
-                "commerce:*",
-                "travel:book"
-              ]
-            },
-            "spend": {
-              "mode": "bounded",
-              "unit": "iso4217:USD:minor",
-              "per_action": "5000",
-              "cumulative": "10000"
-            },
-            "depth": {
-              "remaining": 2
-            },
-            "time": {
-              "not_before": "2026-07-18T22:00:00.000Z",
-              "not_after": "2026-07-19T22:00:00.000Z"
-            },
-            "reputation": {
-              "profile": "aps-score-0-100-v1",
-              "ceiling": 80
-            },
-            "values": {
-              "profile": "aps-values-identifiers-v1",
-              "required": [
-                "F-001",
-                "F-003"
-              ]
-            },
-            "reversibility": {
-              "profile": "aps-tci-v1",
-              "ceiling": "compensable"
-            }
-          },
-          "delegation_id": "sha256:dc12a433983a762c37a407a37bf0d8b46fd7cccd5fbe10cd30abd9b716bfea14",
-          "signature": "79c6f8a809cdf51271db016066f2e3fb3f189d721908f8d16d37a8de96ddd6080e99ebab4e7b2511d173a87801c50475aa44d239545078fc60050cc3d7a36c01"
-        }
-      ],
-      "context": {
-        "now": "2026-07-18T23:00:00.000Z",
-        "keys": [
-          {
-            "issuer": "did:example:principal",
-            "verification_method": "did:example:principal#key-1",
-            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
-          },
-          {
-            "issuer": "did:example:agent-a",
-            "verification_method": "did:example:agent-a#key-1",
-            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
-          },
-          {
-            "issuer": "did:example:agent-b",
-            "verification_method": "did:example:agent-b#key-1",
-            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
-          },
-          {
-            "issuer": "did:example:agent-c",
-            "verification_method": "did:example:agent-c#key-1",
-            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
-          },
-          {
-            "issuer": "did:example:outsider",
-            "verification_method": "did:example:outsider#key-1",
-            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
-          }
-        ],
-        "trust": {
-          "mode": "table",
-          "trusted_root_ids": [
-            "sha256:dc12a433983a762c37a407a37bf0d8b46fd7cccd5fbe10cd30abd9b716bfea14"
-          ]
-        },
-        "revocation": {
-          "default": "active"
-        }
-      },
-      "expected": {
-        "state": "invalid",
-        "sdk_codes": [
-          "SCHEMA_INVALID",
-          "UNSUPPORTED_PROFILE"
-        ],
-        "index": 0
-      },
-      "ts_behaviour": {
-        "state": "invalid",
-        "codes": [
-          "SCHEMA_INVALID",
-          "UNSUPPORTED_PROFILE"
         ],
         "index": 0
       }
@@ -25085,7 +24969,7 @@
   "withheld": [
     {
       "topic": "Multi-fault chains",
-      "reason": "Every chain negative changes exactly one thing in an otherwise valid chain. In AD-N-S08, AD-N-S09, AD-N-S10, AD-N-S11, AD-N-S12, AD-N-S13, AD-N-S53, AD-N-S55, AD-N-S56, AD-N-S62, AD-N-U08, AD-N-H01, AD-N-H02 and AD-N-H10, that one change necessarily fails more than one check; each of those cases' own note names the other checks it cannot avoid also failing. A chain built from two independent faults is withheld instead, because the draft does not settle which failure decides when two unrelated checks fail together. That includes the precedence inside one record between an I-JSON failure and an unknown version (formerly AD-N-S68, which paired an unsupported version with a non-I-JSON subject and is now removed)."
+      "reason": "Every chain negative changes exactly one thing in an otherwise valid chain. In AD-N-S08, AD-N-S09, AD-N-S10, AD-N-S11, AD-N-S12, AD-N-S13, AD-N-S53, AD-N-S55, AD-N-S56, AD-N-U08, AD-N-H01, AD-N-H02 and AD-N-H10, that one change necessarily fails more than one check; each of those cases' own note names the other checks it cannot avoid also failing. Chains built from two independent faults are withheld instead, because the draft does not settle which failure decides when two unrelated checks fail together. That includes the precedence inside one record between an I-JSON failure and an unknown version (formerly AD-N-S68, which paired an unsupported version with a non-I-JSON subject and is now removed) or an unsupported facet profile (formerly AD-N-S62, which paired an unsupported scope profile with a non-I-JSON record and is now removed)."
     },
     {
       "topic": "Values the draft admits that the TypeScript schema rejects by a grammar the draft does not state",
@@ -25121,16 +25005,16 @@
     }
   ],
   "counts": {
-    "total": 184,
+    "total": 183,
     "by_kind": {
-      "chain": 138,
+      "chain": 137,
       "wire": 9,
       "issue_root": 6,
       "issue_child": 17,
       "budget": 14
     },
     "by_provenance": {
-      "draft-derived": 180,
+      "draft-derived": 179,
       "ts-conformant-regression": 4
     }
   }
