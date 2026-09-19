@@ -199,6 +199,22 @@ function forceSignExpectingCanonicalizationFailure(body: any, label: Label, case
   fail(`${caseId}: expected computeAuthorityDelegationId to throw on a lone surrogate, but it did not`)
 }
 
+/** AD-N-U10, AD-N-U11 and AD-N-S68: compute delegation_id and signature over
+ *  the record as written wherever JCS allows it (the same recipe as
+ *  forceSign), falling back to the AD-N-S13 all-zero placeholder only if
+ *  canonicalization actually throws (e.g. a lone surrogate). None of these
+ *  three cases' mutations are lone surrogates, so in practice this always
+ *  takes the forceSign branch; the fallback exists to match what the spec
+ *  says to do if that were ever not so. */
+function forceSignOrZeroPlaceholder(body: any, label: Label): any {
+  try {
+    AD.computeAuthorityDelegationId(body)
+  } catch {
+    return { ...body, delegation_id: `sha256:${'0'.repeat(64)}`, signature: '0'.repeat(128) }
+  }
+  return forceSign(body, label)
+}
+
 function flipLastHexChar(hex: string): string {
   const last = hex[hex.length - 1]
   const replacement = last === 'f' ? 'e' : 'f'
@@ -658,6 +674,14 @@ pushChainCase({
   })
 }
 
+const BODY_P21 = mutate(BODY_R, (b) => { b.authority.time.not_before = '2026-07-18T21:00:00.000Z' })
+pushChainCase({
+  id: 'AD-P21', title: "Root's time.not_before predates its own issued_at", chain: [issue(BODY_P21, 'principal')],
+  expectedState: 'valid',
+  lines: 'L511, L536-537',
+  note: "The not_before-must-not-predate-issued_at rule binds only a record directly delegated from a parent (L511, L536-537); a root has no parent and is exempt, so R's not_before moves an hour earlier than its issued_at (22:00) while every other rule still holds.",
+})
+
 {
   const R2 = issue(mutate(BODY_R, (b) => {
     b.issued_at = '2026-06-30T23:00:00.000Z'
@@ -685,7 +709,7 @@ rootOnlyInvalid('AD-N-S02', 'Missing nonce', 'L426-427', 'nonce is a required me
 rootOnlyInvalid('AD-N-S03', 'authority missing the values facet', 'L429-431', 'authority must carry exactly all seven facets.', 'SCHEMA_INVALID', (b) => { delete b.authority.values })
 rootOnlyInvalid('AD-N-S04', 'An eighth authority facet', 'L429-430', 'authority carries exactly seven facets, not eight.', 'SCHEMA_INVALID', (b) => { b.authority.risk = { profile: 'x', ceiling: 1 } })
 rootOnlyInvalid('AD-N-S05', 'depth with an extra member', 'L480', 'depth is a closed object of exactly {remaining}.', 'SCHEMA_INVALID', (b) => { b.authority.depth = { remaining: 2, max: 3 } })
-rootOnlyInvalid('AD-N-S06', 'Unsupported record_type v2', 'L424-426, L590, L1227', 'The draft states no rule for an unknown record_type; by analogy with L590 and L1227, an unimplemented construct is unsupported, not invalid.', 'UNSUPPORTED_VERSION', (b) => { b.record_type = 'aps:authority-delegation:v2' }, 'unsupported')
+rootOnlyInvalid('AD-N-S06', 'Unsupported record_type v2', 'L424-426, L590, L1227', 'The draft states no rule for an unknown record_type, and the state follows by analogy with L590 and L1227.', 'UNSUPPORTED_VERSION', (b) => { b.record_type = 'aps:authority-delegation:v2' }, 'unsupported')
 rootOnlyInvalid('AD-N-S07', 'Unsupported version 2.0', 'L426', 'The draft states no rule for an unknown version; by analogy with L590 and L1227, an unimplemented construct is unsupported, not invalid.', 'UNSUPPORTED_VERSION', (b) => { b.version = '2.0' }, 'unsupported')
 
 {
@@ -771,6 +795,7 @@ rootOnlyInvalid('AD-N-S46', 'Duplicate values.required entry', 'L547', 'values.r
 rootOnlyInvalid('AD-N-S47', 'Reversibility ceiling outside the three classes', 'L553-565', 'Only tentative, compensable and irreversible are defined.', 'SCHEMA_INVALID', (b) => { b.authority.reversibility.ceiling = 'reversible' })
 rootOnlyInvalid('AD-N-S48', 'Reversibility ceiling as an array', 'L553-565, L480', 'reversibility.ceiling must be a string.', 'SCHEMA_INVALID', (b) => { b.authority.reversibility.ceiling = ['compensable'] })
 rootOnlyInvalid('AD-N-S49', 'Scope facet without a profile', 'L512-514, L480', 'The scope facet carries profile and grants (L464-465) in a closed schema (L480); a missing member is invalid.', 'SCHEMA_INVALID', (b) => { b.authority.scope = { grants: ['commerce:*', 'travel:book'] } })
+rootOnlyInvalid('AD-N-S50', 'Reputation facet with a non-string profile', 'L512-514', 'A profile that is not a string is malformed input.', 'SCHEMA_INVALID', (b) => { b.authority.reputation = { profile: 5, ceiling: 80 } })
 {
   const c1bad = forceSign(mutate(BODY_C1, (b) => { b.authority.time.not_before = '2026-07-18T22:05:00.000Z' }), 'agent-a')
   pushChainCase({
@@ -845,9 +870,24 @@ rootOnlyInvalid('AD-N-S61', 'subject with a trailing noncharacter (U+10FFFF)', '
   })
 }
 
+rootOnlyInvalid('AD-N-S63', 'version is the JSON number 1', 'L426', 'A version that is not a string is malformed input.', 'SCHEMA_INVALID', (b) => { b.version = 1 })
+rootOnlyInvalid('AD-N-S64', 'version wrapped in an array', 'L426', 'A version that is not a string is malformed input, the same as AD-N-S63; here it is an array containing the correct value instead of a bare number.', 'SCHEMA_INVALID', (b) => { b.version = ['1.0'] })
+rootOnlyInvalid('AD-N-S65', 'record_type is a JSON number', 'L424-426', 'A record_type that is not a string is malformed input, treated like a non-string version.', 'SCHEMA_INVALID', (b) => { b.record_type = 7 })
+
 rootOnlyInvalid('AD-N-S66', 'issued_at second 60 on a day that is not the last day of its month', 'RFC 3339 section 5.7 and Appendix D', 'RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; June 2026 has 30 days, so the 29th is not the last day of that month.', 'NONCANONICAL_VALUE', (b) => { b.issued_at = '2026-06-29T23:59:60.000Z' })
 
 rootOnlyInvalid('AD-N-S67', 'time.not_after second 60 at minute 58 (not minute 59)', 'RFC 3339 section 5.7 and Appendix D', 'RFC 3339 section 5.7 and Appendix D admit second 60 only as 23:59:60 on the last day of a month; minute 58 is not minute 59. issued_at and time.not_before are set to the values root RL (AD-P16) uses, with not_after replaced.', 'NONCANONICAL_VALUE', (b) => { b.issued_at = '2016-12-31T23:59:59.000Z'; b.authority.time = { not_before: '2016-12-31T23:59:59.000Z', not_after: '2016-12-31T23:58:60.000Z' } })
+
+{
+  const body = mutate(BODY_R, (b) => { b.version = '2.0'; b.subject = b.subject + '\uFDD0' })
+  pushChainCase({
+    id: 'AD-N-S68', title: 'Unsupported version 2.0 combined with a non-I-JSON subject (U+FDD0)',
+    chain: [forceSignOrZeroPlaceholder(body, 'principal')],
+    expectedState: 'invalid', expectedCodes: ['SCHEMA_INVALID', 'UNSUPPORTED_VERSION'], expectedIndex: 0,
+    lines: 'L204 with RFC 7493 section 2.1, L426',
+    note: 'The record-wide I-JSON check belongs to canonical serialization, not the v1 body schema (draft line 204), and runs before the version check; it fails on the noncharacter, so the failures are SCHEMA_INVALID followed by UNSUPPORTED_VERSION and the state is invalid, even though the record_type names the v1 type.',
+  })
+}
 
 // -------------------------------------------------------------------------
 // Chain cases, negative: unsupported facet profiles
@@ -857,9 +897,15 @@ function rootOnlyUnsupported(id: string, title: string, note: string, fn: (b: an
   rootOnlyInvalid(id, title, 'L512-514, L590', note, 'UNSUPPORTED_PROFILE', fn, 'unsupported')
 }
 
+const UNSUPPORTED_PROFILE_NOTE = 'An unsupported facet profile is unsupported; the section 3.2 value rules belong to the profiles this revision defines, so they are not applied under an unknown profile'
+
 rootOnlyUnsupported('AD-N-U01', 'Unsupported scope profile', 'An unsupported facet profile is unsupported, not invalid.', (b) => { b.authority.scope.profile = 'aps-hierarchical-v2' })
+rootOnlyUnsupported('AD-N-U02', 'Unsupported scope profile, non-v1 grant syntax', UNSUPPORTED_PROFILE_NOTE, (b) => { b.authority.scope = { profile: 'aps-hierarchical-v2', grants: ['commerce/checkout'] } })
+rootOnlyUnsupported('AD-N-U03', 'Unsupported scope profile with an extra member', UNSUPPORTED_PROFILE_NOTE, (b) => { b.authority.scope = { profile: 'aps-hierarchical-v2', grants: ['commerce:*'], exclusions: [] } })
 rootOnlyUnsupported('AD-N-U04', 'Unsupported reputation profile', 'An unsupported facet profile is unsupported, not invalid.', (b) => { b.authority.reputation = { profile: 'aps-score-0-1000-v1', ceiling: 80 } })
+rootOnlyUnsupported('AD-N-U05', 'Unsupported reputation profile, out-of-v1-range ceiling', UNSUPPORTED_PROFILE_NOTE, (b) => { b.authority.reputation = { profile: 'aps-score-0-1000-v1', ceiling: 800 } })
 rootOnlyUnsupported('AD-N-U06', 'Unsupported values profile', 'An unsupported facet profile is unsupported, not invalid.', (b) => { b.authority.values = { profile: 'aps-values-uri-v1', required: ['F-001', 'F-003'] } })
+rootOnlyUnsupported('AD-N-U07', 'Unsupported reversibility profile', UNSUPPORTED_PROFILE_NOTE, (b) => { b.authority.reversibility = { profile: 'aps-tci-v2', ceiling: 'reversible' } })
 {
   const c1bad = forceSign(mutate(BODY_C1, (b) => { b.authority.scope.profile = 'aps-hierarchical-v2' }), 'agent-a')
   pushChainCase({
@@ -868,7 +914,32 @@ rootOnlyUnsupported('AD-N-U06', 'Unsupported values profile', 'An unsupported fa
     lines: 'L512-514, L590', note: "C1's own scope profile is unsupported at the shape level, independent of the parent/child comparison.",
   })
 }
-rootOnlyInvalid('AD-N-U09', 'Unsupported reversibility profile, otherwise valid content', 'L590, L512-514', 'The content is valid under v1, so the case is a single fault; withholding AD-N-U07 had left no vector with an unsupported reversibility profile.', 'UNSUPPORTED_PROFILE', (b) => { b.authority.reversibility = { profile: 'aps-tci-v2', ceiling: 'compensable' } }, 'unsupported')
+rootOnlyInvalid('AD-N-U09', 'Unsupported reversibility profile, otherwise valid content', 'L590, L512-514', "The content is valid under v1, so the case is a single fault: reversibility.ceiling 'compensable' would itself be v1-valid, unlike AD-N-U07's 'reversible', which is outside the v1 three-class enum.", 'UNSUPPORTED_PROFILE', (b) => { b.authority.reversibility = { profile: 'aps-tci-v2', ceiling: 'compensable' } }, 'unsupported')
+
+{
+  const body = mutate(BODY_R, (b) => {
+    b.version = '2.0'
+    b.extensions = {}
+    b.authority.risk = { profile: 'x', ceiling: 1 }
+  })
+  pushChainCase({
+    id: 'AD-N-U10', title: 'Unsupported version 2.0 with a non-v1 body (extra top-level member and an eighth facet)',
+    chain: [forceSignOrZeroPlaceholder(body, 'principal')],
+    expectedState: 'unsupported', expectedCode: 'UNSUPPORTED_VERSION', expectedIndex: 0,
+    lines: 'L426, L512-514',
+    note: 'The record_type names the v1 type but the version is an unsupported string, so rule 4 reports it unsupported without judging the body against the v1 schema at all: the extra top-level member "extensions" and the eighth facet "risk" are never reached.',
+  })
+}
+{
+  const body = mutate(BODY_R, (b) => { b.version = '1.1'; delete b.nonce })
+  pushChainCase({
+    id: 'AD-N-U11', title: 'Unsupported version 1.1 with no nonce member',
+    chain: [forceSignOrZeroPlaceholder(body, 'principal')],
+    expectedState: 'unsupported', expectedCode: 'UNSUPPORTED_VERSION', expectedIndex: 0,
+    lines: 'L426-427',
+    note: 'A recognised record_type with an unsupported version string is not judged by the v1 body schema at all, so the otherwise-required nonce (L426-427) being absent is never itself a fault here.',
+  })
+}
 
 // -------------------------------------------------------------------------
 // Chain cases, negative: signature, identifier and key resolution
@@ -1400,6 +1471,9 @@ pushIssueChildCase('AD-I16', 'issue_child: parent R, body C1 unchanged, now befo
   { keys: 'default', revocation_parent: 'active', now: '2026-07-18T21:00:00.000Z' }, false, 'draft-derived',
   'L696-699', "now is before R's not_before, so the parent is not yet valid at issuance; the issuer refuses.")
 
+pushIssueRootCase('AD-I17', "issue_root: body R with not_before predating issued_at (AD-P21's body), key principal", clone(BODY_P21), 'principal', true, 'ts-conformant-regression',
+  'section 3.1', 'Same reasoning as AD-I01; confirms issueAuthorityDelegation also issues a root whose not_before predates its issued_at, which item 3 exempts a root from refusing.')
+
 // -------------------------------------------------------------------------
 // Budget cases: InMemoryAuthorityBudgetLedger reserve/dispatch/commit/cancel
 // -------------------------------------------------------------------------
@@ -1691,11 +1765,8 @@ const conventions = {
 
 const withheld = [
   { topic: 'Multi-fault chains', reason: 'The draft does not say which failure decides when several steps fail. Only single-fault chains are included; AD-N-H01, AD-N-H02, AD-N-H10 and AD-N-S62 carry an unavoidable later fault and each case explains why the order does not matter for it. For AD-N-S62, the I-JSON failure belongs to the first step of the section 3.3 order (closed schema and canonical values), so it is decided before the unsupported profile it also carries.' },
-  { topic: "A root whose time.not_before predates its issued_at", reason: 'L536-537 states the rule for a child; whether it binds a root is an open question.' },
   { topic: 'Values the draft admits that the TypeScript schema rejects by a grammar the draft does not state', reason: 'A spend unit outside ^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$, and JSON number spellings such as 2.0 or 1e2 in wire input; whether the draft admits them is an open question.' },
-  { topic: 'A non-string record_type or version', reason: 'Whether that is unsupported or invalid is not determined by the draft.' },
-  { topic: 'A facet profile that is not a string', reason: 'Whether that is invalid or unsupported is not determined by the draft.' },
-  { topic: 'Facet content that breaks a section 3.2 value rule under an unsupported profile', reason: 'The draft does not say whether those rules bind a facet whose profile is not supported, so such a record may be two faults.' },
+  { topic: 'An unknown record_type string: reported unsupported and still judged by the v1 schema', reason: 'A record_type naming some other string is unsupported (UNSUPPORTED_VERSION) but is still judged by the v1 body schema, unlike a recognised record_type paired with an unknown version, which is not. No rule states whether it should be judged.' },
   { topic: 'Key-resolution outcome structure', reason: 'not found, ambiguous, malformed, unreachable, unsupported scheme (L360-369): an open question.' },
   { topic: 'Runtime reputation and unresolved action reversibility', reason: 'L542-545 and L566 are action-time rules, not chain verification.' },
   { topic: 'Revocation records and cascade completion', reason: 'Sections 3.5 and 3.5.1: no wire format is fixed and no implementation exists.' },
