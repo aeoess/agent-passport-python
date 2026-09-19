@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6",
   "generated_from": {
     "repository": "agent-passport-system",
-    "commit": "02472e0aff190a6a83b15653a0cb6bc8a4cdd932"
+    "commit": "ab3555cea97c7757fb0df3117ecd122c704f6ad6"
   },
   "provenance_definitions": {
     "draft-derived": "the expected state, outcome or rejection follows from the draft text, directly or by an analogy the case's derivation note states, with RFC 3339 or RFC 7493 where cited; TypeScript output was not consulted to decide it.",
@@ -3123,6 +3123,116 @@
       }
     },
     {
+      "id": "AD-P21",
+      "kind": "chain",
+      "title": "Root's time.not_before predates its own issued_at",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L511, L536-537",
+        "note": "The not_before-must-not-predate-issued_at rule binds only a record directly delegated from a parent (L511, L536-537); a root has no parent and is exempt, so R's not_before moves an hour earlier than its issued_at (22:00) while every other rule still holds."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T21:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:073b00820204c8a37b254a01c9646218baf0334ea9aff9726890f2cd25170350",
+          "signature": "85db72a8aa79eeee38e3853b91123f2d6a9d17442b1ae4116119275ddd140a87b534b4591d13aa3dc8899c0e2368f971e7efd355c43dddaa243a6c678c832105"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:073b00820204c8a37b254a01c9646218baf0334ea9aff9726890f2cd25170350"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "valid",
+        "sdk_codes": [],
+        "index": null
+      },
+      "ts_behaviour": {
+        "state": "valid",
+        "codes": [],
+        "index": null
+      }
+    },
+    {
       "id": "AD-P22",
       "kind": "chain",
       "title": "not_after and now both a canonical leap second",
@@ -3807,7 +3917,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L424-426, L590, L1227",
-        "note": "The draft states no rule for an unknown record_type; by analogy with L590 and L1227, an unimplemented construct is unsupported, not invalid."
+        "note": "The draft states no rule for an unknown record_type, and the state follows by analogy with L590 and L1227."
       },
       "chain": [
         {
@@ -8865,6 +8975,120 @@
       }
     },
     {
+      "id": "AD-N-S50",
+      "kind": "chain",
+      "title": "Reputation facet with a non-string profile",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L512-514",
+        "note": "A profile that is not a string is malformed input."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": 5,
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:70452c85354d540686e798b5cc493c0e23606823cb9b68efd7351627c35c4f20",
+          "signature": "076e8bcef5c719158a2d8c361bd4d5aeb45223b6e7e419f5bd60cc480f14414dc7f02aad3fede5c92bb0bf191ae0ea53b3396f408d0e55ec26f0cc6ffdaf400e"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:70452c85354d540686e798b5cc493c0e23606823cb9b68efd7351627c35c4f20"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "invalid",
+        "sdk_codes": [
+          "SCHEMA_INVALID"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "invalid",
+        "codes": [
+          "SCHEMA_INVALID"
+        ],
+        "index": 0
+      }
+    },
+    {
       "id": "AD-N-S51",
       "kind": "chain",
       "title": "not_before predates issued_at",
@@ -10237,6 +10461,350 @@
       }
     },
     {
+      "id": "AD-N-S63",
+      "kind": "chain",
+      "title": "version is the JSON number 1",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L426",
+        "note": "A version that is not a string is malformed input."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": 1,
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:e4c9623ee6620c1dd43d539557ddeae00d807cfa0c940afd2012224b9dd3187f",
+          "signature": "9f6e5502593b4105893c1eb0e926129906c5fb3ac98ac26c2e8c6c0776196a6c8b531e17d21a61451c5336c7019091bb3ac7258d9646669d33ba8ebf0c343b00"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:e4c9623ee6620c1dd43d539557ddeae00d807cfa0c940afd2012224b9dd3187f"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "invalid",
+        "sdk_codes": [
+          "SCHEMA_INVALID"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "invalid",
+        "codes": [
+          "SCHEMA_INVALID"
+        ],
+        "index": 0
+      }
+    },
+    {
+      "id": "AD-N-S64",
+      "kind": "chain",
+      "title": "version wrapped in an array",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L426",
+        "note": "A version that is not a string is malformed input, the same as AD-N-S63; here it is an array containing the correct value instead of a bare number."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": [
+            "1.0"
+          ],
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:d210692e115cec13c765f47521390a103dcb782347ba2ab5643a564126650ec4",
+          "signature": "f12658886be97d34563aec36e7ff9d94c8e65b88f1e097325c2430877ab8c05f30c5abc6d6317cc9f652abc9b52e885c96c1a87872109c0fdf74936bd57dc206"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:d210692e115cec13c765f47521390a103dcb782347ba2ab5643a564126650ec4"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "invalid",
+        "sdk_codes": [
+          "SCHEMA_INVALID"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "invalid",
+        "codes": [
+          "SCHEMA_INVALID"
+        ],
+        "index": 0
+      }
+    },
+    {
+      "id": "AD-N-S65",
+      "kind": "chain",
+      "title": "record_type is a JSON number",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L424-426",
+        "note": "A record_type that is not a string is malformed input, treated like a non-string version."
+      },
+      "chain": [
+        {
+          "record_type": 7,
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:7089bb71be19afa6dc2c2db748bac8641dad3fa33933c49ee6696a361f34af27",
+          "signature": "4d4a3715051b7b8cfff4f24adb1fecac298092510098fcaa56d51dc75648291f54481a25b2c24378b41e77474a49795412210ee22735f652d8e01ae2a23fbe0a"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:7089bb71be19afa6dc2c2db748bac8641dad3fa33933c49ee6696a361f34af27"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "invalid",
+        "sdk_codes": [
+          "SCHEMA_INVALID"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "invalid",
+        "codes": [
+          "SCHEMA_INVALID"
+        ],
+        "index": 0
+      }
+    },
+    {
       "id": "AD-N-S66",
       "kind": "chain",
       "title": "issued_at second 60 on a day that is not the last day of its month",
@@ -10465,6 +11033,122 @@
       }
     },
     {
+      "id": "AD-N-S68",
+      "kind": "chain",
+      "title": "Unsupported version 2.0 combined with a non-I-JSON subject (U+FDD0)",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L204 with RFC 7493 section 2.1, L426",
+        "note": "The record-wide I-JSON check belongs to canonical serialization, not the v1 body schema (draft line 204), and runs before the version check; it fails on the noncharacter, so the failures are SCHEMA_INVALID followed by UNSUPPORTED_VERSION and the state is invalid, even though the record_type names the v1 type."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "2.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a﷐",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:7580693b8727b425f3526aacb26398f9d5a7e6d6f60bfb49849ed7ded01009c2",
+          "signature": "e206ff8c187ae9f5a22deb2dfd2fb4c44a60d8c3d1bdd1c10ada4f40661c77f1287c33ccf738a00f823422b3921d2749d56faf83d602ba0bb3bf10b547ba4600"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:7580693b8727b425f3526aacb26398f9d5a7e6d6f60bfb49849ed7ded01009c2"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "invalid",
+        "sdk_codes": [
+          "SCHEMA_INVALID",
+          "UNSUPPORTED_VERSION"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "invalid",
+        "codes": [
+          "SCHEMA_INVALID",
+          "UNSUPPORTED_VERSION"
+        ],
+        "index": 0
+      }
+    },
+    {
       "id": "AD-N-U01",
       "kind": "chain",
       "title": "Unsupported scope profile",
@@ -10557,6 +11241,233 @@
           "mode": "table",
           "trusted_root_ids": [
             "sha256:8826fe44c4d998ebe2e54ac87f1f62b4eb357a562aa1cc636742a987a347d944"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "unsupported",
+        "sdk_codes": [
+          "UNSUPPORTED_PROFILE"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "unsupported",
+        "codes": [
+          "UNSUPPORTED_PROFILE"
+        ],
+        "index": 0
+      }
+    },
+    {
+      "id": "AD-N-U02",
+      "kind": "chain",
+      "title": "Unsupported scope profile, non-v1 grant syntax",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L512-514, L590",
+        "note": "An unsupported facet profile is unsupported; the section 3.2 value rules belong to the profiles this revision defines, so they are not applied under an unknown profile"
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v2",
+              "grants": [
+                "commerce/checkout"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:52aaaee1dd68880dc13cc0d7859f6d4ebd060772ed1348655f812cc7136392e7",
+          "signature": "57f88285dd1981faa8f43211ce7355d67772109315bc52f911f2f8fd3e7373bbf48adb26caa0f66d68d50ba4ef23bfa0df03e4964dc3abe6fcbad482e849860c"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:52aaaee1dd68880dc13cc0d7859f6d4ebd060772ed1348655f812cc7136392e7"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "unsupported",
+        "sdk_codes": [
+          "UNSUPPORTED_PROFILE"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "unsupported",
+        "codes": [
+          "UNSUPPORTED_PROFILE"
+        ],
+        "index": 0
+      }
+    },
+    {
+      "id": "AD-N-U03",
+      "kind": "chain",
+      "title": "Unsupported scope profile with an extra member",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L512-514, L590",
+        "note": "An unsupported facet profile is unsupported; the section 3.2 value rules belong to the profiles this revision defines, so they are not applied under an unknown profile"
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v2",
+              "grants": [
+                "commerce:*"
+              ],
+              "exclusions": []
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:2a4ca41e531c567200909b18b9621ca3100a30a97dcb3da3c24c56c242c25560",
+          "signature": "31fd42db64d2578159a7ca9121ea6f069813c4835fd04c129ce35b1a1aae38d4a33a5ee5eb494092631ae9710e470a05eefd58d9e1ec88edd8db6bc38f517e0e"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:2a4ca41e531c567200909b18b9621ca3100a30a97dcb3da3c24c56c242c25560"
           ]
         },
         "revocation": {
@@ -10693,6 +11604,120 @@
       }
     },
     {
+      "id": "AD-N-U05",
+      "kind": "chain",
+      "title": "Unsupported reputation profile, out-of-v1-range ceiling",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L512-514, L590",
+        "note": "An unsupported facet profile is unsupported; the section 3.2 value rules belong to the profiles this revision defines, so they are not applied under an unknown profile"
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-1000-v1",
+              "ceiling": 800
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:07cff262dc80612e9e7612b6d9e37f5741e7898c28154a6d8b2635b2ed572322",
+          "signature": "a66a096186f80c2e071ddcdce4c912753d8fa60a31a342613185802a5350ca828328e60ebdfd338fc35f71ca7ac6cc3d7dee88df84e2a2d5158c94f6907cac0e"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:07cff262dc80612e9e7612b6d9e37f5741e7898c28154a6d8b2635b2ed572322"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "unsupported",
+        "sdk_codes": [
+          "UNSUPPORTED_PROFILE"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "unsupported",
+        "codes": [
+          "UNSUPPORTED_PROFILE"
+        ],
+        "index": 0
+      }
+    },
+    {
       "id": "AD-N-U06",
       "kind": "chain",
       "title": "Unsupported values profile",
@@ -10785,6 +11810,120 @@
           "mode": "table",
           "trusted_root_ids": [
             "sha256:5cce085eead47ea081c928ce14195f6777e10fb6a3cdd5b97d604c3b14d860ec"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "unsupported",
+        "sdk_codes": [
+          "UNSUPPORTED_PROFILE"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "unsupported",
+        "codes": [
+          "UNSUPPORTED_PROFILE"
+        ],
+        "index": 0
+      }
+    },
+    {
+      "id": "AD-N-U07",
+      "kind": "chain",
+      "title": "Unsupported reversibility profile",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L512-514, L590",
+        "note": "An unsupported facet profile is unsupported; the section 3.2 value rules belong to the profiles this revision defines, so they are not applied under an unknown profile"
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v2",
+              "ceiling": "reversible"
+            }
+          },
+          "delegation_id": "sha256:04c8355906e19e488a1569fb1d69ee9733d4c5f11a93f13929f9647e61cc470b",
+          "signature": "de8755c12d595721d037b5036afc3d2bdb1ce01bf489e754412e58efed17a30c759428c89634048eb262478b0f3491519a63aa01d057bfd21e373886acaa6802"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:04c8355906e19e488a1569fb1d69ee9733d4c5f11a93f13929f9647e61cc470b"
           ]
         },
         "revocation": {
@@ -10976,7 +12115,7 @@
       "expected_provenance": "draft-derived",
       "derivation": {
         "lines": "L590, L512-514",
-        "note": "The content is valid under v1, so the case is a single fault; withholding AD-N-U07 had left no vector with an unsupported reversibility profile."
+        "note": "The content is valid under v1, so the case is a single fault: reversibility.ceiling 'compensable' would itself be v1-valid, unlike AD-N-U07's 'reversible', which is outside the v1 three-class enum."
       },
       "chain": [
         {
@@ -11079,6 +12218,238 @@
         "state": "unsupported",
         "codes": [
           "UNSUPPORTED_PROFILE"
+        ],
+        "index": 0
+      }
+    },
+    {
+      "id": "AD-N-U10",
+      "kind": "chain",
+      "title": "Unsupported version 2.0 with a non-v1 body (extra top-level member and an eighth facet)",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L426, L512-514",
+        "note": "The record_type names the v1 type but the version is an unsupported string, so rule 4 reports it unsupported without judging the body against the v1 schema at all: the extra top-level member \"extensions\" and the eighth facet \"risk\" are never reached."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "2.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            },
+            "risk": {
+              "profile": "x",
+              "ceiling": 1
+            }
+          },
+          "extensions": {},
+          "delegation_id": "sha256:c938da8da1c699593ce48faa25676c8a859f57d228d5092248ac9d423393425b",
+          "signature": "4c468fb72e3cb985ed32853f75823fd0eb014f6ef32e4536a0776ec179c533b480dd461c6779dd3d74e47d862b3c3265b0f37ba960aed640bc6b4b10125cb503"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:c938da8da1c699593ce48faa25676c8a859f57d228d5092248ac9d423393425b"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "unsupported",
+        "sdk_codes": [
+          "UNSUPPORTED_VERSION"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "unsupported",
+        "codes": [
+          "UNSUPPORTED_VERSION"
+        ],
+        "index": 0
+      }
+    },
+    {
+      "id": "AD-N-U11",
+      "kind": "chain",
+      "title": "Unsupported version 1.1 with no nonce member",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L426-427",
+        "note": "A recognised record_type with an unsupported version string is not judged by the v1 body schema at all, so the otherwise-required nonce (L426-427) being absent is never itself a fault here."
+      },
+      "chain": [
+        {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.1",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T22:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:fe9be571d98a6ca691957413f7e03fc23fa96f9fb2653fa5be28476a5d8991a2",
+          "signature": "a1127553815e9f2005cdd6cc54f6e1a65c1f5dd1bc7cd63269015107de2a05c2cef83c7e39fe765940a052c86fdd9993512a52adccb1f900dcf0697515825206"
+        }
+      ],
+      "context": {
+        "now": "2026-07-18T23:00:00.000Z",
+        "keys": [
+          {
+            "issuer": "did:example:principal",
+            "verification_method": "did:example:principal#key-1",
+            "public_key_hex": "82f5ca046354836563ceba282632207462608fa9a253c91d7e6c6eb16059fea1"
+          },
+          {
+            "issuer": "did:example:agent-a",
+            "verification_method": "did:example:agent-a#key-1",
+            "public_key_hex": "130fa835568a84a03ada1d596a855574dc44b6533de69a13337a46bbca193ec6"
+          },
+          {
+            "issuer": "did:example:agent-b",
+            "verification_method": "did:example:agent-b#key-1",
+            "public_key_hex": "636546eaf9020daf6e74f23ade6160403e5c570be6a4af7ddcb40f86a3ba8dce"
+          },
+          {
+            "issuer": "did:example:agent-c",
+            "verification_method": "did:example:agent-c#key-1",
+            "public_key_hex": "effd0296ad8cc17175c4235a41d50d9baf64eea17bb8a56fceeeee137d708da8"
+          },
+          {
+            "issuer": "did:example:outsider",
+            "verification_method": "did:example:outsider#key-1",
+            "public_key_hex": "f1ac5304a43bcfb1b5e0adf9259a4c9754f38a503b3d776276d3568f810c6be1"
+          }
+        ],
+        "trust": {
+          "mode": "table",
+          "trusted_root_ids": [
+            "sha256:fe9be571d98a6ca691957413f7e03fc23fa96f9fb2653fa5be28476a5d8991a2"
+          ]
+        },
+        "revocation": {
+          "default": "active"
+        }
+      },
+      "expected": {
+        "state": "unsupported",
+        "sdk_codes": [
+          "UNSUPPORTED_VERSION"
+        ],
+        "index": 0
+      },
+      "ts_behaviour": {
+        "state": "unsupported",
+        "codes": [
+          "UNSUPPORTED_VERSION"
         ],
         "index": 0
       }
@@ -19569,6 +20940,119 @@
       }
     },
     {
+      "id": "AD-I17",
+      "kind": "issue_root",
+      "title": "issue_root: body R with not_before predating issued_at (AD-P21's body), key principal",
+      "expected_provenance": "ts-conformant-regression",
+      "derivation": {
+        "lines": "section 3.1",
+        "note": "Same reasoning as AD-I01; confirms issueAuthorityDelegation also issues a root whose not_before predates its issued_at, which item 3 exempts a root from refusing."
+      },
+      "body": {
+        "record_type": "aps:authority-delegation:v1",
+        "version": "1.0",
+        "parent_delegation_id": null,
+        "issuer": "did:example:principal",
+        "subject": "did:example:agent-a",
+        "verification_method": "did:example:principal#key-1",
+        "issued_at": "2026-07-18T22:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff",
+        "authority": {
+          "scope": {
+            "profile": "aps-hierarchical-v1",
+            "grants": [
+              "commerce:*",
+              "travel:book"
+            ]
+          },
+          "spend": {
+            "mode": "bounded",
+            "unit": "iso4217:USD:minor",
+            "per_action": "5000",
+            "cumulative": "10000"
+          },
+          "depth": {
+            "remaining": 2
+          },
+          "time": {
+            "not_before": "2026-07-18T21:00:00.000Z",
+            "not_after": "2026-07-19T22:00:00.000Z"
+          },
+          "reputation": {
+            "profile": "aps-score-0-100-v1",
+            "ceiling": 80
+          },
+          "values": {
+            "profile": "aps-values-identifiers-v1",
+            "required": [
+              "F-001",
+              "F-003"
+            ]
+          },
+          "reversibility": {
+            "profile": "aps-tci-v1",
+            "ceiling": "compensable"
+          }
+        }
+      },
+      "signing_key": "principal",
+      "expected": {
+        "result": "issue",
+        "delegation": {
+          "record_type": "aps:authority-delegation:v1",
+          "version": "1.0",
+          "parent_delegation_id": null,
+          "issuer": "did:example:principal",
+          "subject": "did:example:agent-a",
+          "verification_method": "did:example:principal#key-1",
+          "issued_at": "2026-07-18T22:00:00.000Z",
+          "nonce": "00112233445566778899aabbccddeeff",
+          "authority": {
+            "scope": {
+              "profile": "aps-hierarchical-v1",
+              "grants": [
+                "commerce:*",
+                "travel:book"
+              ]
+            },
+            "spend": {
+              "mode": "bounded",
+              "unit": "iso4217:USD:minor",
+              "per_action": "5000",
+              "cumulative": "10000"
+            },
+            "depth": {
+              "remaining": 2
+            },
+            "time": {
+              "not_before": "2026-07-18T21:00:00.000Z",
+              "not_after": "2026-07-19T22:00:00.000Z"
+            },
+            "reputation": {
+              "profile": "aps-score-0-100-v1",
+              "ceiling": 80
+            },
+            "values": {
+              "profile": "aps-values-identifiers-v1",
+              "required": [
+                "F-001",
+                "F-003"
+              ]
+            },
+            "reversibility": {
+              "profile": "aps-tci-v1",
+              "ceiling": "compensable"
+            }
+          },
+          "delegation_id": "sha256:073b00820204c8a37b254a01c9646218baf0334ea9aff9726890f2cd25170350",
+          "signature": "85db72a8aa79eeee38e3853b91123f2d6a9d17442b1ae4116119275ddd140a87b534b4591d13aa3dc8899c0e2368f971e7efd355c43dddaa243a6c678c832105"
+        }
+      },
+      "ts_behaviour": {
+        "result": "issue"
+      }
+    },
+    {
       "id": "AD-B01",
       "kind": "budget",
       "title": "Idempotent reserve, then a conflicting amount",
@@ -23145,24 +24629,12 @@
       "reason": "The draft does not say which failure decides when several steps fail. Only single-fault chains are included; AD-N-H01, AD-N-H02, AD-N-H10 and AD-N-S62 carry an unavoidable later fault and each case explains why the order does not matter for it. For AD-N-S62, the I-JSON failure belongs to the first step of the section 3.3 order (closed schema and canonical values), so it is decided before the unsupported profile it also carries."
     },
     {
-      "topic": "A root whose time.not_before predates its issued_at",
-      "reason": "L536-537 states the rule for a child; whether it binds a root is an open question."
-    },
-    {
       "topic": "Values the draft admits that the TypeScript schema rejects by a grammar the draft does not state",
       "reason": "A spend unit outside ^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$, and JSON number spellings such as 2.0 or 1e2 in wire input; whether the draft admits them is an open question."
     },
     {
-      "topic": "A non-string record_type or version",
-      "reason": "Whether that is unsupported or invalid is not determined by the draft."
-    },
-    {
-      "topic": "A facet profile that is not a string",
-      "reason": "Whether that is invalid or unsupported is not determined by the draft."
-    },
-    {
-      "topic": "Facet content that breaks a section 3.2 value rule under an unsupported profile",
-      "reason": "The draft does not say whether those rules bind a facet whose profile is not supported, so such a record may be two faults."
+      "topic": "An unknown record_type string: reported unsupported and still judged by the v1 schema",
+      "reason": "A record_type naming some other string is unsupported (UNSUPPORTED_VERSION) but is still judged by the v1 body schema, unlike a recognised record_type paired with an unknown version, which is not. No rule states whether it should be judged."
     },
     {
       "topic": "Key-resolution outcome structure",
@@ -23190,17 +24662,17 @@
     }
   ],
   "counts": {
-    "total": 166,
+    "total": 179,
     "by_kind": {
-      "chain": 127,
+      "chain": 139,
       "wire": 9,
-      "issue_root": 1,
+      "issue_root": 2,
       "issue_child": 15,
       "budget": 14
     },
     "by_provenance": {
-      "draft-derived": 163,
-      "ts-conformant-regression": 3
+      "draft-derived": 175,
+      "ts-conformant-regression": 4
     }
   }
 }
