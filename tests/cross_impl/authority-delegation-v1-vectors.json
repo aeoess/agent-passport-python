@@ -1,9 +1,9 @@
 {
-  "description": "Cross-implementation vectors for AuthorityDelegationV1 (draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6). Expected states, outcomes and rejections come from the draft text, RFC 3339 and RFC 7493, as cited per case, not from TypeScript output; sdk_codes are the TypeScript SDK's own failure-code vocabulary (AuthorityFailureCode in src/v2/authority-delegation/types.ts, and BudgetOperationResult.code), which the draft does not name, and the Python port shares the same strings as SDK parity, not a protocol claim. Every record's delegation_id and signature were computed by the TypeScript reference's canonical.ts (computeAuthorityDelegationId and signAuthorityDelegation, or issueAuthorityDelegation for records this file names as valid), except the all-zero placeholder in AD-N-S13 (which cannot be canonicalized at all) and the records a case edits after signing, as its own title says; tests/cross_impl/crosscheck_authority_delegation_v1_vectors.py recomputes every one of them independently with the rfc8785 package and PyNaCl. This file is not \"TS verified\" and no case in it should be described that way: TypeScript output was consulted only for the bytes and behaviour any implementation must reproduce, not for what the expected state or result should be.",
+  "description": "Cross-implementation vectors for AuthorityDelegationV1 (draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6). Expected states, outcomes and rejections come from the draft text, RFC 3339 and RFC 7493, as cited per case, not from TypeScript output; sdk_codes are the TypeScript SDK's own failure-code vocabulary (AuthorityFailureCode in src/v2/authority-delegation/types.ts, and BudgetOperationResult.code), which the draft does not name, and the Python port shares the same strings as SDK parity, not a protocol claim. Every record's delegation_id and signature were computed by the TypeScript reference's canonical.ts (computeAuthorityDelegationId and signAuthorityDelegation; a record this file names as valid is minted through issueAuthorityDelegation for a root body and issueSubAuthorityDelegation for a child body, which produce the same bytes), except the all-zero placeholder in AD-N-S13 (which cannot be canonicalized at all) and the records a case edits after signing, as its own title says; tests/cross_impl/crosscheck_authority_delegation_v1_vectors.py recomputes every one of them independently with the rfc8785 package and PyNaCl. This file is not \"TS verified\" and no case in it should be described that way: TypeScript output was consulted only for the bytes and behaviour any implementation must reproduce, not for what the expected state or result should be.",
   "draft": "draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6",
   "generated_from": {
     "repository": "agent-passport-system",
-    "commit": "ae024deb10fc49a034afdce6980b35dbba0d944d"
+    "commit": "05695c70675c2a703495c2e07844b729d706895f"
   },
   "provenance_definitions": {
     "draft-derived": "the expected state, outcome or rejection follows from the draft text, directly or by an analogy the case's derivation note states, with RFC 3339 or RFC 7493 where cited; TypeScript output was not consulted to decide it.",
@@ -12732,10 +12732,10 @@
       "id": "AD-N-C05",
       "kind": "chain",
       "title": "Key resolver missing the root issuer",
-      "expected_provenance": "draft-derived",
+      "expected_provenance": "ts-conformant-regression",
       "derivation": {
-        "lines": "L492, L321-323, L589-590",
-        "note": "By analogy with L321-323 (without key-authority evidence the result is indeterminate) and L589-590, the state is indeterminate, not invalid; finer resolution-outcome structure (L360-369) is an open question and not tested here."
+        "lines": "L492, L360-369, L589-590",
+        "note": "Both SDKs report indeterminate for a key the resolver does not return, by analogy with L321-323 (without key-authority evidence the result is indeterminate). The draft does not map a resolution outcome to one of the four verification states of L588-592, and L360-369 lists not found as one outcome among several, so this case pins current behaviour rather than a state the text fixes."
       },
       "chain": [
         {
@@ -12841,10 +12841,10 @@
       "id": "AD-N-C06",
       "kind": "chain",
       "title": "Key resolver missing the child issuer",
-      "expected_provenance": "draft-derived",
+      "expected_provenance": "ts-conformant-regression",
       "derivation": {
-        "lines": "L492, L321-323, L589-590",
-        "note": "By analogy with L321-323 (without key-authority evidence the result is indeterminate) and L589-590, the state is indeterminate, not invalid; same reasoning as AD-N-C05, one level deeper in the chain."
+        "lines": "L492, L360-369, L589-590",
+        "note": "Same as AD-N-C05, one level deeper in the chain: the state a resolution failure maps to is not fixed by the draft, so this case pins current behaviour."
       },
       "chain": [
         {
@@ -24981,7 +24981,7 @@
     },
     {
       "topic": "Key-resolution outcome structure",
-      "reason": "not found, ambiguous, malformed, unreachable, unsupported scheme (L360-369): an open question."
+      "reason": "not found, ambiguous, malformed, unreachable, unsupported scheme (L360-369), and which of the four verification states each one maps to: an open question. AD-N-C05 and AD-N-C06 cover a key the resolver does not return, labelled ts-conformant-regression for that reason, and no case here derives a state for the other outcomes."
     },
     {
       "topic": "Runtime reputation and unresolved action reversibility",
@@ -25014,8 +25014,8 @@
       "budget": 14
     },
     "by_provenance": {
-      "draft-derived": 179,
-      "ts-conformant-regression": 4
+      "draft-derived": 177,
+      "ts-conformant-regression": 6
     }
   }
 }
