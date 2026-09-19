@@ -33,6 +33,8 @@ from nacl.signing import SigningKey
 from agent_passport.v2.authority_delegation import (
     AuthorityDelegationError,
     InMemoryAuthorityBudgetLedger,
+    authority_delegation_body,
+    compute_authority_delegation_id_for_write,
     grants_are_canonical,
     is_canonical_timestamp,
     is_valid_scope_grant,
@@ -41,6 +43,7 @@ from agent_passport.v2.authority_delegation import (
     parse_authority_delegation_json,
     scope_grant_covers,
     scope_narrows,
+    sign_authority_delegation,
     validate_authority_delegation_shape,
     verify_authority_delegation_chain,
 )
@@ -538,6 +541,87 @@ class TestIssueBareBodyRequired:
         with pytest.raises(AuthorityDelegationError) as exc_info:
             issue_authority_delegation([1, 2, 3], seed)
         assert exc_info.value.code == "SCHEMA_INVALID"
+
+
+class TestRootIssuerIssuesRootsOnly:
+    """issue_authority_delegation issues roots only (draft section 3.1 line
+    428; section 3.6 lines 695-704). It refuses a body whose
+    parent_delegation_id is not null with PARENT_MISMATCH, whether or not a
+    real, sound parent exists for that body; a sound root body is unaffected;
+    and the child issuer, which no longer calls the root issuer internally,
+    still produces exactly the bytes the root issuer used to produce for the
+    same body."""
+
+    def test_valid_child_body_under_a_real_sound_parent_is_refused(self):
+        chain = _Chain()
+        child_body = {
+            "record_type": "aps:authority-delegation:v1",
+            "version": "1.0",
+            "parent_delegation_id": chain.root["delegation_id"],
+            "issuer": "did:example:agent-a",
+            "subject": "did:example:agent-b",
+            "verification_method": "did:example:agent-a#key-1",
+            "issued_at": "2026-01-01T00:05:00.000Z",
+            "authority": _authority(
+                depth={"remaining": 1},
+                time={"not_before": "2026-01-01T00:10:00.000Z", "not_after": "2026-01-01T00:20:00.000Z"},
+            ),
+        }
+        # Sanity: this is exactly the body the child issuer accepts under
+        # chain.root, so the refusal below is not a symptom of an otherwise
+        # malformed or orphaned body.
+        issued = issue_sub_authority_delegation(
+            chain.root,
+            dict(child_body),
+            chain.agent_a_seed,
+            now=child_body["issued_at"],
+            resolve_verification_key=chain.resolve_verification_key,
+            resolve_revocation=lambda delegation: "active",
+        )
+        assert issued["parent_delegation_id"] == chain.root["delegation_id"]
+
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            issue_authority_delegation(dict(child_body), chain.agent_a_seed)
+        assert exc_info.value.code == "PARENT_MISMATCH"
+
+    def test_orphan_child_body_is_refused(self):
+        seed, _ = _keypair()
+        body = _root_body(
+            parent_delegation_id="sha256:" + "a" * 64,
+            authority=_authority(
+                scope={"profile": "aps-hierarchical-v1", "grants": ["*"]},
+                spend={"mode": "unbounded"},
+                depth={"remaining": 255},
+            ),
+        )
+
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            issue_authority_delegation(body, seed)
+        assert exc_info.value.code == "PARENT_MISMATCH"
+
+    def test_sound_root_body_still_issues_and_id_recomputes(self):
+        seed, _ = _keypair()
+        body = _root_body()
+
+        record = issue_authority_delegation(body, seed)
+
+        assert record["parent_delegation_id"] is None
+        assert (
+            compute_authority_delegation_id_for_write(authority_delegation_body(record))
+            == record["delegation_id"]
+        )
+
+    def test_child_issuer_output_is_byte_identical_to_the_raw_helpers(self):
+        chain = _Chain()
+
+        unsigned = authority_delegation_body(chain.child)
+        recomputed_id = compute_authority_delegation_id_for_write(unsigned)
+        assert recomputed_id == chain.child["delegation_id"]
+
+        recomputed_signature = sign_authority_delegation(
+            {**unsigned, "delegation_id": recomputed_id}, chain.agent_a_seed
+        )
+        assert recomputed_signature == chain.child["signature"]
 
 
 class _ActiveLookalike(str):
