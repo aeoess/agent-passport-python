@@ -90,6 +90,23 @@ from .v2.composition_check import (
     verify_composition_check,
 )
 
+# Native action reference (draft-pidlisnyi-aps-03 section 4.1, profile
+# aps-action-ref-v2). DISTINCT from compute_action_ref above, which is a
+# pre-draft-03 compatibility digest over a different preimage (see its own
+# docstring for what it is and is not).
+from .v2.action_reference import (
+    ACTION_REF_V2_PROFILE,
+    ACTION_REF_V2_DOMAIN,
+    PAYLOAD_REF_V1_DOMAIN,
+    ActionReferenceError,
+    validate_action_reference_input_v2,
+    compute_action_ref_v2,
+    compute_payload_ref_v1,
+    create_action_reference_input_v2,
+    parse_action_reference_input_v2,
+    compute_action_ref_v2_from_json,
+)
+
 # Agora (Layer 4 — Communication)
 from .agora import (
     create_agora_message,
