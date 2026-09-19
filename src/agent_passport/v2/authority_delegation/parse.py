@@ -37,6 +37,9 @@ import json
 from .schema import validate_authority_delegation_shape
 from .types import AuthorityDelegationError, AuthorityFailure
 
+# Provisional: the draft does not state a maximum wire size. This 1 MiB
+# (1,048,576-byte) limit is kept identical to the TypeScript SDK, pending a
+# protocol ruling.
 _MAX_WIRE_BYTES = 1_048_576
 
 

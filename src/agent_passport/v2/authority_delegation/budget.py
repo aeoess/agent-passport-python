@@ -59,6 +59,10 @@ class InMemoryAuthorityBudgetLedger:
                 return BudgetOperationResult(ok=False, code="CONFLICT")
             if type(verified_chain) not in (list, tuple):
                 return BudgetOperationResult(ok=False, code="CONFLICT")
+            # Provisional: the draft does not state a maximum chain length.
+            # This 256-record limit is kept identical to the TypeScript SDK
+            # and to verify.py's own chain-length check, pending a protocol
+            # ruling.
             length = len(verified_chain)
             if length == 0 or length > 256:
                 return BudgetOperationResult(ok=False, code="CONFLICT")

@@ -119,16 +119,24 @@ def _is_surrogate_or_noncharacter(code_point: int) -> bool:
 
 
 class _LeaveContainer:
-    """Internal marker: pop a dict's or list's id() off the walk's path.
+    """Legacy internal-marker type, kept only as an ordinary unrecognized
+    type for _has_non_i_json_value's walk to reject, never again as a
+    control signal.
 
-    Pushed onto the stack right after the walk enters a dict or list, and
-    popped back off (removing that container's id from ``path_ids``) once
-    every item queued for it has been processed. This is what distinguishes
-    a cycle from a container merely reachable twice: while a container's
-    subtree is still being walked, its id stays in ``path_ids``, so meeting
-    it again before this marker comes back around is a cycle; once this
-    marker is reached, the id is gone, so meeting that same container again
-    through a different, non-overlapping branch is walked again as fresh.
+    Before this fix, an exit signal was a fresh instance of this class,
+    identified on the walk's own stack by type(current) is _LeaveContainer.
+    A value of that exact type, placed anywhere in a record wherever an
+    ordinary value is walked, was then popped as if it were the walk's own
+    signal to leave a container, which could clear a real container's id
+    from path_ids while that container's subtree was still being walked,
+    defeating cycle detection and making the walk loop forever on a
+    self-referential container.
+
+    The walk below no longer inspects any value's type against this class
+    at all; its exit signal is tracked out of band instead, as a (payload,
+    is_exit) pair never taken from the record. An instance of this class
+    therefore now carries no special meaning: met as a value, it falls to
+    the walk's catch-all case, exactly like a set or a bytes object.
     """
 
     __slots__ = ("container_id",)
@@ -170,23 +178,38 @@ def _has_non_i_json_value(value) -> bool:
 
     The walk is iterative, using an explicit stack rather than recursion. It
     tracks, in ``path_ids``, the id() of every dict or list currently on the
-    walk's own path from the root, pushing a ``_LeaveContainer`` marker right
-    after entering one and discarding its id when that marker is popped back
-    off: a container that contains itself at any depth (its id is still on
-    the path when the walk reaches it again) is not plain JSON data, while a
+    walk's own path from the root, pushing an exit signal right after
+    entering one and discarding its id when that signal is popped back off:
+    a container that contains itself at any depth (its id is still on the
+    path when the walk reaches it again) is not plain JSON data, while a
     container reachable twice without a cycle is walked again, fresh, once
-    its first occurrence's marker has cleared its id. It never raises.
+    its first occurrence's exit signal has cleared its id.
+
+    That exit signal is kept out of band, never mixed into the stack as a
+    value that could be confused with one from the record. Every stack entry
+    is a ``(payload, is_exit)`` pair: a value taken from the record itself is
+    always pushed as ``(item, False)``, and the only ``(payload, True)``
+    pairs on the stack are the ones this function pushes itself, right after
+    entering a dict or list, with that container's own id() as payload. A
+    value from the record is therefore only ever inspected from the
+    ``is_exit`` False side of that pair, whatever it is shaped like,
+    including a dict or list that itself holds something that looks like one
+    of this walk's own exit signals (an id paired with ``True``): such a
+    thing is just a value nested one level deeper, read out as ``(that
+    tuple, False)``, and it falls to the catch-all case below, rejected as
+    not plain data the same as a set or a bytes object, never mistaken for a
+    signal that pops a path id. It never raises.
     """
 
     def is_ill_formed_string(text) -> bool:
         return any(_is_surrogate_or_noncharacter(ord(ch)) for ch in text)
 
-    stack: list = [value]
+    stack: list[tuple] = [(value, False)]
     path_ids: set[int] = set()
     while stack:
-        current = stack.pop()
-        if type(current) is _LeaveContainer:
-            path_ids.discard(current.container_id)
+        current, is_exit = stack.pop()
+        if is_exit:
+            path_ids.discard(current)
             continue
         if type(current) is str:
             if is_ill_formed_string(current):
@@ -196,18 +219,19 @@ def _has_non_i_json_value(value) -> bool:
             if identity in path_ids:
                 return True
             path_ids.add(identity)
-            stack.append(_LeaveContainer(identity))
+            stack.append((identity, True))
             for key, item in current.items():
                 if type(key) is not str or is_ill_formed_string(key):
                     return True
-                stack.append(item)
+                stack.append((item, False))
         elif type(current) is list:
             identity = id(current)
             if identity in path_ids:
                 return True
             path_ids.add(identity)
-            stack.append(_LeaveContainer(identity))
-            stack.extend(current)
+            stack.append((identity, True))
+            for item in current:
+                stack.append((item, False))
         elif type(current) is bool:
             pass
         elif type(current) is int:
@@ -302,6 +326,11 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
     # because I-JSON belongs to canonical serialization, not to this body
     # schema: if the record fails it, the failures are SCHEMA_INVALID followed
     # by UNSUPPORTED_VERSION, and otherwise UNSUPPORTED_VERSION alone.
+    # Reporting the I-JSON failure first, which makes a record invalid even
+    # when its version is unknown or a facet's profile is unsupported, is a
+    # provisional choice kept identical to the TypeScript SDK. It stands
+    # pending a protocol ruling, because the first step of the draft's order
+    # at line 580 does not order the two.
     record_type_value = top.get("record_type")
     version_value = top.get("version")
     if type(record_type_value) is str and record_type_value == AUTHORITY_DELEGATION_RECORD_TYPE and (
@@ -343,6 +372,9 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
         type(top["parent_delegation_id"]) is not str or not _ID.fullmatch(top["parent_delegation_id"])
     ):
         failures.append(_failure("SCHEMA_INVALID", "parent_delegation_id must be null or a delegation digest"))
+    # Provisional: the draft does not state a maximum length for issuer,
+    # subject or verification_method. This 1024 UTF-8 byte cap is kept
+    # identical to the TypeScript SDK, pending a protocol ruling.
     for key in ("issuer", "subject", "verification_method"):
         item = top[key]
         if type(item) is not str or len(item) == 0 or _utf8_len(item) > 1024:
@@ -444,6 +476,11 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
     ):
         failures.append(_failure("SCHEMA_INVALID", "reputation ceiling must be an integer from 0 through 100"))
 
+    # Provisional: the aps-values-identifiers-v1 identifier grammar enforced
+    # by _IDENTIFIER below (letters, digits, and ".", "_", ":", "-", up to
+    # 128 characters, starting with a letter or digit) is narrower than
+    # draft line 547's own description of a profile-defined identifier. This
+    # is kept identical to the TypeScript SDK, pending a protocol ruling.
     values = _record(authority["values"])
     if values is None or type(values.get("profile")) is not str:
         failures.append(_failure("SCHEMA_INVALID", "values.required must contain valid identifiers"))
