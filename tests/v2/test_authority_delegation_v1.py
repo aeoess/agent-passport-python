@@ -1342,7 +1342,8 @@ class TestHostileKeyHashCollisionGivesDefinedResults:
     member, across validate_authority_delegation_shape, chain
     verification, the budget ledger, and both issuers. A plain int key,
     which is simply the wrong type rather than hostile, is checked
-    separately below and keeps giving the same defined results."""
+    separately below and gives those same defined results: SCHEMA_INVALID
+    alone from the shape check and from verification."""
 
     @pytest.mark.parametrize("colliding_with", _HOSTILE_KEY_PLACEMENTS)
     def test_shape_is_schema_invalid(self, colliding_with):
@@ -1416,6 +1417,64 @@ class TestHostileKeyHashCollisionGivesDefinedResults:
         with pytest.raises(AuthorityDelegationError) as exc_info:
             issue_authority_delegation(body, seed)
         assert exc_info.value.code == "SCHEMA_INVALID"
+
+
+def _raising_metaclass_container_types():
+    """A list subclass and a tuple subclass whose metaclass defines __eq__
+    to raise. A tuple membership test such as ``type(x) in (list, tuple)``
+    compares with ==, and Python tries the reflected __eq__ of a metaclass
+    that subclasses type first, so that test runs this caller code."""
+
+    class RaisingMeta(type):
+        def __eq__(cls, other):
+            raise RuntimeError("metaclass __eq__ called")
+
+        __hash__ = type.__hash__
+
+    class HostileList(list, metaclass=RaisingMeta):
+        pass
+
+    class HostileTuple(tuple, metaclass=RaisingMeta):
+        pass
+
+    return HostileList, HostileTuple
+
+
+class TestChainContainerTypeTestRunsNoCallerCode:
+    """The chain container's own type is tested by identity, so a list or
+    tuple subclass whose metaclass raises from __eq__ gets the same defined
+    result any other container that is not exactly a list or a tuple gets,
+    from chain verification and from the budget ledger, never an exception.
+    The same record in a plain list is the control."""
+
+    @pytest.mark.parametrize("which", [0, 1], ids=["list-subclass", "tuple-subclass"])
+    def test_verify_is_invalid_schema_invalid(self, which):
+        seed, public_key = _keypair()
+        record = issue_authority_delegation(_root_body(authority=_rich_authority()), seed)
+        assert _verify_one(record, public_key).state == "valid"
+
+        container = _raising_metaclass_container_types()[which]([record])
+        result = verify_authority_delegation_chain(
+            container,
+            now="2026-01-01T00:05:00.000Z",
+            resolve_verification_key=lambda *args: public_key,
+            trust_root=lambda root: True,
+            resolve_revocation=lambda delegation: "active",
+        )
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID"]
+
+    @pytest.mark.parametrize("which", [0, 1], ids=["list-subclass", "tuple-subclass"])
+    def test_ledger_reserve_is_conflict(self, which):
+        seed, _ = _keypair()
+        record = issue_authority_delegation(_root_body(authority=_rich_authority()), seed)
+        control = InMemoryAuthorityBudgetLedger().reserve([record], "f" * 64, "iso4217:USD:minor", "1")
+        assert control.ok is True
+
+        container = _raising_metaclass_container_types()[which]([record])
+        result = InMemoryAuthorityBudgetLedger().reserve(container, "f" * 64, "iso4217:USD:minor", "1")
+        assert result.ok is False
+        assert result.code == "CONFLICT"
 
 
 class TestContainerTypeItselfMustBeExact:

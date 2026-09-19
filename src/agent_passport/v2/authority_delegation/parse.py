@@ -21,13 +21,14 @@ separate sweep here would only duplicate that walk.
 
 Provisional: rejecting a fraction or exponent even when the number denotes
 an integer (for example depth.remaining written as "2.0" or "2e0") is kept
-identical to the TypeScript SDK. The draft does not say whether such a
-spelling should be admitted; the TypeScript SDK rejects it because a
-JavaScript number carries no separate integer/float tag, so the token
-itself is the only place it can draw that line. In Python the strict
-type(v) is int checks in schema.py would already reject this value on
-their own once it is decoded as a float, so this rule mainly matters for
-producing the rejection at the parse step rather than the schema step.
+identical to the TypeScript SDK, pending a protocol ruling. The draft does
+not say whether such a spelling should be admitted; the TypeScript SDK
+rejects it because a JavaScript number carries no separate integer/float
+tag, so the token itself is the only place it can draw that line. In
+Python the strict type(v) is int checks in schema.py would already reject
+this value on their own once it is decoded as a float, so this rule mainly
+matters for producing the rejection at the parse step rather than the
+schema step.
 """
 
 from __future__ import annotations

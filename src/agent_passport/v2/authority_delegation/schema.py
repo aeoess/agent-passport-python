@@ -311,16 +311,18 @@ def _has_non_str_key(value) -> bool:
 
     The walk is iterative, using an explicit stack rather than recursion, and
     it only ever descends into a value whose type is exactly dict or exactly
-    list, exactly like _has_non_i_json_value below. It reads each dict's own
+    list, exactly like _has_non_i_json_value above. It reads each dict's own
     keys with ``for key, item in current.items()``, which returns the keys a
     dict already holds without hashing or comparing any of them again, so
     this walk cannot itself raise from a hostile ``__eq__`` or ``__hash__``.
-    A container already visited is not visited again, which is the only
-    reason for that bookkeeping: it keeps the walk from looping forever on a
-    self-referential dict or list. Deciding whether a cycle itself makes the
-    record invalid is _has_non_i_json_value's job, run afterward, once this
-    walk has already found every dict lookup in the rest of this function
-    safe to perform.
+    A container already visited is not visited again. That bookkeeping keeps
+    the walk from looping forever on a self-referential dict or list, and it
+    keeps the walk's cost linear on a record built from shared references
+    (``node_i = [node_(i-1), node_(i-1)]``), which would otherwise be walked
+    once per path, a number that doubles with every level. Deciding whether
+    a cycle itself makes the record invalid is _has_non_i_json_value's job,
+    run afterward, once this walk has already found every dict lookup in the
+    rest of this function safe to perform.
     """
     stack: list = [value]
     seen: set[int] = set()
@@ -433,7 +435,12 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
     # value check runs for it. The record-wide I-JSON check still runs first,
     # because I-JSON belongs to canonical serialization, not to this body
     # schema: if the record fails it, the failures are SCHEMA_INVALID followed
-    # by UNSUPPORTED_VERSION, and otherwise UNSUPPORTED_VERSION alone.
+    # by UNSUPPORTED_VERSION, and otherwise UNSUPPORTED_VERSION alone. The one
+    # exception is a record carrying a key that is not exactly str, anywhere:
+    # the walk above has already reported it SCHEMA_INVALID alone, since
+    # reading its record_type or version would take a dict lookup that could
+    # run that key's own code, so neither UNSUPPORTED_VERSION nor
+    # UNSUPPORTED_PROFILE is ever added for such a record.
     # Reporting the I-JSON failure first, which makes a record invalid even
     # when its version is unknown or a facet's profile is unsupported, is a
     # provisional choice kept identical to the TypeScript SDK. It stands
@@ -467,9 +474,12 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
     # A record_type or version that is not a string at all (an int, a list,
     # and so on) is malformed input, reported the same way regardless of
     # which of the two fields is wrongly typed. Otherwise, a record_type
-    # other than the v1 type, or a version other than "1.0", is unsupported;
-    # an unrecognised record_type string is still judged by the checks below,
-    # exactly like a recognised one.
+    # other than the v1 type, or a version other than "1.0", is unsupported.
+    # Provisional, and left open rather than settled: an unrecognised
+    # record_type string is still judged by the checks below, exactly like a
+    # recognised one. The draft does not say which body schema, if any,
+    # judges a record whose record_type names some other string; this
+    # matches the TypeScript SDK, pending a protocol ruling.
     if type(top["record_type"]) is not str or type(top["version"]) is not str:
         failures.append(_failure("SCHEMA_INVALID", "record_type and version must be strings"))
     elif top["record_type"] != AUTHORITY_DELEGATION_RECORD_TYPE or top["version"] != AUTHORITY_DELEGATION_VERSION:
@@ -526,7 +536,8 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
         # requires the same identifier pattern used for values.required entries
         # (letters, digits, and ".", "_", ":", "-", up to 128 characters,
         # starting with a letter or digit), kept identical to the TypeScript
-        # SDK rather than accepting an arbitrary non-empty string.
+        # SDK rather than accepting an arbitrary non-empty string, pending a
+        # protocol ruling.
         if (
             not _exact_keys(spend, ("mode", "unit", "per_action", "cumulative"))
             or type(spend.get("unit")) is not str

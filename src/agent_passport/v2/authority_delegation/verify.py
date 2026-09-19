@@ -74,7 +74,10 @@ def verify_authority_delegation_chain(
     # Provisional: the draft does not state a maximum chain length. This
     # 256-record limit is kept identical to the TypeScript SDK, pending a
     # protocol ruling.
-    if type(chain) not in (list, tuple) or not (1 <= len(chain) <= 256):
+    # Two identity tests rather than ``type(chain) not in (list, tuple)``: a
+    # tuple membership test compares with ==, which runs a hostile metaclass's
+    # own __eq__, while ``is`` never runs caller code.
+    if (type(chain) is not list and type(chain) is not tuple) or not (1 <= len(chain) <= 256):
         return _result(
             "invalid", (AuthorityFailure(code="SCHEMA_INVALID", message="chain must contain 1 through 256 records"),)
         )
