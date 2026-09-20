@@ -543,14 +543,43 @@ def test_serialized_route_rejects_a_duplicate_member_the_object_route_cannot_see
         assert "duplicate object member" in result["errors"][1]
 
 
-def test_serialized_route_reports_a_size_limit_rather_than_parsing():
+def test_serialized_route_reports_a_resource_ceiling_as_indeterminate():
+    """A resource ceiling is not a statement about the artifact.
+
+    Both ceilings belong to this parser, not to the draft, so hitting one says this verifier
+    stopped, never that the receipt is bad. Previously both returned invalid/parse_error,
+    which made validity depend on verifier capacity: the same bytes verify under a higher
+    ceiling. Genuine parse failures are unchanged.
+    """
     control = build_receipt(action_intent_fields())
     import json
 
     raw = json.dumps(control, separators=(",", ":"))
-    result = verify_receipt_v1_serialized(raw, _resolve, max_utf8_bytes=10)
-    assert result["errors"][0] == "parse_error"
-    assert result["status"] == "invalid"
+    assert verify_receipt_v1_serialized(raw, _resolve)["status"] == "valid"
+
+    over_wire = verify_receipt_v1_serialized(raw, _resolve, max_utf8_bytes=10)
+    assert over_wire["status"] == "indeterminate"
+    assert over_wire["errors"][0] == "RESOURCE_LIMIT"
+    assert "parse_error" not in over_wire["errors"]
+    assert over_wire["valid"] is False
+
+    over_depth = verify_receipt_v1_serialized('{"a":' * 200 + "1" + "}" * 200, _resolve)
+    assert over_depth["status"] == "indeterminate"
+    assert over_depth["errors"][0] == "RESOURCE_LIMIT"
+    assert "parse_error" not in over_depth["errors"]
+
+    malformed = verify_receipt_v1_serialized('{"a": }', _resolve)
+    assert malformed["status"] == "invalid"
+    assert malformed["errors"][0] == "parse_error"
+
+    duplicate = verify_receipt_v1_serialized('{"a":1,"a":2}', _resolve)
+    assert duplicate["status"] == "invalid"
+    assert duplicate["errors"][0] == "parse_error"
+
+    # A caller misconfiguring the limit is an argument error, not a ceiling this parser hit.
+    bad_config = verify_receipt_v1_serialized(raw, _resolve, max_utf8_bytes=0)
+    assert bad_config["status"] == "invalid"
+    assert bad_config["errors"][0] == "parse_error"
 
 
 # --- rule A: only required signatures decide a receipt's state -------------------------

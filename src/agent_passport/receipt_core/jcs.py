@@ -12,6 +12,18 @@ class IJsonValidationError(TypeError):
     """An in-memory value cannot be represented as an APS new-write I-JSON value."""
 
 
+class IJsonResourceLimitError(IJsonValidationError):
+    """A parse stopped at one of this implementation's own resource ceilings.
+
+    The draft states no maximum nesting depth or wire size, so a ceiling hit is this
+    implementation declining to finish judging the artifact, never a statement that the
+    artifact is bad. Callers report it as indeterminate under
+    RESOURCE_LIMIT rather than invalid. A subclass, so every existing except clause on
+    IJsonValidationError keeps working. A caller misconfiguring the limits is not this: that
+    is an ordinary argument error and stays IJsonValidationError.
+    """
+
+
 def _assert_scalar_string(value: str, path: str) -> None:
     for char in value:
         if 0xD800 <= ord(char) <= 0xDFFF:
@@ -203,8 +215,12 @@ def parse_strict_i_json(raw: str, max_utf8_bytes: int = 1_048_576, max_depth: in
     """Parse bounded raw JSON while rejecting decoded duplicate member names."""
     if type(raw) is not str:
         raise IJsonValidationError("$: raw JSON string required")
-    if type(max_utf8_bytes) is not int or max_utf8_bytes < 1 or len(raw.encode("utf-8", "surrogatepass")) > max_utf8_bytes:
-        raise IJsonValidationError("$: raw JSON size limit exceeded")
+    # A limit this caller cannot have meant is an argument error, not a ceiling this parser
+    # hit, so the two are raised apart: only the second is a RESOURCE_LIMIT ceiling.
+    if type(max_utf8_bytes) is not int or max_utf8_bytes < 1:
+        raise IJsonValidationError("$: invalid size limit")
+    if len(raw.encode("utf-8", "surrogatepass")) > max_utf8_bytes:
+        raise IJsonResourceLimitError("$: raw JSON size limit exceeded")
     if type(max_depth) is not int or max_depth < 1:
         raise IJsonValidationError("$: invalid depth limit")
 
@@ -229,7 +245,7 @@ def parse_strict_i_json(raw: str, max_utf8_bytes: int = 1_048_576, max_depth: in
 
     def check_depth(item, depth=1):
         if depth > max_depth:
-            raise IJsonValidationError("$: JSON nesting limit exceeded")
+            raise IJsonResourceLimitError("$: JSON nesting limit exceeded")
         if type(item) is list:
             for child in item:
                 check_depth(child, depth + 1)

@@ -7,7 +7,13 @@ import re
 from collections.abc import Iterable
 
 from ..crypto import sign, verify
-from .jcs import assert_exact_keys, parse_strict_i_json, snapshot_i_json_shape, strict_jcs
+from .jcs import (
+    IJsonResourceLimitError,
+    assert_exact_keys,
+    parse_strict_i_json,
+    snapshot_i_json_shape,
+    strict_jcs,
+)
 
 RECEIPT_ID_TAG = "APS-RECEIPT-ID-V1"
 RECEIPT_SIG_TAG = "APS-RECEIPT-SIG-V1"
@@ -440,6 +446,23 @@ def verify_receipt_v1_serialized(
     """
     try:
         parsed = parse_strict_i_json(raw, max_utf8_bytes=max_utf8_bytes, max_depth=max_depth)
+    except IJsonResourceLimitError as exc:
+        # This parser's own nesting-depth and wire-size ceilings are properties of this
+        # implementation, not validity conditions the draft states, so hitting one
+        # establishes that this verifier stopped, never that the receipt is malformed. The same bytes can verify under a higher ceiling. Reported on the
+        # indeterminate axis under RESOURCE_LIMIT, as the authority-delegation surface
+        # already reports its three ceilings. Every genuine parse failure below is
+        # unchanged. This clause precedes the general one because the class is a subclass.
+        return {
+            "valid": False,
+            "status": "indeterminate",
+            "receipt_id_valid": "not_checked",
+            "stage": "not_checked",
+            "signer_authority": "not_checked",
+            "signature_results": [],
+            "other_signatures": "none",
+            "errors": ["RESOURCE_LIMIT", str(exc)],
+        }
     except (TypeError, ValueError) as exc:
         return {
             "valid": False,
