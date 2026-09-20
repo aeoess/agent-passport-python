@@ -48,7 +48,6 @@ _ID = re.compile(r"^sha256:[0-9a-f]{64}$")
 _HEX_32 = re.compile(r"^[0-9a-f]{32}$")
 _HEX_128 = re.compile(r"^[0-9a-f]{128}$")
 _DECIMAL = re.compile(r"^(0|[1-9][0-9]*)$")
-_IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 _MAX_QUANTITY = 9223372036854775807
 
 # RFC 3339 exact UTC-millisecond form. Group 1 = year, 2 = month, 3 = day,
@@ -415,6 +414,20 @@ def is_canonical_quantity(value) -> bool:
         return False
 
 
+def _is_admissible_identifier(value) -> bool:
+    """Any non-empty string, for a spend unit or a values.required entry.
+
+    Draft line 547 calls a values identifier profile-defined, and the draft states no
+    grammar for a bounded spend's unit either (line 466 shows one example value,
+    "iso4217:USD:minor"). This package previously required both to match the same
+    identifier pattern, which made an SDK grammar into a protocol rejection: a record
+    carrying a unit or an identifier the draft permits was reported invalid. Both are
+    now any non-empty string that the record-wide I-JSON check already admits; a
+    profile that wants a narrower form is where that belongs.
+    """
+    return type(value) is str and len(value) > 0
+
+
 def _failure(code: str, message: str) -> AuthorityFailure:
     return AuthorityFailure(code=code, message=message)
 
@@ -437,37 +450,29 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
             "SCHEMA_INVALID", "record must be I-JSON: no unpaired surrogates, noncharacters, or non-JSON values",
         )]
 
-    # A record whose record_type names the v1 type and whose version is some
-    # other string is unsupported outright: it is not judged by the v1 body
-    # schema at all, so neither the exact-keys check below nor any facet or
-    # value check runs for it. The record-wide I-JSON check still runs first,
-    # because I-JSON belongs to canonical serialization, not to this body
-    # schema: if the record fails it, the failures are SCHEMA_INVALID followed
-    # by UNSUPPORTED_VERSION, and otherwise UNSUPPORTED_VERSION alone. The one
-    # exception is a record whose non-str key the walk above found: it has
-    # already been reported SCHEMA_INVALID alone, so neither
-    # UNSUPPORTED_VERSION nor UNSUPPORTED_PROFILE is added for it. The walk
-    # returns on the first such key wherever it sits, which is simpler than
-    # deciding which keys a later lookup could reach: a key of a dict that
-    # the record_type, version or profile lookups do reach could run its own
-    # code during those reads, and one nested deeper could not.
-    # Reporting the I-JSON failure first, which makes a record invalid even
-    # when its version is unknown or a facet's profile is unsupported, is a
-    # provisional choice kept identical to the TypeScript SDK. It stands
-    # pending a protocol ruling, because the first step of the draft's order
-    # at line 580 does not order the two.
+    # Recognition comes first, and nothing the v1 body schema says is applied to a
+    # record this schema does not claim. A non-string record_type or version is
+    # invalid, because no recognition is possible at all. A string record_type that is
+    # not this one, or this record_type with any other string version, is unsupported,
+    # and the record is returned unjudged: no exact-keys check, no facet checks, not
+    # even the record-wide I-JSON check, which is part of evaluating the v1 body.
+    #
+    # Both halves are ruled. Recognition preceding v1 schema evaluation inside the
+    # first phase of the draft's order at line 580 is one ruling; an unknown string
+    # record_type being unsupported where a non-string one is invalid is another. This
+    # module previously judged an unrecognised record_type by the v1 schema and
+    # reported an I-JSON failure ahead of an unsupported version, both of which said
+    # more than recognition can.
     record_type_value = top.get("record_type")
     version_value = top.get("version")
-    if type(record_type_value) is str and record_type_value == AUTHORITY_DELEGATION_RECORD_TYPE and (
-        type(version_value) is str and version_value != AUTHORITY_DELEGATION_VERSION
-    ):
-        unsupported: list[AuthorityFailure] = []
-        if _has_non_i_json_value(top):
-            unsupported.append(_failure(
-                "SCHEMA_INVALID", "record must be I-JSON: no unpaired surrogates, noncharacters, or non-JSON values",
-            ))
-        unsupported.append(_failure("UNSUPPORTED_VERSION", "unsupported authority-delegation record_type or version"))
-        return unsupported
+    if type(record_type_value) is not str or type(version_value) is not str:
+        return [_failure("SCHEMA_INVALID", "record_type and version must be strings")]
+    if record_type_value != AUTHORITY_DELEGATION_RECORD_TYPE:
+        return [_failure(
+            "UNSUPPORTED_RECORD_TYPE", "record_type names another record, not judged by this schema",
+        )]
+    if version_value != AUTHORITY_DELEGATION_VERSION:
+        return [_failure("UNSUPPORTED_VERSION", "unsupported authority-delegation version")]
 
     failures: list[AuthorityFailure] = []
     if not _exact_keys(top, (
@@ -481,32 +486,25 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
             "SCHEMA_INVALID", "record must be I-JSON: no unpaired surrogates, noncharacters, or non-JSON values",
         ))
 
-    # A record_type or version that is not a string at all (an int, a list,
-    # and so on) is malformed input, reported the same way regardless of
-    # which of the two fields is wrongly typed. Otherwise, a record_type
-    # other than the v1 type, or a version other than "1.0", is unsupported.
-    # Provisional, and left open rather than settled: an unrecognised
-    # record_type string is still judged by the checks below, exactly like a
-    # recognised one. The draft does not say which body schema, if any,
-    # judges a record whose record_type names some other string; this
-    # matches the TypeScript SDK, pending a protocol ruling.
-    if type(top["record_type"]) is not str or type(top["version"]) is not str:
-        failures.append(_failure("SCHEMA_INVALID", "record_type and version must be strings"))
-    elif top["record_type"] != AUTHORITY_DELEGATION_RECORD_TYPE or top["version"] != AUTHORITY_DELEGATION_VERSION:
-        failures.append(_failure("UNSUPPORTED_VERSION", "unsupported authority-delegation record_type or version"))
     if type(top["delegation_id"]) is not str or not _ID.fullmatch(top["delegation_id"]):
         failures.append(_failure("SCHEMA_INVALID", "delegation_id must be sha256:<64 lowercase hex>"))
     if top["parent_delegation_id"] is not None and (
         type(top["parent_delegation_id"]) is not str or not _ID.fullmatch(top["parent_delegation_id"])
     ):
         failures.append(_failure("SCHEMA_INVALID", "parent_delegation_id must be null or a delegation digest"))
-    # Provisional: the draft does not state a maximum length for issuer,
-    # subject or verification_method. This 1024 UTF-8 byte cap is kept
-    # identical to the TypeScript SDK, pending a protocol ruling.
+    # The draft states no maximum length for issuer, subject or verification_method.
+    # This 1024 UTF-8 byte cap is this implementation's own ceiling, not a protocol
+    # rule: a record that exceeds it is one this implementation declines to judge,
+    # reported as RESOURCE_LIMIT and mapped to indeterminate rather than as a schema
+    # failure (before this rule, exceeding it was reported as SCHEMA_INVALID, the same
+    # as absence or the wrong type, which still is). Absence or the wrong type is still
+    # SCHEMA_INVALID.
     for key in ("issuer", "subject", "verification_method"):
         item = top[key]
-        if type(item) is not str or len(item) == 0 or _utf8_len(item) > 1024:
-            failures.append(_failure("SCHEMA_INVALID", f"{key} must be a non-empty string of at most 1024 UTF-8 bytes"))
+        if type(item) is not str or len(item) == 0:
+            failures.append(_failure("SCHEMA_INVALID", f"{key} must be a non-empty string"))
+        elif _utf8_len(item) > 1024:
+            failures.append(_failure("RESOURCE_LIMIT", f"{key} exceeds this implementation's 1024-byte ceiling"))
     if not is_canonical_timestamp(top["issued_at"]):
         failures.append(_failure("NONCANONICAL_VALUE", "issued_at must be canonical UTC milliseconds"))
     if type(top["nonce"]) is not str or not _HEX_32.fullmatch(top["nonce"]):
@@ -542,16 +540,9 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
         if not _exact_keys(spend, ("mode",)):
             failures.append(_failure("SCHEMA_INVALID", "unbounded spend has no other fields"))
     elif spend["mode"] == "bounded":
-        # Provisional: the draft does not state a grammar for spend.unit. This
-        # requires the same identifier pattern used for values.required entries
-        # (letters, digits, and ".", "_", ":", "-", up to 128 characters,
-        # starting with a letter or digit), kept identical to the TypeScript
-        # SDK rather than accepting an arbitrary non-empty string, pending a
-        # protocol ruling.
         if (
             not _exact_keys(spend, ("mode", "unit", "per_action", "cumulative"))
-            or type(spend.get("unit")) is not str
-            or not _IDENTIFIER.fullmatch(spend["unit"])
+            or not _is_admissible_identifier(spend.get("unit"))
             or not is_canonical_quantity(spend.get("per_action"))
             or not is_canonical_quantity(spend.get("cumulative"))
         ):
@@ -605,11 +596,6 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
     ):
         failures.append(_failure("SCHEMA_INVALID", "reputation ceiling must be an integer from 0 through 100"))
 
-    # Provisional: the aps-values-identifiers-v1 identifier grammar enforced
-    # by _IDENTIFIER below (letters, digits, and ".", "_", ":", "-", up to
-    # 128 characters, starting with a letter or digit) is narrower than
-    # draft line 547's own description of a profile-defined identifier. This
-    # is kept identical to the TypeScript SDK, pending a protocol ruling.
     values = _record(authority["values"])
     if values is None or type(values.get("profile")) is not str:
         failures.append(_failure("SCHEMA_INVALID", "values.required must contain valid identifiers"))
@@ -618,7 +604,7 @@ def validate_authority_delegation_shape(value) -> list[AuthorityFailure]:
     elif (
         not _exact_keys(values, ("profile", "required"))
         or type(values.get("required")) is not list
-        or not all(type(item) is str and _IDENTIFIER.fullmatch(item) for item in values["required"])
+        or not all(_is_admissible_identifier(item) for item in values["required"])
     ):
         failures.append(_failure("SCHEMA_INVALID", "values.required must contain valid identifiers"))
     else:

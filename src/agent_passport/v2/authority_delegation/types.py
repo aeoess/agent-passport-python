@@ -16,6 +16,25 @@ REPUTATION_PROFILE_V1 = "aps-score-0-100-v1"
 VALUES_PROFILE_V1 = "aps-values-identifiers-v1"
 REVERSIBILITY_PROFILE_V1 = "aps-tci-v1"
 
+# Draft section 2.5 lines 360-364: "At minimum a resolver distinguishes: resolved;
+# subject or key not found; ambiguous (including duplicate key identifiers);
+# structurally malformed key material; transport unreachability; and an unsupported
+# identifier scheme." A verification key resolver may report one of these five
+# outcomes, instead of a key string or None, by returning a mapping of the form
+# {"outcome": <name below>}. Both verify.py's chain verifier and issue.py's child
+# issuer report it under the code named here; the chain verifier gives
+# "unsupported_scheme" the state "unsupported" and the other four "indeterminate",
+# and the child issuer names whichever one its own resolver gave. A resolver that
+# returns None, raises, or answers with anything else has said nothing about why it
+# could not resolve, which stays KEY_RESOLUTION_FAILED.
+KEY_RESOLUTION_OUTCOME_CODES: dict[str, str] = {
+    "unsupported_scheme": "KEY_SCHEME_UNSUPPORTED",
+    "not_found": "KEY_NOT_FOUND",
+    "ambiguous": "KEY_AMBIGUOUS",
+    "unreachable": "KEY_UNREACHABLE",
+    "malformed": "KEY_MATERIAL_MALFORMED",
+}
+
 
 @dataclass(frozen=True)
 class AuthorityFailure:
