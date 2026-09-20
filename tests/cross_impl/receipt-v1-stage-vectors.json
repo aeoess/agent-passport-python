@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 sections 5.1, 5.2, 5.3 and 5.6",
   "generated_from": {
     "repository": "agent-passport-system",
-    "commit": "ab02006e71ff28b2223af6ba169692701870ab65"
+    "commit": "c587a40dd6e2feb52b77604de93b749922fb1aea"
   },
   "provenance_definitions": {
     "draft-derived": "the expected acceptance, rejection or state follows from the draft text, with RFC 3339 where cited; TypeScript output was not consulted to decide it.",
@@ -38,15 +38,15 @@
     "Evidence resolution under section 5.5, implemented nowhere in either SDK."
   ],
   "counts": {
-    "total": 68,
+    "total": 71,
     "by_kind": {
-      "envelope": 22,
+      "envelope": 25,
       "stage": 41,
       "verify": 5
     },
     "by_provenance": {
       "draft-derived": 63,
-      "ruling-derived": 5
+      "ruling-derived": 8
     }
   },
   "cases": [
@@ -506,6 +506,142 @@
       },
       "ts_behaviour": {
         "message": "EvidenceRefV1: value"
+      }
+    },
+    {
+      "id": "RC-E23",
+      "kind": "envelope",
+      "title": "decision_ref as a one-element array",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L984-985, L1652-1660",
+        "note": "decision_ref is a 64 lowercase hexadecimal digest, a string. It is conditional on the stage, so it is exercised on a record that carries it."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": [
+          "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        ],
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "permit",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [],
+          "valid_until": "2026-07-18T12:00:05.000Z"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: decision_ref"
+      }
+    },
+    {
+      "id": "RC-E24",
+      "kind": "envelope",
+      "title": "prev as a one-element array",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L986-987, L1652-1660",
+        "note": "prev is the receipt_id of another record, a string. Same reason for using a record that carries it."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": [
+          "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        ],
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "permit",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [],
+          "valid_until": "2026-07-18T12:00:05.000Z"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: prev"
+      }
+    },
+    {
+      "id": "RC-E25",
+      "kind": "envelope",
+      "title": "a signature value as a one-element array",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L975, L1652-1660",
+        "note": "A signature value is 128 lowercase hexadecimal characters, a string. The one-element array of that string coerced through the pattern test."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": [
+              "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            ]
+          }
+        ],
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115"
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptSignatureV1: value"
       }
     },
     {
@@ -1250,7 +1386,7 @@
       "id": "RC-S07",
       "kind": "stage",
       "title": "An action intent under another result profile",
-      "expected_provenance": "draft-derived",
+      "expected_provenance": "ruling-derived",
       "derivation": {
         "lines": "L1054-1055",
         "note": "A wrong result profile for a stage that is recognised is invalid, not unsupported: that result object is closed."
@@ -2111,7 +2247,7 @@
       "id": "RC-S24",
       "kind": "stage",
       "title": "A decision result under another profile",
-      "expected_provenance": "draft-derived",
+      "expected_provenance": "ruling-derived",
       "derivation": {
         "lines": "L1078, L1226-1227",
         "note": "A wrong result profile for a recognised stage is invalid, where an unknown envelope profile is unsupported."
@@ -2705,7 +2841,7 @@
       "id": "RC-S36",
       "kind": "stage",
       "title": "An action result under another result profile",
-      "expected_provenance": "draft-derived",
+      "expected_provenance": "ruling-derived",
       "derivation": {
         "lines": "L1110",
         "note": "profile is aps-action-result-v1."

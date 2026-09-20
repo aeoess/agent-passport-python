@@ -19,6 +19,7 @@ from .receipt import (
     receipt_signature_payload_v1,
     validate_receipt_v1,
     verify_receipt_v1,
+    verify_receipt_v1_serialized,
 )
 from .stage import (
     RECEIPT_STAGE_TYPES_V1,

@@ -7,7 +7,7 @@ import hashlib
 import re
 
 from ..crypto import sign, verify
-from .jcs import assert_exact_keys, strict_jcs
+from .jcs import assert_exact_keys, parse_strict_i_json, strict_jcs
 
 RECEIPT_ID_TAG = "APS-RECEIPT-ID-V1"
 RECEIPT_SIG_TAG = "APS-RECEIPT-SIG-V1"
@@ -230,12 +230,29 @@ def _declares_foreign_profile(receipt) -> bool:
     return isinstance(profile, str) and profile != "aps-receipt-v1"
 
 
-def verify_receipt_v1(receipt: dict, resolve_key) -> dict:
+def verify_receipt_v1(receipt: dict, resolve_key, *, expected_receipt_type=None, boundary_identity=None) -> dict:
+    """Verify a ReceiptV1: envelope, identifier, signatures and the section 5.3 stage
+    rules for the record's own receipt_type.
+
+    The stage dispatch is part of this because draft line 1214 has a verifier enforce the
+    closed ReceiptV1 schema AND the type-specific schema, and this function reports its
+    outcome in the draft's own state words. Without it, an action-intent record issued by
+    someone other than the acting agent, carrying prev and decision_ref and a free-form
+    result, came back "valid".
+
+    `receipt_id_valid` and `stage` are "not_checked" where the record never reached those
+    steps, rather than False, which would say a check ran and failed.
+    """
+    # Imported here rather than at module scope: stage.py imports this module, and a
+    # module-level import in both directions would leave one of them half-initialized.
+    from .stage import validate_receipt_stage_v1
+
     if _declares_foreign_profile(receipt):
         return {
             "valid": False,
             "status": "unsupported",
-            "receipt_id_valid": False,
+            "receipt_id_valid": "not_checked",
+            "stage": "not_checked",
             "signer_authority": "not_checked",
             "signature_results": [],
             "errors": ["unsupported_profile"],
@@ -246,7 +263,8 @@ def verify_receipt_v1(receipt: dict, resolve_key) -> dict:
         return {
             "valid": False,
             "status": "invalid",
-            "receipt_id_valid": False,
+            "receipt_id_valid": "not_checked",
+            "stage": "not_checked",
             "signer_authority": "not_checked",
             "signature_results": [],
             "errors": [str(exc)],
@@ -280,9 +298,17 @@ def verify_receipt_v1(receipt: dict, resolve_key) -> dict:
         signer_authority = "not_established"
     else:
         signer_authority = "verified"
-    if bad_bytes or not id_valid:
+    stage = validate_receipt_stage_v1(
+        receipt, expected_receipt_type=expected_receipt_type, boundary_identity=boundary_identity
+    )
+    if stage["status"] != "valid":
+        errors.append(f"stage_{stage['status']}")
+        errors.extend(failure["code"] for failure in stage["failures"])
+    if bad_bytes or not id_valid or stage["status"] == "invalid":
         status = "invalid"
-    elif unresolved:
+    elif stage["status"] == "unsupported":
+        status = "unsupported"
+    elif unresolved or stage["status"] == "indeterminate":
         status = "indeterminate"
     else:
         status = "valid"
@@ -290,7 +316,40 @@ def verify_receipt_v1(receipt: dict, resolve_key) -> dict:
         "valid": status == "valid",
         "status": status,
         "receipt_id_valid": id_valid,
+        "stage": stage,
         "signer_authority": signer_authority,
         "signature_results": results,
         "errors": errors,
     }
+
+
+def verify_receipt_v1_serialized(raw: str, resolve_key, *, expected_receipt_type=None, boundary_identity=None, max_utf8_bytes: int = 1_048_576, max_depth: int = 128) -> dict:
+    """Verify a receipt from its serialized bytes.
+
+    Draft line 1213 has a verifier parse bounded I-JSON WHILE PRESERVING DUPLICATE NAMES.
+    Rejecting a duplicate member is a property of parsing: once bytes have become a dict
+    the later member has already overwritten the earlier one and the evidence is gone, so
+    verify_receipt_v1, which receives an object, cannot detect it however carefully it
+    validates. Without this entry point the only Python route was json.loads plus
+    verify_receipt_v1, which accepts a document TypeScript rejects.
+
+    Parse failure is reported as the error code `parse_error` followed by the parser's own
+    message, so it is distinguishable from a structural failure, which surfaces the
+    validator's message with no code, and from a signature failure, which surfaces
+    `signature_invalid`.
+    """
+    try:
+        parsed = parse_strict_i_json(raw, max_utf8_bytes=max_utf8_bytes, max_depth=max_depth)
+    except (TypeError, ValueError) as exc:
+        return {
+            "valid": False,
+            "status": "invalid",
+            "receipt_id_valid": "not_checked",
+            "stage": "not_checked",
+            "signer_authority": "not_checked",
+            "signature_results": [],
+            "errors": ["parse_error", str(exc)],
+        }
+    return verify_receipt_v1(
+        parsed, resolve_key, expected_receipt_type=expected_receipt_type, boundary_identity=boundary_identity
+    )

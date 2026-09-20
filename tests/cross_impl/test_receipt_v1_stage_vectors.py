@@ -47,7 +47,7 @@ def test_vector_file_is_self_describing() -> None:
         assert count == sum(1 for case in CASES if case["expected_provenance"] == label)
     # A ruling-derived case is one the draft names without fixing its outcome. Its count is
     # asserted here so that silently relabelling a case as draft-derived breaks a test.
-    assert by_provenance["ruling-derived"] == 5
+    assert by_provenance["ruling-derived"] == 8
     for case in CASES:
         assert case["derivation"]["lines"], case["id"]
         assert case["derivation"]["note"], case["id"]

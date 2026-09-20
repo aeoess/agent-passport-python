@@ -5,6 +5,7 @@ from agent_passport.receipt_core import (
     create_receipt_v1,
     validate_receipt_stage_v1,
     verify_receipt_v1,
+    verify_receipt_v1_serialized,
 )
 
 PRIVATE_KEY = "00" * 32
@@ -458,3 +459,93 @@ def test_noncharacter_in_string_value_is_refused():
 def test_noncharacter_in_object_key_is_refused():
     with pytest.raises(ValueError, match="noncharacter"):
         build_receipt(action_intent_fields(result={"profile": "aps-action-intent-result-v1", "status": "declared", "﷐x": "y"}))
+
+
+# --- the verifier enforces the type-specific schema, and the serialized route exists ----
+
+
+def _resolve(signer, key_id, issued_at):
+    return PUBLIC_KEY
+
+
+def test_verifier_refuses_a_record_that_breaks_its_own_stage():
+    """Draft line 1214: a verifier enforces the closed ReceiptV1 schema AND the
+    type-specific schema. Before this, a gateway-issued action intent carrying prev, a
+    decision_ref and a free-form result came back valid from verify_receipt_v1."""
+    control = build_receipt(action_intent_fields())
+    assert verify_receipt_v1(control, _resolve)["status"] == "valid"
+
+    bad = build_receipt(
+        action_intent_fields(
+            issuer="did:example:gateway",
+            decision_ref=hx("c"),
+            prev=hx("d"),
+            result={"profile": "anything-at-all", "status": "whatever", "extra": [1, 2, 3]},
+        ),
+        signer="did:example:gateway",
+    )
+    verified = verify_receipt_v1(bad, _resolve)
+    assert verified["status"] == "invalid"
+    assert verified["valid"] is False
+    assert "stage_invalid" in verified["errors"]
+    for code in ("INTENT_ISSUER_NOT_ACTING_AGENT", "INTENT_PREV_PRESENT", "INTENT_DECISION_REF_PRESENT", "INTENT_RESULT_PROFILE"):
+        assert code in verified["errors"]
+
+
+def test_verifier_carries_the_stage_result_and_the_unchecked_markers():
+    control = build_receipt(action_intent_fields())
+    verified = verify_receipt_v1(control, _resolve)
+    assert verified["stage"]["stage"] == "action-intent"
+    assert verified["receipt_id_valid"] is True
+
+    foreign = {**control, "profile": "aps-receipt-v2"}
+    unsupported = verify_receipt_v1(foreign, _resolve)
+    assert unsupported["status"] == "unsupported"
+    # Neither check ran, so neither reports a result. Reporting False said the identifier
+    # did not match when it was never computed.
+    assert unsupported["receipt_id_valid"] == "not_checked"
+    assert unsupported["stage"] == "not_checked"
+
+
+def test_an_unsupported_receipt_type_is_unsupported_through_the_verifier():
+    odd = build_receipt(action_intent_fields(receipt_type="aps:action:v1"))
+    verified = verify_receipt_v1(odd, _resolve)
+    assert verified["status"] == "unsupported"
+    assert "stage_unsupported" in verified["errors"]
+
+
+def test_a_decision_with_no_supplied_boundary_identity_is_indeterminate():
+    decision = build_receipt(policy_decision_fields(), signer=POLICY_ISSUER)
+    assert verify_receipt_v1(decision, _resolve)["status"] == "indeterminate"
+    assert verify_receipt_v1(decision, _resolve, boundary_identity=POLICY_ISSUER)["status"] == "valid"
+
+
+def test_serialized_route_rejects_a_duplicate_member_the_object_route_cannot_see():
+    """Draft line 1213: parse bounded I-JSON while preserving duplicate names. Once bytes
+    have become a dict the later member has overwritten the earlier one, so the object
+    entry point cannot detect it however carefully it validates."""
+    import json
+
+    control = build_receipt(action_intent_fields())
+    clean = json.dumps(control, separators=(",", ":"))
+    assert verify_receipt_v1_serialized(clean, _resolve)["status"] == "valid"
+
+    for spliced in (
+        clean.replace(f'"issuer":"{AGENT}"', f'"issuer":"{AGENT}","issuer":"did:example:attacker"', 1),
+        clean.replace(f'"issuer":"{AGENT}"', f'"issuer":"{AGENT}","\\u0069ssuer":"did:example:attacker"', 1),
+    ):
+        assert spliced != clean, "the duplicate was not spliced in"
+        result = verify_receipt_v1_serialized(spliced, _resolve)
+        assert result["status"] == "invalid"
+        assert result["errors"][0] == "parse_error"
+        assert "duplicate object member" in result["errors"][1]
+
+
+def test_serialized_route_reports_a_size_limit_rather_than_parsing():
+    control = build_receipt(action_intent_fields())
+    import json
+
+    raw = json.dumps(control, separators=(",", ":"))
+    result = verify_receipt_v1_serialized(raw, _resolve, max_utf8_bytes=10)
+    assert result["errors"][0] == "parse_error"
+    assert result["status"] == "invalid"
