@@ -3,13 +3,14 @@
   "draft": "draft-pidlisnyi-aps-03 section 4.1 (published text lines 751-832)",
   "generated_from": {
     "repository": "aeoess/agent-passport-system",
-    "commit": "ebb11d1680bc1723e4d15177001c24c97119c37b",
+    "commit": "ebbd015078fe65d0cfad2b1aab8c4c23b7c22b5a",
     "module": "src/v2/action-reference/v2.ts",
     "generator": "tests/cross_impl/gen_action_ref_v2_vectors.mts"
   },
   "expected_provenance_values": {
     "draft-derived": "The expected result (accept or reject, the failure code, and any digest the case carries) is fixed by the section 4.1 text alone, or by the RFC 3339 or RFC 7493 provisions it incorporates, independent of what the TypeScript SDK's own validation decides: every reject case whose failure code the draft text fixes on its own, whether or not its provenance_note explains the rule; every payload_ref digest, a single canonicalization step over an arbitrary I-JSON payload with no validation branches to review; and every accepted object digest computed straight from the section 4.1 formula with canonicalizeJCS, rather than trusted from computeActionRefV2's own accept/reject decision, which is the leap-second and noncharacter-accept cases and is why their provenance_note says so.",
-    "ts-conformant-regression": "The expected result rests on the corrected TypeScript SDK's own decision for a construction the draft text does not by itself fix, once that construction was reviewed against the draft and found to follow it: every accepted object, json and create digest taken directly from computeActionRefV2, computeActionRefV2FromJson or createActionReferenceInputV2's own validate-and-canonicalize pipeline (including the create cases' NFC normalization and UTF-8 ordering rule); the SDK's own integer-magnitude policy for a payload number the draft's I-JSON reference does not itself bound (RFC 7493 section 2.2 states it only as interoperability advice); and a provenance_note case where the draft leaves the exact failure class open and this file pins whichever class the reviewed SDK actually reports."
+    "ts-conformant-regression": "The expected result rests on the corrected TypeScript SDK's own decision for a construction the draft text does not by itself fix, once that construction was reviewed against the draft and found to follow it: every accepted object, json and create digest taken directly from computeActionRefV2, computeActionRefV2FromJson or createActionReferenceInputV2's own validate-and-canonicalize pipeline (including the create cases' NFC normalization and UTF-8 ordering rule); the SDK's own integer-magnitude policy for a payload number the draft's I-JSON reference does not itself bound (RFC 7493 section 2.2 states it only as interoperability advice); and a provenance_note case where the draft leaves the exact failure class open and this file pins whichever class the reviewed SDK actually reports.",
+    "ruling-derived": "The draft names the case but does not fix its outcome, and the expected outcome comes from a ruling recorded by the principal for this programme. Line 799 says all string fields MUST be non-empty \"except that a profile MAY permit an empty scope_required array\", which leaves open whether the generic computation may permit it itself. The ruling is that it may not: an empty scope_required is refused unless the caller supplies profile context that permits it. These are the cases a later revision would have to state in normative text for the expectation to become draft-derived."
   },
   "failure_codes": [
     {
@@ -36,6 +37,11 @@
       "code": "wrong_profile",
       "meaning": "profile is not \"aps-action-ref-v2\"",
       "draft_lines": "789"
+    },
+    {
+      "code": "empty_scope_required",
+      "meaning": "scope_required is empty and no applicable profile permits it",
+      "draft_lines": "799-800"
     },
     {
       "code": "not_string",
@@ -90,23 +96,19 @@
       "note": "an implementation limit, not a draft rule; no case uses it"
     }
   ],
-  "withheld": [
-    {
-      "case": "scope_required = []",
-      "reason": "draft lines 798-800 let a profile permit an empty scope_required array, but the input object names no profile, so the default is not determined by the text."
-    }
-  ],
+  "withheld": [],
   "counts": {
-    "total": 91,
+    "total": 93,
     "by_entry": {
       "payload": 15,
-      "object": 64,
+      "object": 66,
       "json": 7,
       "create": 5
     },
     "by_expected_provenance": {
       "draft-derived": 68,
-      "ts-conformant-regression": 23
+      "ts-conformant-regression": 23,
+      "ruling-derived": 2
     }
   },
   "cross_checks": {
@@ -1523,6 +1525,52 @@
       },
       "expected_provenance": "draft-derived",
       "draft_lines": "789-799"
+    },
+    {
+      "id": "AR-N44",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "expected": {
+        "result": "reject",
+        "failure": "empty_scope_required",
+        "ts_error_message": "scope_required: empty is permitted only by an applicable profile"
+      },
+      "expected_provenance": "ruling-derived",
+      "provenance_note": "Line 799 puts the permission to carry an empty scope_required in a profile, not in the generic computation, so the generic one refuses. A caller holding the applicable profile supplies the context that permits it, which case AR-P44 covers.",
+      "draft_lines": "798-800"
+    },
+    {
+      "id": "AR-P44",
+      "entry": "object",
+      "input": {
+        "profile": "aps-action-ref-v2",
+        "agent_id": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK",
+        "action_type": "commerce_preflight",
+        "target": "https://api.example/payments",
+        "payload_ref": "9e1d86673f6f2401f5504fdac162c3a429dc2b539f9fa2e0d22a588fb3ffabdf",
+        "scope_required": [],
+        "issued_at": "2026-04-08T12:00:00.000Z",
+        "nonce": "00112233445566778899aabbccddeeff"
+      },
+      "profile_context": {
+        "emptyScopeRequiredPermitted": true
+      },
+      "expected": {
+        "result": "accept",
+        "action_ref": "e550bdf46adf4cff89771bf44eb154ccec3f4460b4ffc459aba7a57d315b3be8"
+      },
+      "expected_provenance": "ruling-derived",
+      "provenance_note": "The same input as AR-N44 with profile context that permits an empty scope_required. The context decides admission only: no marker enters the preimage, so this digest is the digest of this input.",
+      "draft_lines": "807-808"
     },
     {
       "id": "AR-N34",

@@ -13,15 +13,22 @@ distinct from the section 4.2 legacy external correlation form.
 
 Mirrors the TypeScript SDK's ``src/v2/action-reference/v2.ts`` with the same
 profile string and domain-separation tags, giving the same digest for every
-input both accept. Known differences: an empty ``scope_required`` array is
-rejected here (``empty_scope_required``, a provisional fail-closed choice
-while the draft's default for an empty array is unresolved) and accepted by
-the TypeScript SDK; the order of checks is
-similar but not identical, so an input with several faults can be reported
-under a different code; values nested beyond this implementation's
-recursion limit are rejected with ``nesting_limit``. Canonicalization goes
-through the strict new-write I-JSON JCS in
-:mod:`agent_passport.receipt_core.jcs`, not the legacy canonicalizer.
+input both accept. Draft-pidlisnyi-aps-03 section 4.1 line 799 lets a
+profile permit an empty ``scope_required`` array; ``validate_action_reference_input_v2``,
+``compute_action_ref_v2``, ``parse_action_reference_input_v2`` and
+``compute_action_ref_v2_from_json`` all refuse one by default
+(``empty_scope_required``) and admit it only when the keyword-only
+``empty_scope_required_permitted=True`` is passed, for a caller holding the
+applicable profile; before this was ruled, an empty array was refused here
+unconditionally, calling that choice provisional. The context changes only
+what is admitted, never what is hashed: no marker enters the preimage, so
+the digest of a permitted empty array is the digest of that input. Known
+differences from the TypeScript SDK: the order of checks is similar but not
+identical, so an input with several faults can be reported under a
+different code; values nested beyond this implementation's recursion limit
+are rejected with ``nesting_limit``. Canonicalization goes through the
+strict new-write I-JSON JCS in :mod:`agent_passport.receipt_core.jcs`, not
+the legacy canonicalizer.
 
 Also rejects Unicode noncharacters (U+FDD0 through U+FDEF, and every code
 point whose low 16 bits are 0xFFFE or 0xFFFF) in any object key or string
@@ -251,8 +258,17 @@ def _is_valid_calendar_day(year: int, month: int, day: int) -> bool:
     return day <= _days_in_month(year, month)
 
 
-def validate_action_reference_input_v2(candidate: object) -> None:
+def validate_action_reference_input_v2(
+    candidate: object, *, empty_scope_required_permitted: bool = False
+) -> None:
     """Validate a candidate ``aps-action-ref-v2`` input object in place.
+
+    `empty_scope_required_permitted` is the flattened form of the TypeScript
+    reference's ``ActionReferenceProfileContextV2.emptyScopeRequiredPermitted``:
+    pass ``True`` only when the applicable profile explicitly permits an
+    empty ``scope_required`` array (draft-pidlisnyi-aps-03 section 4.1 line
+    799). It changes only step 8 below; it is not hashed and does not
+    otherwise change what this function accepts.
 
     Raises :class:`ActionReferenceError` on the first violation found, in this
     order, mirroring ``validateActionReferenceInputV2`` in the TS reference:
@@ -273,13 +289,12 @@ def validate_action_reference_input_v2(candidate: object) -> None:
     7. ``payload_ref`` is a string matching 64 lowercase hex characters (else
        ``not_string`` / ``bad_hex``).
     8. ``scope_required`` is an array (else ``scope_not_array``). An empty
-       array is rejected with ``empty_scope_required``. This is provisional:
-       section 4.1 lets a profile permit an empty array but does not say what
-       a verifier with no profile does, and until that is ruled this function,
-       which takes no profile, fails closed on ``[]``. Each element must be a non-empty string
-       (else ``not_string`` / ``empty_string``), already in NFC, and the array
-       strictly increasing by the lexicographic order of UTF-8 encodings, with
-       no duplicate (else ``scope_not_canonical``). Nothing is normalized here.
+       array is rejected with ``empty_scope_required`` unless
+       `empty_scope_required_permitted` is ``True``. Each element must be a
+       non-empty string (else ``not_string`` / ``empty_string``), already in
+       NFC, and the array strictly increasing by the lexicographic order of
+       UTF-8 encodings, with no duplicate (else ``scope_not_canonical``).
+       Nothing is normalized here.
     9. ``issued_at`` is a string matching the canonical RFC 3339 UTC
        millisecond form, naming a day that exists in that month under the
        proleptic Gregorian calendar (else ``not_string`` / ``bad_timestamp``).
@@ -342,11 +357,11 @@ def validate_action_reference_input_v2(candidate: object) -> None:
     if type(scope_required) is not list:
         raise ActionReferenceError("scope_required: expected an array", "scope_not_array")
     scopes = cast(list, scope_required)
-    if len(scopes) == 0:
+    if len(scopes) == 0 and not empty_scope_required_permitted:
         raise ActionReferenceError(
-            "scope_required: empty array; only a profile may permit an empty "
-            "scope_required and this function takes no profile, so [] is "
-            "always rejected here",
+            "scope_required: empty array; only a profile that explicitly permits "
+            "an empty scope_required does so, by passing "
+            "empty_scope_required_permitted=True",
             "empty_scope_required",
         )
     for scope in scopes:
@@ -401,15 +416,22 @@ def validate_action_reference_input_v2(candidate: object) -> None:
         )
 
 
-def compute_action_ref_v2(input_object: dict) -> str:
+def compute_action_ref_v2(
+    input_object: dict, *, empty_scope_required_permitted: bool = False
+) -> str:
     """Compute the draft-03 section 4.1 ``action_ref`` (lowercase hex SHA-256).
 
     Validates first, then hashes the domain-separation tag concatenated with
     the strict RFC 8785 JCS bytes of `input_object`, giving the same digest
     as ``computeActionRefV2`` in the TypeScript SDK for any input both
-    accept.
+    accept. `empty_scope_required_permitted` is forwarded to
+    :func:`validate_action_reference_input_v2` unchanged: it changes what is
+    admitted, never what is hashed, so the digest of a permitted empty
+    ``scope_required`` is the digest of that input.
     """
-    validate_action_reference_input_v2(input_object)
+    validate_action_reference_input_v2(
+        input_object, empty_scope_required_permitted=empty_scope_required_permitted
+    )
     try:
         canonical = strict_jcs(input_object)
     except RecursionError as exc:
@@ -514,7 +536,9 @@ def create_action_reference_input_v2(
     return value
 
 
-def parse_action_reference_input_v2(raw: str) -> dict:
+def parse_action_reference_input_v2(
+    raw: str, *, empty_scope_required_permitted: bool = False
+) -> dict:
     """Parse a serialized ``aps-action-ref-v2`` input document and validate it.
 
     Rejecting a duplicate object member is a property of PARSING, not of
@@ -524,8 +548,9 @@ def parse_action_reference_input_v2(raw: str) -> dict:
     existing strict I-JSON parser in :mod:`agent_passport.receipt_core.jcs`,
     which rejects a duplicate member name (compared AFTER escape decoding, so
     ``"a"`` and ``"\\u0061"`` collide as the same name) before it can be lost,
-    then hands the result to :func:`validate_action_reference_input_v2`
-    unchanged: nothing here weakens or bypasses that validator.
+    then hands the result, and `empty_scope_required_permitted` unchanged, to
+    :func:`validate_action_reference_input_v2`: nothing here weakens or
+    bypasses that validator.
     """
     try:
         parsed = parse_strict_i_json(raw)
@@ -537,15 +562,24 @@ def parse_action_reference_input_v2(raw: str) -> dict:
     except IJsonValidationError as exc:
         message = str(exc)
         raise ActionReferenceError(message, _classify_i_json_error(message)) from exc
-    validate_action_reference_input_v2(parsed)
+    validate_action_reference_input_v2(
+        parsed, empty_scope_required_permitted=empty_scope_required_permitted
+    )
     return cast(dict, parsed)
 
 
-def compute_action_ref_v2_from_json(raw: str) -> str:
+def compute_action_ref_v2_from_json(
+    raw: str, *, empty_scope_required_permitted: bool = False
+) -> str:
     """Compose :func:`parse_action_reference_input_v2` and
     :func:`compute_action_ref_v2`, for a caller holding wire bytes rather than
     an already-parsed input object. Identical digest to the parsed path for
     any document that parses, because it IS the parsed path once the bytes
-    have been read.
+    have been read. `empty_scope_required_permitted` is forwarded to both.
     """
-    return compute_action_ref_v2(parse_action_reference_input_v2(raw))
+    return compute_action_ref_v2(
+        parse_action_reference_input_v2(
+            raw, empty_scope_required_permitted=empty_scope_required_permitted
+        ),
+        empty_scope_required_permitted=empty_scope_required_permitted,
+    )

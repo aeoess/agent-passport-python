@@ -28,14 +28,23 @@ _VECTORS = json.loads(
 _CASES = _VECTORS["cases"]
 
 
+def _profile_context(case):
+    """Profile context a case supplies. Draft line 799 puts the permission to carry an
+    empty scope_required in a profile rather than in the generic computation, so a case
+    that exercises the permitted side says so here."""
+    context = case.get("profile_context") or {}
+    return {"empty_scope_required_permitted": bool(context.get("emptyScopeRequiredPermitted"))}
+
+
 def _run(case):
     entry = case["entry"]
+    context = _profile_context(case)
     if entry == "payload":
         return compute_payload_ref_v1(case["input"]), None
     if entry == "object":
-        return compute_action_ref_v2(case["input"]), None
+        return compute_action_ref_v2(case["input"], **context), None
     if entry == "json":
-        return compute_action_ref_v2_from_json(case["input_json"]), None
+        return compute_action_ref_v2_from_json(case["input_json"], **context), None
     if entry == "create":
         value = create_action_reference_input_v2(**case["create_input"])
         return compute_action_ref_v2(value), value
@@ -44,7 +53,14 @@ def _run(case):
 
 def test_vector_file_shape():
     assert len(_CASES) == _VECTORS["counts"]["total"]
-    assert {c["expected_provenance"] for c in _CASES} <= {"draft-derived", "ts-conformant-regression"}
+    assert {c["expected_provenance"] for c in _CASES} <= {
+        "draft-derived",
+        "ts-conformant-regression",
+        "ruling-derived",
+    }
+    # A ruling-derived case is one the draft names without fixing its outcome. The count
+    # is asserted so that silently relabelling one as draft-derived breaks a test.
+    assert _VECTORS["counts"]["by_expected_provenance"]["ruling-derived"] == 2
     codes = {row["code"] for row in _VECTORS["failure_codes"]}
     for case in _CASES:
         if case["expected"]["result"] == "reject":
