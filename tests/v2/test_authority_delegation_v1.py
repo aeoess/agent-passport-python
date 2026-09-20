@@ -897,6 +897,44 @@ class TestReserveUnitTypeChecked:
         assert result.code == "RESERVED"
 
 
+class TestReserveRetriedAfterCancellation:
+    """A cancelled reservation holds nothing, so a call naming that action_ref
+    again is a fresh reservation, not an idempotent repeat. Reporting it as
+    idempotent told a boundary that the amount was reserved when no counter
+    held it, and two such calls could dispatch twice against one signed
+    cumulative ceiling."""
+
+    def test_the_retry_books_the_amount_and_the_ceiling_still_holds(self):
+        seed, _ = _keypair()
+        leaf = issue_authority_delegation(
+            _root_body(authority=_authority(spend={
+                "mode": "bounded", "unit": "iso4217:USD:minor",
+                "per_action": "60", "cumulative": "100",
+            })),
+            seed,
+        )
+        ledger = InMemoryAuthorityBudgetLedger()
+        first = "e" * 64
+        second = "f" * 64
+
+        assert ledger.reserve([leaf], first, "iso4217:USD:minor", "60").code == "RESERVED"
+        assert ledger.counter(leaf["delegation_id"])["reserved"] == "60"
+        assert ledger.cancel(first).code == "CANCELLED"
+        assert ledger.counter(leaf["delegation_id"])["reserved"] == "0"
+
+        retry = ledger.reserve([leaf], first, "iso4217:USD:minor", "60")
+        assert retry.ok is True
+        assert retry.code == "RESERVED"
+        assert ledger.counter(leaf["delegation_id"])["reserved"] == "60"
+
+        blocked = ledger.reserve([leaf], second, "iso4217:USD:minor", "60")
+        assert blocked.ok is False
+        assert blocked.code == "CUMULATIVE_EXCEEDED"
+
+        assert ledger.commit(first).ok is True
+        assert ledger.counter(leaf["delegation_id"])["committed"] == "60"
+
+
 class TestLedgerNonStringKeysReturnDefined:
     """mark_dispatched, commit and cancel with an action_ref that is not a
     str must return NOT_FOUND rather than raising out of an unhashable dict
