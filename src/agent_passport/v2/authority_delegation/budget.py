@@ -90,8 +90,23 @@ class InMemoryAuthorityBudgetLedger:
             bounded = [item for item in verified_chain if item["authority"]["spend"]["mode"] == "bounded"]
             ids = [item["delegation_id"] for item in bounded]
 
+            # A cancelled reservation holds nothing: its amount was released from
+            # every bounded ancestor's counter. Reporting a retry of it as idempotent
+            # would tell a boundary that the amount is reserved when no counter holds
+            # it, and two such calls could dispatch twice against one signed
+            # cumulative ceiling, which draft-pidlisnyi-aps-03 lines 602-607 require
+            # to be reserved "against every bounded ancestor or against none". A call
+            # naming a cancelled action_ref is therefore treated as the fresh
+            # reservation it is: every limit is checked again and the cancelled record
+            # is replaced. Provisional: the draft says only that an identical retry is
+            # idempotent and conflicting reuse is rejected (lines 621-622), and does
+            # not say which of those a retry after cancellation is, so refusing it
+            # outright would be defensible too. This choice keeps a boundary able to
+            # retry after releasing, and it can never report a reservation it does not
+            # hold. Pending a protocol ruling. The TypeScript SDK makes the same
+            # choice.
             prior = self._reservations.get(action_ref)
-            if prior is not None:
+            if prior is not None and prior.state != "cancelled":
                 identical = prior.unit == unit and prior.amount == amount and prior.delegation_ids == ids
                 if identical:
                     return BudgetOperationResult(ok=True, code="IDEMPOTENT", state=prior.state)

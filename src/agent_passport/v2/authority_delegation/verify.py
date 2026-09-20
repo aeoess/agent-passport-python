@@ -76,11 +76,16 @@ def verify_authority_delegation_chain(
     ``trust_root`` and ``resolve_revocation`` are each handed a deep copy of
     the record, made after phase 1 has validated it, and every phase from
     there on reads this function's own copy of the chain rather than the
-    caller's dicts. A callback is given a copy because the phases after it
-    read that record again: a callback that wrote to what it was given would
-    otherwise change what the linkage, continuity, issuance-time,
+    caller's dicts. ``trust_root`` is given a copy because the phases after
+    it read that record again: a callback that wrote to what it was given
+    would otherwise change what the linkage, continuity, issuance-time,
     attenuation, validity and revocation checks see, and a chain that widens
-    its parent's authority would verify valid. What a callback does to its
+    its parent's authority would verify valid. ``resolve_revocation`` is
+    given a copy for the same reason rather than from the same need: it runs
+    in the last phase, after every other check of that member, so a write
+    there changes nothing this function still reads. The child issuer is
+    where a revocation callback's write does reach later checks, and it
+    copies too (see issue.py). What a callback does to its
     own copy changes nothing here, and neither does a caller writing to its
     own dicts once this function has copied them. The TypeScript SDK gives
     its callbacks a copy for the same reason. A callback that compares its
