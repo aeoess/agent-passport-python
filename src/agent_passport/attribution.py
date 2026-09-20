@@ -13,7 +13,19 @@ from typing import Any
 
 
 def trace_beneficiary(receipt: dict, delegations: list, beneficiary_map: dict) -> dict:
-    """Follow the delegation chain from an action receipt back to the human beneficiary.
+    """Follow a chain of legacy Delegation records from an action receipt back to the
+    beneficiary the caller's map names for its root.
+
+    NOT draft-03 principal attribution, and not a beneficiary determination under the
+    protocol. draft-pidlisnyi-aps-03 section 12 keeps four attribution axes apart:
+    authority, contribution, principal and beneficiary. It specifies the authority and
+    principal axes and states that it does not specify a beneficiary-attribution model,
+    and lines 1741 to 1743 place the allocation of credit, benefit, compensation,
+    liability and ownership outside the document and say the authority chain does not
+    imply them. The beneficiary reported here is whatever beneficiary_map says; where the
+    map has no entry the fallback is the root of the legacy chain, which is an authority
+    fact and not a statement about who benefits. The records walked are the pre-draft
+    compatibility Delegation, not AuthorityDelegationV1: see create_delegation.
 
     Reports two DISTINCT, honestly-named properties (mirrors the TypeScript traceBeneficiary):
 

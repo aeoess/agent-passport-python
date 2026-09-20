@@ -71,7 +71,7 @@ assert verify_merkle_proof(hashes[0], proof, root)
 | `crypto` | base | Ed25519 key generation, signing, verification |
 | `canonical` | base | Deterministic JSON serialization (cross-language compatible) |
 | `passport` | 1 | Agent identity creation, signing, verification, expiry |
-| `delegation` | 1 | Scoped delegation chains, sub-delegation, revocation |
+| `delegation` | 1 | Pre-draft compatibility delegation chains, sub-delegation, revocation. Deprecated, frozen, not on the draft-03 path |
 | `v2.authority_delegation` | 1 | AuthorityDelegationV1, the draft-03 delegated authority record: closed schema, seven-facet narrowing, chain verification with an explicit `now` and caller-supplied key, trust and revocation resolvers, and an in-memory spend ledger |
 | `values` | 2 | Human Values Floor: load YAML/JSON, attestation, compliance, graduated enforcement |
 | `attribution` | 3 | Merkle proofs, beneficiary tracing, contribution tracking |
@@ -87,6 +87,8 @@ assert verify_merkle_proof(hashes[0], proof, root)
 The Python SDK produces identical canonical JSON and Ed25519 signatures as the TypeScript SDK. This means:
 
 - A passport signed in Python can be verified in TypeScript
+Two delegation records ship, and they are not interchangeable. `AuthorityDelegationV1` (`record_type` `aps:authority-delegation:v1`) in `v2.authority_delegation` is the delegated authority record of `draft-pidlisnyi-aps-03` section 3.1, with the seven signed facets and a chain verifier that returns valid, invalid, indeterminate or unsupported. The older `Delegation` from `create_delegation`, `sub_delegate` and `verify_delegation` is a pre-draft compatibility surface, deprecated and frozen: it predates the draft wire format and is not on the draft path. Its scope rules are pre-draft too and differ from section 3.2 in both directions, which is recorded on each function. New work uses `AuthorityDelegationV1`.
+
 - Delegation chains can span Python and TypeScript agents
 - Merkle roots computed from the same receipts match across languages
 
