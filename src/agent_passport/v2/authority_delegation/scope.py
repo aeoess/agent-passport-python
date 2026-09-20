@@ -8,19 +8,19 @@ from __future__ import annotations
 
 import re
 
-_SEGMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+_ASCII_ONLY = re.compile(r"^[\x00-\x7f]*$")
 
 
 def is_valid_scope_grant(grant: str) -> bool:
-    """True when grant is "*" or a well-formed aps-hierarchical-v1 grant.
+    """True when grant is "*" or a well-formed ASCII colon-separated scope grant.
 
-    Provisional, pending a protocol ruling: the aps-hierarchical-v1 segment
-    grammar checked by _SEGMENT (letters, digits, ".", "_", "-", up to 64
-    characters, starting with a letter or digit) is narrower than draft line
-    516's own requirement that scope grants use ASCII colon-separated
-    segments, and the limits below of at most 16 segments and 255 characters
-    for the whole grant are not stated by the draft at all. All three are
-    kept identical to the TypeScript SDK.
+    Draft lines 516-518 state the whole rule: "Scope grants use ASCII colon-separated
+    segments. '*' covers all grants; a wildcard is otherwise permitted only as the
+    terminal segment ':*'." Nothing more is a protocol requirement. This package
+    previously also imposed a segment character class, a 16-segment cap and a
+    255-character cap; none of the three is in the draft, and a grant this package
+    rejected for one of them was rejected by an SDK grammar rather than by the
+    protocol.
     """
     # The type test comes first: ``grant == "*"`` on a caller-supplied object runs
     # that object's own __eq__, which can raise out of this function and out of
@@ -28,19 +28,20 @@ def is_valid_scope_grant(grant: str) -> bool:
     # twin compares with === and never coerces. Chain verification and the issuers are
     # unaffected either way, since the closed schema types every grant before calling
     # here.
-    if type(grant) is not str or len(grant) == 0 or len(grant) > 255:
+    if type(grant) is not str or len(grant) == 0:
+        return False
+    if not _ASCII_ONLY.fullmatch(grant):
         return False
     if grant == "*":
         return True
     parts = grant.split(":")
-    if len(parts) > 16:
-        return False
-    wildcard = parts[-1] == "*"
-    if wildcard:
-        parts = parts[:-1]
-    if len(parts) == 0 or any(not _SEGMENT.fullmatch(part) for part in parts):
-        return False
-    return "*" not in parts
+    # A terminal ":*" is the one permitted wildcard segment; it is dropped before the
+    # remaining segments are checked, so no other segment may be a wildcard.
+    if parts[-1] == "*":
+        parts.pop()
+    # Colon-separated segments: a segment is what lies between two colons, so an empty
+    # one is not a segment. Every remaining segment must also be free of the wildcard.
+    return len(parts) > 0 and all(len(part) > 0 and "*" not in part for part in parts)
 
 
 def scope_grant_covers(parent: str, child: str) -> bool:

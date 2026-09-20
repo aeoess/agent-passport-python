@@ -455,7 +455,13 @@ class TestResolverEdgeCases:
         assert [item.code for item in result.failures] == ["KEY_RESOLUTION_FAILED"]
         assert result.failures[0].index == 0
 
-    def test_key_resolver_returning_64_non_hex_chars_gives_invalid_signature_invalid(self):
+    def test_key_resolver_returning_64_non_hex_chars_gives_indeterminate_key_material_malformed(self):
+        # Previously asserted state == "invalid" and ["SIGNATURE_INVALID"]: a
+        # 64-character non-hex string used to reach the signature check, which
+        # returned False on a decode failure and was reported as if the bytes had
+        # been checked and failed. Rule B3 catches this before the signature check
+        # runs: a resolved string that is not 32 bytes of hexadecimal is
+        # structurally malformed material.
         chain = _Chain()
 
         def resolve_verification_key(issuer, verification_method, issued_at):
@@ -468,8 +474,8 @@ class TestResolverEdgeCases:
             trust_root=chain.trust_root,
             resolve_revocation=lambda delegation: "active",
         )
-        assert result.state == "invalid"
-        assert [item.code for item in result.failures] == ["SIGNATURE_INVALID"]
+        assert result.state == "indeterminate"
+        assert [item.code for item in result.failures] == ["KEY_MATERIAL_MALFORMED"]
         assert result.failures[0].index == 0
 
     def test_trust_policy_returning_non_bool_gives_indeterminate_root_untrusted(self):
@@ -543,14 +549,23 @@ class TestParseWireLimits:
         with pytest.raises(AuthorityDelegationError):
             parse_authority_delegation_json(oversized)
 
-    def test_depth_remaining_written_as_2_point_0_is_rejected(self):
+    def test_depth_remaining_written_as_2_point_0_parses_and_matches_the_integer_spelling(self):
+        # Previously asserted this raised AuthorityDelegationError: the wire parser
+        # used to reject any number token carrying a fraction or exponent, even one
+        # that denotes an integer. Rule A4 removes that spelling rejection: an
+        # integral-valued I-JSON number is admissible however it is written, so
+        # "2.0" parses to the same value, and the same record, as "2".
         seed, _ = _keypair()
         record = issue_authority_delegation(_root_body(nonce="00" * 16), seed)
         source = json.dumps(record)
         assert '"remaining": 2' in source
-        source = source.replace('"remaining": 2', '"remaining": 2.0')
-        with pytest.raises(AuthorityDelegationError):
-            parse_authority_delegation_json(source)
+        fractional_source = source.replace('"remaining": 2', '"remaining": 2.0')
+
+        parsed = parse_authority_delegation_json(fractional_source)
+
+        assert parsed["authority"]["depth"]["remaining"] == 2
+        assert type(parsed["authority"]["depth"]["remaining"]) is int
+        assert parsed["delegation_id"] == record["delegation_id"]
 
 
 def _append_newline_to_nonce(record: dict) -> dict:
@@ -672,9 +687,15 @@ class TestNonStringDictKey:
 class TestSpacedHexKeyRejected:
     """bytes.fromhex tolerates whitespace between byte pairs, so a resolved
     key written with a space after every two hex digits must not verify even
-    though it decodes to the right bytes."""
+    though it decodes to the right bytes. It also fails the 32-byte-hex
+    pattern Rule B3 checks before the signature check ever runs, so it is
+    reported as structurally malformed material rather than as a signature
+    failure."""
 
-    def test_key_resolver_returning_spaced_hex_gives_invalid_signature_invalid(self):
+    def test_key_resolver_returning_spaced_hex_gives_indeterminate_key_material_malformed(self):
+        # Previously asserted state == "invalid" and ["SIGNATURE_INVALID"]: the
+        # spaced string used to reach the signature check, which returned False on
+        # a decode failure. Rule B3 now catches this first.
         chain = _Chain()
         spaced_principal_pub = " ".join(
             chain.principal_pub[i : i + 2] for i in range(0, len(chain.principal_pub), 2)
@@ -692,8 +713,8 @@ class TestSpacedHexKeyRejected:
             resolve_revocation=lambda delegation: "active",
         )
 
-        assert result.state == "invalid"
-        assert [item.code for item in result.failures] == ["SIGNATURE_INVALID"]
+        assert result.state == "indeterminate"
+        assert [item.code for item in result.failures] == ["KEY_MATERIAL_MALFORMED"]
 
 
 class TestIssueBareBodyRequired:
@@ -1726,15 +1747,21 @@ class TestContainerTypeItselfMustBeExact:
         assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
 
     @pytest.mark.parametrize("bad_value", _BAD_VALUES)
-    def test_inside_a_record_with_unknown_version_combines_with_unsupported_version(self, bad_value):
+    def test_inside_a_record_with_unknown_version_is_unsupported_version_alone(self, bad_value):
+        # Previously asserted state == "invalid" and ["SCHEMA_INVALID",
+        # "UNSUPPORTED_VERSION"]: an unrecognised version used to be judged by the
+        # v1 body schema too, so the malformed scope grants combined with it. Rule
+        # A6 makes recognition run first: an unrecognised version returns
+        # UNSUPPORTED_VERSION alone, and the v1 body (here, the malformed grants
+        # value) is never evaluated at all.
         authority = _authority(scope={"profile": "aps-hierarchical-v1", "grants": bad_value})
         record = _bare_valid_record(authority)
         record["version"] = "2.0"
 
         result = _verify_one(record, "unused")
 
-        assert result.state == "invalid"
-        assert [item.code for item in result.failures] == ["SCHEMA_INVALID", "UNSUPPORTED_VERSION"]
+        assert result.state == "unsupported"
+        assert [item.code for item in result.failures] == ["UNSUPPORTED_VERSION"]
 
 
 class TestCyclicContainerIsNotPlainJsonData:
@@ -1937,65 +1964,89 @@ class TestNonIJsonWalkRevisitsEachDistinctKeyStringOnce:
         assert [item.code for item in result.failures] == ["UNSUPPORTED_PROFILE"]
 
     def test_an_ill_formed_key_is_still_found_after_a_clean_key_of_the_same_length_is_memoised(self):
+        # Previously placed the keys in an "extra" top-level member of a record
+        # whose version was unrecognised ("2.0") and asserted ["SCHEMA_INVALID",
+        # "UNSUPPORTED_VERSION"]. Rule A6 makes recognition run first: an
+        # unrecognised version now returns UNSUPPORTED_VERSION alone without ever
+        # running the record-wide I-JSON walk this test means to exercise, so the
+        # fixture moves the keys inside an unsupported scope profile facet
+        # instead, which is still walked.
         clean_key = "k" * 1_000
         ill_formed_key = "k" * 999 + "\ufdd0"
-        body = _root_body(version="2.0", authority=_authority())
-        body["extra"] = [{clean_key: None}, {clean_key: None}, {ill_formed_key: None}]
+        grants = [{clean_key: None}, {clean_key: None}, {ill_formed_key: None}]
+        authority = _authority(scope={"profile": "custom-unsupported-v9", "grants": grants})
+        record = _bare_valid_record(authority)
 
-        failures = validate_authority_delegation_shape(body)
+        failures = validate_authority_delegation_shape(record)
 
-        assert [item.code for item in failures] == ["SCHEMA_INVALID", "UNSUPPORTED_VERSION"]
+        assert [item.code for item in failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
 
     def test_distinct_key_objects_are_each_judged_by_their_own_content(self):
         # Two str objects of equal content, and a third of the same length whose
         # content is ill formed: whichever way the memo is keyed, each key is
-        # judged by its own content.
+        # judged by its own content. Previously placed both cases in an "extra"
+        # member of a record whose version was unrecognised ("2.0"), asserting
+        # ["UNSUPPORTED_VERSION"] for the clean case and ["SCHEMA_INVALID",
+        # "UNSUPPORTED_VERSION"] for the ill-formed one. Rule A6 skips the
+        # record-wide walk entirely for an unrecognised version, so both cases move
+        # inside an unsupported scope profile facet instead, which is still
+        # walked.
         first_key = "".join(["k"] * 1_000)
         same_content_key = "".join(["k"] * 1_000)
         ill_formed_key = "".join(["k"] * 999) + "\ufdd0"
         assert first_key == same_content_key and first_key is not same_content_key
 
-        clean = _root_body(version="2.0", authority=_authority())
-        clean["extra"] = [{first_key: None}, {same_content_key: None}]
-        assert [item.code for item in validate_authority_delegation_shape(clean)] == ["UNSUPPORTED_VERSION"]
+        clean_authority = _authority(
+            scope={"profile": "custom-unsupported-v9", "grants": [{first_key: None}, {same_content_key: None}]},
+        )
+        clean = _bare_valid_record(clean_authority)
+        assert [item.code for item in validate_authority_delegation_shape(clean)] == ["UNSUPPORTED_PROFILE"]
 
-        ill_formed = _root_body(version="2.0", authority=_authority())
-        ill_formed["extra"] = [{first_key: None}, {ill_formed_key: None}]
+        ill_formed_authority = _authority(
+            scope={"profile": "custom-unsupported-v9", "grants": [{first_key: None}, {ill_formed_key: None}]},
+        )
+        ill_formed = _bare_valid_record(ill_formed_authority)
         assert [item.code for item in validate_authority_delegation_shape(ill_formed)] == [
-            "SCHEMA_INVALID", "UNSUPPORTED_VERSION",
+            "SCHEMA_INVALID", "UNSUPPORTED_PROFILE",
         ]
 
 
 class TestIntegerMagnitudeMustFitADouble:
     """An integer this package will canonicalize as a JSON number must
     itself survive conversion to an IEEE 754 double: float(v) raising
-    OverflowError is what the tests below check for. Placed inside a record
-    whose version is unrecognised, so it is reached only by the record-wide walk,
-    never by any version="1.0" facet-specific integer check, and the wire
-    form is exercised through parse_authority_delegation_json directly,
-    since json.loads decodes an arbitrarily large integer literal exactly
-    (unlike JSON.parse, which would already have turned it into Infinity)."""
+    OverflowError is what the tests below check for. Placed inside a facet
+    with an unsupported profile, so it is reached only by the record-wide
+    walk, never by any facet-specific integer check. (Previously placed
+    inside a record whose version was unrecognised for the same reason; Rule
+    A6 now skips the record-wide walk entirely for an unrecognised version,
+    so that placement no longer reaches this walk at all.) The wire form is
+    exercised through parse_authority_delegation_json directly, since
+    json.loads decodes an arbitrarily large integer literal exactly (unlike
+    JSON.parse, which would already have turned it into Infinity)."""
 
-    def _probe_with_depth_remaining(self, value) -> dict:
-        body = _root_body(version="2.0", authority=_authority(depth={"remaining": value}))
-        return {**body, "nonce": "0" * 32, "delegation_id": "sha256:" + "0" * 64, "signature": "0" * 128}
+    def _probe_with_scope_grants(self, value) -> dict:
+        authority = _authority(scope={"profile": "custom-unsupported-v9", "grants": [value]})
+        return _bare_valid_record(authority)
 
-    def test_a_400_digit_integer_is_schema_invalid_and_unsupported_version(self):
-        probe = self._probe_with_depth_remaining(10**400)
-
-        failures = validate_authority_delegation_shape(probe)
-
-        assert [item.code for item in failures] == ["SCHEMA_INVALID", "UNSUPPORTED_VERSION"]
-
-    def test_a_300_digit_integer_stays_unsupported_version_only(self):
-        probe = self._probe_with_depth_remaining(10**300)
+    def test_a_400_digit_integer_is_schema_invalid_and_unsupported_profile(self):
+        # Previously asserted ["SCHEMA_INVALID", "UNSUPPORTED_VERSION"] with the
+        # value inside depth.remaining on an unrecognised-version record.
+        probe = self._probe_with_scope_grants(10**400)
 
         failures = validate_authority_delegation_shape(probe)
 
-        assert [item.code for item in failures] == ["UNSUPPORTED_VERSION"]
+        assert [item.code for item in failures] == ["SCHEMA_INVALID", "UNSUPPORTED_PROFILE"]
+
+    def test_a_300_digit_integer_stays_unsupported_profile_only(self):
+        # Previously asserted ["UNSUPPORTED_VERSION"] only, same placement as above.
+        probe = self._probe_with_scope_grants(10**300)
+
+        failures = validate_authority_delegation_shape(probe)
+
+        assert [item.code for item in failures] == ["UNSUPPORTED_PROFILE"]
 
     def test_parse_authority_delegation_json_reports_the_verifiers_first_code(self):
-        probe = self._probe_with_depth_remaining(10**400)
+        probe = self._probe_with_scope_grants(10**400)
         direct_failures = validate_authority_delegation_shape(probe)
         wire_text = json.dumps(probe)
 
@@ -2120,11 +2171,15 @@ class TestRootNotBeforeMayPredateIssuedAt:
 
 
 class TestRecordTypeVersionAndFacetProfiles:
-    """A record_type or version that is not a string is malformed input; a
-    recognised record_type with an unknown string version is unsupported and
-    skips the rest of the v1 body schema entirely; an unrecognised record_type
-    string is still judged by that schema; and a facet's own profile handling
-    (missing/non-string profile, unsupported profile string) is unchanged."""
+    """Recognition of record_type and version runs first, before anything else in
+    shape validation (Rule A6). A record_type or version that is not a string is
+    malformed input and returns SCHEMA_INVALID alone: no recognition is possible at
+    all. A string record_type other than the v1 type returns UNSUPPORTED_RECORD_TYPE
+    alone; the recognised record_type with any other string version returns
+    UNSUPPORTED_VERSION alone. In every one of those three cases the record is
+    returned unjudged: no exact-keys check, no facet checks, not even the
+    record-wide I-JSON check. A facet's own profile handling (missing/non-string
+    profile, unsupported profile string) is unchanged."""
 
     def _probe(self, **overrides) -> dict:
         body = _root_body(**overrides)
@@ -2147,18 +2202,18 @@ class TestRecordTypeVersionAndFacetProfiles:
 
     @pytest.mark.parametrize("version", ["2.0", "1.0"])
     def test_record_type_str_subclass_is_schema_invalid_regardless_of_version(self, version):
-        # A str subclass equal by content to the v1 record_type must not
-        # take the recognised-type-with-unknown-version fast path (which
-        # would otherwise skip this record straight to UNSUPPORTED_VERSION
-        # alone): the branch tests record_type by exact type, so this record
-        # falls through to the ordinary body checks, where the record-wide
-        # walk and the record_type/version type check each report
-        # SCHEMA_INVALID, regardless of which version string is present.
+        # Previously asserted ["SCHEMA_INVALID", "SCHEMA_INVALID"]: recognition used
+        # to run after the record-wide I-JSON walk and the exact-keys check, so a
+        # record_type held in a str subclass (not a plain str) was caught twice,
+        # once by each. Rule A6 tests record_type by exact type as the very first
+        # step and returns SCHEMA_INVALID alone: this record never reaches the
+        # ordinary body checks at all, regardless of which version string is
+        # present.
         probe = self._probe(record_type=_RecordTypeAlias("aps:authority-delegation:v1"), version=version)
 
         failures = validate_authority_delegation_shape(probe)
 
-        assert [item.code for item in failures] == ["SCHEMA_INVALID", "SCHEMA_INVALID"]
+        assert [item.code for item in failures] == ["SCHEMA_INVALID"]
 
     def test_recognised_type_with_unknown_version_skips_exact_keys_and_facet_checks(self):
         probe = self._probe(version="2.0")
@@ -2179,36 +2234,50 @@ class TestRecordTypeVersionAndFacetProfiles:
 
         assert [item.code for item in failures] == ["UNSUPPORTED_VERSION"]
 
-    def test_recognised_type_with_unknown_version_and_a_noncharacter_reports_both_codes(self):
+    def test_recognised_type_with_unknown_version_reports_unsupported_version_alone(self):
+        # Previously named "...and_a_noncharacter_reports_both_codes" and asserted
+        # ["SCHEMA_INVALID", "UNSUPPORTED_VERSION"]: the record-wide I-JSON walk
+        # used to run even for an unrecognised version, ahead of UNSUPPORTED_VERSION.
+        # Rule A6 skips that walk entirely when version is unrecognised, so a
+        # noncharacter elsewhere in the body no longer changes the result.
         probe = self._probe(version="2.0", subject="did:example:agent-a\ufdd0")
 
         failures = validate_authority_delegation_shape(probe)
 
-        assert [item.code for item in failures] == ["SCHEMA_INVALID", "UNSUPPORTED_VERSION"]
+        assert [item.code for item in failures] == ["UNSUPPORTED_VERSION"]
 
     def test_recognised_type_with_unknown_version_and_an_otherwise_valid_v1_body_is_unsupported(self):
         failures = validate_authority_delegation_shape(self._probe(version="2.0"))
         assert [item.code for item in failures] == ["UNSUPPORTED_VERSION"]
-        assert failures[0].message == "unsupported authority-delegation record_type or version"
+        # Previously "unsupported authority-delegation record_type or version": the
+        # message now names only the field this branch actually judged (version),
+        # since a mismatched record_type is now a distinct UNSUPPORTED_RECORD_TYPE
+        # failure with its own message.
+        assert failures[0].message == "unsupported authority-delegation version"
 
-    def test_unrecognised_record_type_with_an_otherwise_valid_v1_body_is_unsupported_version(self):
+    def test_unrecognised_record_type_is_unsupported_record_type_alone(self):
+        # Previously named "..._is_unsupported_version" and asserted
+        # ["UNSUPPORTED_VERSION"]: an unrecognised record_type string used to be
+        # judged by the v1 body schema and reported under the version code. Rule A6
+        # gives it its own code, UNSUPPORTED_RECORD_TYPE, and the state is
+        # "unsupported".
         failures = validate_authority_delegation_shape(
             self._probe(record_type="aps:authority-delegation:v2"),
         )
-        assert [item.code for item in failures] == ["UNSUPPORTED_VERSION"]
+        assert [item.code for item in failures] == ["UNSUPPORTED_RECORD_TYPE"]
 
-    def test_unrecognised_record_type_with_an_extra_top_level_member_is_schema_invalid(self):
-        # Discriminates this from the recognised-type/unknown-version branch
-        # above, which skips the exact-keys check entirely: an unrecognised
-        # record_type string is still judged by the v1 schema's structural
-        # checks, so an extra top-level member is caught as SCHEMA_INVALID
-        # before UNSUPPORTED_VERSION is ever considered. This is current
-        # behaviour for a case the draft leaves open: no rule states whether
-        # an unknown record_type string should be judged by the v1 schema.
+    def test_unrecognised_record_type_with_an_extra_top_level_member_is_unsupported_record_type_alone(self):
+        # Previously named "...is_schema_invalid" and asserted ["SCHEMA_INVALID"]:
+        # an unrecognised record_type string used to still be judged by the v1
+        # schema's structural checks, so an extra top-level member was caught as
+        # SCHEMA_INVALID before UNSUPPORTED_VERSION was ever considered. Rule A6
+        # returns UNSUPPORTED_RECORD_TYPE alone as soon as record_type fails to
+        # match, before the exact-keys check (or anything else) runs, so the extra
+        # member changes nothing.
         failures = validate_authority_delegation_shape(
             self._probe(record_type="aps:authority-delegation:v2", extensions={}),
         )
-        assert [item.code for item in failures] == ["SCHEMA_INVALID"]
+        assert [item.code for item in failures] == ["UNSUPPORTED_RECORD_TYPE"]
 
     def test_reputation_profile_as_a_number_is_schema_invalid(self):
         probe = self._probe(authority=_authority(reputation={"profile": 5, "ceiling": 80}))
@@ -2254,3 +2323,478 @@ class TestIssuerCopiesOnlyAfterValidation:
         with pytest.raises(AuthorityDelegationError) as exc_info:
             issue_authority_delegation(self._root_with_grants([CopyHookRaises()]), seed)
         assert exc_info.value.code == "SCHEMA_INVALID"
+
+
+class TestSpendUnitIsAnyNonEmptyString:
+    """Rule A1: spend.unit has no SDK grammar. Draft line 466 shows one example
+    value ("iso4217:USD:minor"); the draft states no grammar for it anywhere. It is
+    now any non-empty string the record-wide I-JSON check already admits; an empty
+    unit is still refused."""
+
+    def _record_with_unit(self, unit) -> dict:
+        authority = _authority(
+            spend={"mode": "bounded", "unit": unit, "per_action": "1", "cumulative": "2"},
+        )
+        return _bare_valid_record(authority)
+
+    @pytest.mark.parametrize(
+        "unit",
+        [
+            pytest.param("iso4217 USD minor", id="space"),
+            pytest.param("iso4217/USD/minor", id="slash"),
+            pytest.param("iso4217:\u20ac:minor", id="non-ascii"),
+            pytest.param("u" * 400, id="400-chars"),
+        ],
+    )
+    def test_unit_shapes_the_old_identifier_pattern_rejected_are_now_valid(self, unit):
+        # Passing control for the empty-unit case below: each of these shapes
+        # would have failed the old aps-values-identifiers-v1-style pattern
+        # (letters, digits, ".", "_", ":", "-" only) but is admitted now.
+        failures = validate_authority_delegation_shape(self._record_with_unit(unit))
+        assert failures == []
+
+    def test_empty_unit_is_still_invalid(self):
+        failures = validate_authority_delegation_shape(self._record_with_unit(""))
+        assert [item.code for item in failures] == ["NONCANONICAL_VALUE"]
+
+
+class TestValuesIdentifierIsAnyNonEmptyString:
+    """Rule A2: values.required identifiers are profile-defined (draft line 547),
+    not an SDK grammar. Same change as spend.unit: any non-empty string is valid;
+    the sorted-and-unique requirement is unchanged."""
+
+    @pytest.mark.parametrize(
+        "required",
+        [
+            pytest.param(["F-001"], id="hyphenated"),
+            pytest.param(["identifier with spaces"], id="spaces"),
+            pytest.param(["\u00e9motion"], id="non-ascii"),
+            pytest.param(["x" * 400], id="400-chars"),
+            pytest.param(["a.b:c_d"], id="mixed-punctuation"),
+        ],
+    )
+    def test_identifier_shapes_are_valid(self, required):
+        authority = _authority(values={"profile": "aps-values-identifiers-v1", "required": required})
+        failures = validate_authority_delegation_shape(_bare_valid_record(authority))
+        assert failures == []
+
+    def test_empty_identifier_is_still_invalid(self):
+        # Passing control: the same facet with a non-empty identifier (above) is
+        # valid, so this failure is about emptiness, not the facet shape.
+        authority = _authority(values={"profile": "aps-values-identifiers-v1", "required": [""]})
+        failures = validate_authority_delegation_shape(_bare_valid_record(authority))
+        assert [item.code for item in failures] == ["SCHEMA_INVALID"]
+
+
+class TestScopeGrantGrammarIsProtocolOnly:
+    """Rule A3: draft lines 516-518 state the whole grant rule ("Scope grants use
+    ASCII colon-separated segments. '*' covers all grants; a wildcard is otherwise
+    permitted only as the terminal segment ':*'."). No SDK-only segment character
+    class, segment-count cap, or length cap applies any more."""
+
+    @pytest.mark.parametrize(
+        "grant",
+        [
+            pytest.param("commerce:checkout", id="two-segments"),
+            pytest.param(":".join(["a"] * 18), id="18-segments"),
+            pytest.param("a" * 400, id="400-chars"),
+            pytest.param("A_B", id="underscore"),
+            pytest.param("v1.2+3", id="dot-plus"),
+            pytest.param("commerce:*", id="terminal-wildcard"),
+            pytest.param("*", id="bare-wildcard"),
+        ],
+    )
+    def test_valid_grant_shapes_are_valid(self, grant):
+        assert is_valid_scope_grant(grant) is True
+        authority = _authority(scope={"profile": "aps-hierarchical-v1", "grants": [grant]})
+        failures = validate_authority_delegation_shape(_bare_valid_record(authority))
+        assert failures == []
+
+    @pytest.mark.parametrize(
+        "grant",
+        [
+            pytest.param("commerce:\u00e9", id="non-ascii"),
+            pytest.param("commerce::checkout", id="empty-segment"),
+            pytest.param("commerce:*:checkout", id="wildcard-not-terminal"),
+            pytest.param("*:checkout", id="wildcard-not-terminal-leading"),
+            pytest.param("", id="empty-string"),
+        ],
+    )
+    def test_invalid_grant_shapes_stay_invalid(self, grant):
+        # Passing control is the valid-shapes test above: the same machinery
+        # (is_valid_scope_grant, then the full record) accepts a well-formed grant,
+        # so a NONCANONICAL_VALUE result here is about this specific shape.
+        assert is_valid_scope_grant(grant) is False
+        authority = _authority(scope={"profile": "aps-hierarchical-v1", "grants": [grant]})
+        failures = validate_authority_delegation_shape(_bare_valid_record(authority))
+        assert [item.code for item in failures] == ["NONCANONICAL_VALUE"]
+
+
+class TestResourceLimitCeilings:
+    """Rule A5: the chain record limit, the byte cap on issuer/subject/
+    verification_method, and the wire size limit are this implementation's own
+    ceilings, not protocol rules. Crossing one means this implementation declines
+    to judge the record (RESOURCE_LIMIT, indeterminate), never that the record is
+    bad. A container that is not a usable chain at all is a different answer:
+    invalid, with SCHEMA_INVALID, since there is nothing to verify."""
+
+    def test_over_long_issuer_gives_resource_limit_and_indeterminate(self):
+        seed, public_key = _keypair()
+        record = issue_authority_delegation(_root_body(authority=_rich_authority()), seed)
+        record["issuer"] = "d" * 1025
+
+        result = _verify_one(record, public_key)
+
+        assert result.state == "indeterminate"
+        assert [item.code for item in result.failures] == ["RESOURCE_LIMIT"]
+
+    def test_issuer_at_exactly_the_1024_byte_ceiling_is_a_passing_control(self):
+        # The ceiling is crossed only when exceeded, so exactly 1024 bytes must
+        # verify clean rather than tripping RESOURCE_LIMIT.
+        seed, public_key = _keypair()
+        body = _root_body(issuer="d" * 1024, authority=_rich_authority())
+        record = issue_authority_delegation(body, seed)
+
+        result = _verify_one(record, public_key)
+
+        assert result.state == "valid"
+
+    def test_over_length_chain_gives_resource_limit_and_indeterminate(self):
+        chain = _Chain()
+        padded = [chain.root] * 257
+
+        result = verify_authority_delegation_chain(
+            padded,
+            now="2026-01-01T00:15:00.000Z",
+            resolve_verification_key=chain.resolve_verification_key,
+            trust_root=chain.trust_root,
+            resolve_revocation=lambda delegation: "active",
+        )
+
+        assert result.state == "indeterminate"
+        assert [item.code for item in result.failures] == ["RESOURCE_LIMIT"]
+
+    def test_chain_at_exactly_256_is_a_passing_control_not_resource_limited(self):
+        # The ceiling is crossed only when exceeded: exactly 256 records must fail,
+        # if at all, for some reason other than RESOURCE_LIMIT (here, duplicate
+        # delegation IDs, since these are all copies of the same record).
+        chain = _Chain()
+        padded = [chain.root] * 256
+
+        result = verify_authority_delegation_chain(
+            padded,
+            now="2026-01-01T00:15:00.000Z",
+            resolve_verification_key=chain.resolve_verification_key,
+            trust_root=chain.trust_root,
+            resolve_revocation=lambda delegation: "active",
+        )
+
+        assert [item.code for item in result.failures] != ["RESOURCE_LIMIT"]
+
+    def test_chain_container_that_is_not_a_chain_at_all_stays_invalid_schema_invalid(self):
+        result = verify_authority_delegation_chain(
+            {"not": "a list"},
+            now="2026-01-01T00:15:00.000Z",
+            resolve_verification_key=lambda *a: None,
+            trust_root=lambda root: True,
+            resolve_revocation=lambda delegation: "active",
+        )
+
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID"]
+
+
+class TestIntegralNumberSpellingAdmittedOnTheWire:
+    """Rule A4: an integral-valued I-JSON number is admissible however it is
+    spelled, and RFC 8785 canonicalises the spelling, so "3.0" and "3e0" are the
+    same value as "3". "3.5" is not an integer and is still refused, by the
+    schema, not the parser."""
+
+    def _record_with_depth_remaining(self, value) -> dict:
+        seed, _ = _keypair()
+        body = _root_body(nonce="00" * 16, authority=_authority(depth={"remaining": value}))
+        return issue_authority_delegation(body, seed)
+
+    def test_3_point_0_and_3e0_parse_to_the_same_delegation_id_as_3(self):
+        canonical_record = self._record_with_depth_remaining(3)
+        canonical_source = json.dumps(canonical_record)
+        assert '"remaining": 3' in canonical_source
+
+        for spelling in ("3.0", "3e0"):
+            source = canonical_source.replace('"remaining": 3', f'"remaining": {spelling}')
+            parsed = parse_authority_delegation_json(source)
+            assert parsed["authority"]["depth"]["remaining"] == 3
+            assert type(parsed["authority"]["depth"]["remaining"]) is int
+            assert parsed["delegation_id"] == canonical_record["delegation_id"]
+
+    def test_3_point_5_is_still_refused(self):
+        # Passing control is the "3.0"/"3e0" case above, over the same fixture.
+        canonical_record = self._record_with_depth_remaining(3)
+        source = json.dumps(canonical_record).replace('"remaining": 3', '"remaining": 3.5')
+
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            parse_authority_delegation_json(source)
+        assert exc_info.value.code == "SCHEMA_INVALID"
+
+
+class TestUnsupportedRecordTypeAtVerifyLevel:
+    """Rule A6, at the chain-verification level (the shape-level behaviour is
+    covered by TestRecordTypeVersionAndFacetProfiles above)."""
+
+    def test_unrecognised_record_type_gives_unsupported_even_with_an_extra_member(self):
+        record = _bare_valid_record(_rich_authority())
+        record["record_type"] = "aps:authority-delegation:v2"
+        record["extensions"] = {}
+
+        result = _verify_one(record, "unused")
+
+        assert result.state == "unsupported"
+        assert [item.code for item in result.failures] == ["UNSUPPORTED_RECORD_TYPE"]
+
+    def test_non_string_record_type_gives_invalid_schema_invalid(self):
+        record = _bare_valid_record(_rich_authority())
+        record["record_type"] = 7
+
+        result = _verify_one(record, "unused")
+
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID"]
+
+    def test_non_string_version_gives_invalid_schema_invalid(self):
+        record = _bare_valid_record(_rich_authority())
+        record["version"] = 7
+
+        result = _verify_one(record, "unused")
+
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SCHEMA_INVALID"]
+
+
+class TestKeyResolverOutcomeMapping:
+    """Rule B: a verification key resolver may report one of the draft's five
+    section 2.5 outcomes instead of a key string or None. Each of the seven
+    possible answers (resolved; the five named outcomes; and the unspecified
+    None/anything-else fallback) maps to its own state and code."""
+
+    @pytest.mark.parametrize(
+        "outcome, expected_state, expected_code",
+        [
+            pytest.param("not_found", "indeterminate", "KEY_NOT_FOUND", id="not_found"),
+            pytest.param("ambiguous", "indeterminate", "KEY_AMBIGUOUS", id="ambiguous"),
+            pytest.param("malformed", "indeterminate", "KEY_MATERIAL_MALFORMED", id="malformed"),
+            pytest.param("unreachable", "indeterminate", "KEY_UNREACHABLE", id="unreachable"),
+            pytest.param("unsupported_scheme", "unsupported", "KEY_SCHEME_UNSUPPORTED", id="unsupported_scheme"),
+        ],
+    )
+    def test_named_outcome_maps_to_its_own_state_and_code(self, outcome, expected_state, expected_code):
+        chain = _Chain()
+
+        result = verify_authority_delegation_chain(
+            [chain.root],
+            now="2026-01-01T00:25:00.000Z",
+            resolve_verification_key=lambda *args: {"outcome": outcome},
+            trust_root=chain.trust_root,
+            resolve_revocation=lambda delegation: "active",
+        )
+
+        assert result.state == expected_state
+        assert [item.code for item in result.failures] == [expected_code]
+
+    def test_none_answer_is_indeterminate_key_resolution_failed(self):
+        chain = _Chain()
+
+        result = verify_authority_delegation_chain(
+            [chain.root],
+            now="2026-01-01T00:25:00.000Z",
+            resolve_verification_key=lambda *args: None,
+            trust_root=chain.trust_root,
+            resolve_revocation=lambda delegation: "active",
+        )
+
+        assert result.state == "indeterminate"
+        assert [item.code for item in result.failures] == ["KEY_RESOLUTION_FAILED"]
+
+    def test_an_unrecognised_outcome_name_also_falls_back_to_key_resolution_failed(self):
+        chain = _Chain()
+
+        result = verify_authority_delegation_chain(
+            [chain.root],
+            now="2026-01-01T00:25:00.000Z",
+            resolve_verification_key=lambda *args: {"outcome": "something-else"},
+            trust_root=chain.trust_root,
+            resolve_revocation=lambda delegation: "active",
+        )
+
+        assert result.state == "indeterminate"
+        assert [item.code for item in result.failures] == ["KEY_RESOLUTION_FAILED"]
+
+    def test_resolved_answer_is_the_passing_control(self):
+        chain = _Chain()
+
+        result = verify_authority_delegation_chain(
+            [chain.root],
+            now="2026-01-01T00:25:00.000Z",
+            resolve_verification_key=chain.resolve_verification_key,
+            trust_root=chain.trust_root,
+            resolve_revocation=lambda delegation: "active",
+        )
+
+        assert result.state == "valid"
+
+
+class TestMalformedKeyMaterialGivesIndeterminate:
+    """Rule B3: a resolver that returns a string which is not 32 bytes of
+    hexadecimal has produced structurally malformed material and must not reach
+    the signature check, which would otherwise report SIGNATURE_INVALID and say
+    the bytes were checked and failed when nothing was checked. The control
+    proves the check still runs for well-formed material: a genuine, wrong
+    64-hex-character key still gives SIGNATURE_INVALID."""
+
+    @pytest.mark.parametrize(
+        "malformed",
+        [
+            pytest.param("", id="empty"),
+            pytest.param("ab" * 16, id="32-hex-chars-too-short"),
+            pytest.param("ab" * 40, id="80-hex-chars-too-long"),
+            pytest.param("g" + "a" * 63, id="64-chars-one-non-hex"),
+            pytest.param("ab" * 16 + " " + "ab" * 16, id="internal-space"),
+        ],
+    )
+    def test_malformed_shape_gives_indeterminate_key_material_malformed(self, malformed):
+        chain = _Chain()
+
+        result = verify_authority_delegation_chain(
+            [chain.root],
+            now="2026-01-01T00:25:00.000Z",
+            resolve_verification_key=lambda *args: malformed,
+            trust_root=chain.trust_root,
+            resolve_revocation=lambda delegation: "active",
+        )
+
+        assert result.state == "indeterminate"
+        assert [item.code for item in result.failures] == ["KEY_MATERIAL_MALFORMED"]
+
+    def test_well_formed_wrong_key_is_still_signature_invalid(self):
+        chain = _Chain()
+        _, wrong_public_key = _keypair()
+        assert wrong_public_key != chain.principal_pub
+
+        result = verify_authority_delegation_chain(
+            [chain.root],
+            now="2026-01-01T00:25:00.000Z",
+            resolve_verification_key=lambda *args: wrong_public_key,
+            trust_root=chain.trust_root,
+            resolve_revocation=lambda delegation: "active",
+        )
+
+        assert result.state == "invalid"
+        assert [item.code for item in result.failures] == ["SIGNATURE_INVALID"]
+
+
+class TestKeyResolverCalledWithRecordsOwnIssuedAt:
+    def test_resolver_receives_each_records_own_issued_at_not_the_verification_clock(self):
+        chain = _Chain()
+        seen = []
+
+        def resolve_verification_key(issuer, verification_method, issued_at):
+            seen.append(issued_at)
+            return chain.resolve_verification_key(issuer, verification_method, issued_at)
+
+        result = verify_authority_delegation_chain(
+            [chain.root, chain.child],
+            now="2026-01-01T00:15:00.000Z",  # inside both windows, later than either issued_at
+            resolve_verification_key=resolve_verification_key,
+            trust_root=chain.trust_root,
+            resolve_revocation=lambda delegation: "active",
+        )
+
+        assert result.state == "valid"
+        assert seen == [chain.root["issued_at"], chain.child["issued_at"]]
+        assert "2026-01-01T00:15:00.000Z" not in seen
+
+
+class TestChildIssuerNamesResolverOutcome:
+    """Rule B4: issue_sub_authority_delegation's coded error names the outcome its
+    resolver gave for the parent's verification key, rather than the generic
+    KEY_RESOLUTION_FAILED for every non-string answer."""
+
+    def _child_body(self, chain: "_Chain") -> dict:
+        return {
+            "record_type": "aps:authority-delegation:v1",
+            "version": "1.0",
+            "parent_delegation_id": chain.root["delegation_id"],
+            "issuer": "did:example:agent-a",
+            "subject": "did:example:agent-b",
+            "verification_method": "did:example:agent-a#key-1",
+            "issued_at": "2026-01-01T00:05:00.000Z",
+            "authority": _authority(
+                depth={"remaining": 1},
+                time={"not_before": "2026-01-01T00:10:00.000Z", "not_after": "2026-01-01T00:20:00.000Z"},
+            ),
+        }
+
+    @pytest.mark.parametrize(
+        "outcome, expected_code",
+        [
+            pytest.param("not_found", "KEY_NOT_FOUND", id="not_found"),
+            pytest.param("ambiguous", "KEY_AMBIGUOUS", id="ambiguous"),
+            pytest.param("malformed", "KEY_MATERIAL_MALFORMED", id="malformed"),
+            pytest.param("unreachable", "KEY_UNREACHABLE", id="unreachable"),
+            pytest.param("unsupported_scheme", "KEY_SCHEME_UNSUPPORTED", id="unsupported_scheme"),
+        ],
+    )
+    def test_named_outcome_raises_its_own_code(self, outcome, expected_code):
+        chain = _Chain()
+
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            issue_sub_authority_delegation(
+                chain.root,
+                self._child_body(chain),
+                chain.agent_a_seed,
+                now="2026-01-01T00:05:00.000Z",
+                resolve_verification_key=lambda *a: {"outcome": outcome},
+                resolve_revocation=lambda delegation: "active",
+            )
+        assert exc_info.value.code == expected_code
+
+    def test_none_answer_raises_key_resolution_failed(self):
+        chain = _Chain()
+
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            issue_sub_authority_delegation(
+                chain.root,
+                self._child_body(chain),
+                chain.agent_a_seed,
+                now="2026-01-01T00:05:00.000Z",
+                resolve_verification_key=lambda *a: None,
+                resolve_revocation=lambda delegation: "active",
+            )
+        assert exc_info.value.code == "KEY_RESOLUTION_FAILED"
+
+    def test_malformed_key_material_string_raises_key_material_malformed(self):
+        chain = _Chain()
+
+        with pytest.raises(AuthorityDelegationError) as exc_info:
+            issue_sub_authority_delegation(
+                chain.root,
+                self._child_body(chain),
+                chain.agent_a_seed,
+                now="2026-01-01T00:05:00.000Z",
+                resolve_verification_key=lambda *a: "not-hex-at-all",
+                resolve_revocation=lambda delegation: "active",
+            )
+        assert exc_info.value.code == "KEY_MATERIAL_MALFORMED"
+
+    def test_resolved_and_correctly_signed_key_is_the_passing_control(self):
+        chain = _Chain()
+
+        issued = issue_sub_authority_delegation(
+            chain.root,
+            self._child_body(chain),
+            chain.agent_a_seed,
+            now="2026-01-01T00:05:00.000Z",
+            resolve_verification_key=chain.resolve_verification_key,
+            resolve_revocation=lambda delegation: "active",
+        )
+
+        assert issued["parent_delegation_id"] == chain.root["delegation_id"]

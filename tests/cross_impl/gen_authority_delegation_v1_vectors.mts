@@ -310,7 +310,7 @@ interface CaseOut {
   id: string
   kind: 'chain' | 'wire' | 'issue_root' | 'issue_child' | 'budget'
   title: string
-  expected_provenance: 'draft-derived' | 'ts-conformant-regression'
+  expected_provenance: 'draft-derived' | 'ts-conformant-regression' | 'ruling-derived'
   derivation: { lines: string; note: string }
   [key: string]: unknown
 }
@@ -319,7 +319,7 @@ const cases: CaseOut[] = []
 const counts = {
   total: 0,
   by_kind: { chain: 0, wire: 0, issue_root: 0, issue_child: 0, budget: 0 } as Record<string, number>,
-  by_provenance: { 'draft-derived': 0, 'ts-conformant-regression': 0 } as Record<string, number>,
+  by_provenance: { 'draft-derived': 0, 'ts-conformant-regression': 0, 'ruling-derived': 0 } as Record<string, number>,
 }
 
 function record(kind: CaseOut['kind'], provenance: CaseOut['expected_provenance']): void {
@@ -346,6 +346,13 @@ interface ContextSpec {
   keys: KeyEntry[]
   trust: TrustSpec
   revocation: RevocationSpec
+  /** What the key resolver answers instead of consulting the key table. One of the
+   *  section 2.5 outcomes (lines 360-364), or a literal string of key material, for the
+   *  cases that turn on how an outcome is reported rather than on the chain. */
+  key_resolution?:
+    | { mode: 'table' }
+    | { mode: 'outcome'; outcome: 'not_found' | 'ambiguous' | 'malformed' | 'unreachable' | 'unsupported_scheme' }
+    | { mode: 'material'; material: string }
 }
 
 const DEFAULT_NOW = '2026-07-18T23:00:00.000Z'
@@ -360,7 +367,10 @@ function defaultContext(chain: any[]): ContextSpec {
 }
 
 function buildOptions(spec: ContextSpec, chain: any[]) {
-  const resolveVerificationKey = (issuer: string, vm: string): string | null => {
+  const resolution = spec.key_resolution ?? { mode: 'table' as const }
+  const resolveVerificationKey = (issuer: string, vm: string): unknown => {
+    if (resolution.mode === 'outcome') return { outcome: resolution.outcome }
+    if (resolution.mode === 'material') return resolution.material
     const hit = spec.keys.find((k) => k.issuer === issuer && k.verification_method === vm)
     return hit ? hit.public_key_hex : null
   }
@@ -475,7 +485,7 @@ interface ChainCaseSpec {
   /** 'ts-conformant-regression' for a case whose expected state does not follow from the
    *  draft text, so the case pins current implementation behaviour instead. Defaults to
    *  'draft-derived'. */
-  provenance?: 'draft-derived' | 'ts-conformant-regression'
+  provenance?: 'draft-derived' | 'ts-conformant-regression' | 'ruling-derived'
   lines: string
   note: string
 }
@@ -771,9 +781,13 @@ pushChainCase({
 // Chain cases, negative: closed schema and canonical values
 // -------------------------------------------------------------------------
 
-function rootOnlyInvalid(id: string, title: string, lines: string, note: string, code: string, fn: (b: any) => void, state: 'invalid' | 'unsupported' = 'invalid'): void {
+function rootOnlyInvalid(
+  id: string, title: string, lines: string, note: string, code: string, fn: (b: any) => void,
+  state: 'invalid' | 'unsupported' | 'indeterminate' = 'invalid',
+  provenance?: 'draft-derived' | 'ts-conformant-regression' | 'ruling-derived',
+): void {
   const body = mutate(BODY_R, fn)
-  pushChainCase({ id, title, chain: [forceSign(body, 'principal')], expectedState: state, expectedCode: code, expectedIndex: 0, lines, note })
+  pushChainCase({ id, title, chain: [forceSign(body, 'principal')], expectedState: state, expectedCode: code, expectedIndex: 0, lines, note, provenance })
 }
 
 rootOnlyInvalid('AD-N-S01', 'Extra top-level member', 'L480', 'The v1 schema is closed; an unknown member is rejected.', 'SCHEMA_INVALID', (b) => { b.comment = 'x' })
@@ -781,7 +795,9 @@ rootOnlyInvalid('AD-N-S02', 'Missing nonce', 'L426-427', 'nonce is a required me
 rootOnlyInvalid('AD-N-S03', 'authority missing the values facet', 'L429-431', 'authority must carry exactly all seven facets.', 'SCHEMA_INVALID', (b) => { delete b.authority.values })
 rootOnlyInvalid('AD-N-S04', 'An eighth authority facet', 'L429-430', 'authority carries exactly seven facets, not eight.', 'SCHEMA_INVALID', (b) => { b.authority.risk = { profile: 'x', ceiling: 1 } })
 rootOnlyInvalid('AD-N-S05', 'depth with an extra member', 'L480', 'depth is a closed object of exactly {remaining}.', 'SCHEMA_INVALID', (b) => { b.authority.depth = { remaining: 2, max: 3 } })
-rootOnlyInvalid('AD-N-S06', 'Unsupported record_type v2', 'L424-426, L590, L1227', 'The draft states no rule for an unknown record_type, and the state follows by analogy with L590 and L1227.', 'UNSUPPORTED_VERSION', (b) => { b.record_type = 'aps:authority-delegation:v2' }, 'unsupported')
+// Was UNSUPPORTED_VERSION, by analogy, with the v1 body still judged. Ruled: an unknown
+// string record_type is unsupported under its own code and the body is not evaluated.
+rootOnlyInvalid('AD-N-S06', 'Unsupported record_type v2', 'L424-426, L580-581', 'Ruled: an unknown string record_type is unsupported under its own code, and recognition precedes v1 schema evaluation, so the body is not judged at all.', 'UNSUPPORTED_RECORD_TYPE', (b) => { b.record_type = 'aps:authority-delegation:v2' }, 'unsupported', 'ruling-derived')
 rootOnlyInvalid('AD-N-S07', 'Unsupported version 2.0', 'L426', 'The draft states no rule for an unknown version; by analogy with L590 and L1227, an unimplemented construct is unsupported, not invalid.', 'UNSUPPORTED_VERSION', (b) => { b.version = '2.0' }, 'unsupported')
 
 {
@@ -1258,6 +1274,146 @@ pushChainCase({
   expectedState: 'indeterminate', expectedCode: 'REVOCATION_UNKNOWN', expectedIndex: 0,
   lines: 'L589-590', note: 'A resolver that raises is treated the same as an unknown result.',
 })
+
+// -------------------------------------------------------------------------
+// Ruled cases. Each answers a question the draft names without settling, and the
+// expected outcome comes from a recorded ruling rather than from the text. Every one of
+// these replaced an entry in the withheld list.
+// -------------------------------------------------------------------------
+
+function ruledBody(mutate: (body: any) => void): any {
+  const body = JSON.parse(JSON.stringify(BODY_R))
+  mutate(body)
+  return issue(body, 'principal')
+}
+
+// No SDK grammar is protocol: a spend unit and the values identifiers the draft leaves
+// to a profile.
+for (const [suffix, unit] of [['a', 'USD cents'], ['b', 'urn:x:units/kWh'], ['c', 'credits\u00b5']] as const) {
+  const record = ruledBody((body) => { body.authority.spend.unit = unit })
+  pushChainCase({
+    id: `AD-R-U0${suffix === 'a' ? 1 : suffix === 'b' ? 2 : 3}`,
+    title: `A spend unit outside the old SDK pattern: ${unit}`,
+    chain: [record], expectedState: 'valid', provenance: 'ruling-derived',
+    lines: 'L466, L523-529',
+    note: 'The draft states no grammar for a bounded spend unit; line 466 shows one example value. Both SDKs used to refuse anything outside an identifier pattern of their own, which made an SDK grammar into a protocol rejection. Ruled: any non-empty admissible string.',
+  })
+}
+
+{
+  const record = ruledBody((body) => { body.authority.values.required = ['urn:values:fairness', '\u4ef7\u503c'] })
+  pushChainCase({
+    id: 'AD-R-V01', title: 'Values identifiers outside the old SDK pattern',
+    chain: [record], expectedState: 'valid', provenance: 'ruling-derived',
+    lines: 'L547-549',
+    note: 'Line 547 calls values identifiers profile-defined, which is the opposite of a fixed grammar. Ruled: no SDK pattern judges them. Sorted and unique is unchanged and still checked.',
+  })
+}
+
+{
+  const record = ruledBody((body) => { body.authority.scope.grants = ['a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r'] })
+  pushChainCase({
+    id: 'AD-R-G01', title: 'A scope grant with more segments than the old SDK cap',
+    chain: [record], expectedState: 'valid', provenance: 'ruling-derived',
+    lines: 'L516-521',
+    note: 'Lines 516 to 518 state the whole rule: ASCII colon-separated segments, "*" covers all grants, and a wildcard otherwise only as the terminal segment. The segment character class and the caps on segment count and length were SDK choices. Ruled: only the stated requirement.',
+  })
+}
+
+// An unrecognised record_type is unsupported and is not judged by the v1 body schema.
+// These are force-signed: the issuer refuses to mint a record whose record_type it does
+// not recognise, which is the same ruling seen from the issuing side.
+{
+  const withExtra = mutate(BODY_R, (b: any) => { b.record_type = 'aps:authority-delegation:v2'; b.extensions = {} })
+  pushChainCase({
+    id: 'AD-R-T02', title: 'An unrecognised record_type whose body also carries an extra member',
+    chain: [forceSign(withExtra, 'principal')], expectedState: 'unsupported', expectedCode: 'UNSUPPORTED_RECORD_TYPE', expectedIndex: 0,
+    provenance: 'ruling-derived', lines: 'L424-425, L580-581',
+    note: 'The extra top-level member used to make this SCHEMA_INVALID, because an unrecognised record_type was still judged by the v1 body schema. Ruled: recognition precedes v1 schema evaluation, so a record this schema does not claim is returned unjudged and its body defects are not reported against a schema that is not its schema. AD-N-S06 covers the same record_type over an otherwise valid body.',
+  })
+  const nonString = mutate(BODY_R, (b: any) => { b.record_type = 5 })
+  pushChainCase({
+    id: 'AD-R-T03', title: 'A record_type that is not a string',
+    chain: [forceSign(nonString, 'principal')], expectedState: 'invalid', expectedCode: 'SCHEMA_INVALID', expectedIndex: 0,
+    provenance: 'ruling-derived', lines: 'L424-425, L580-581',
+    note: 'Ruled: a non-string record_type or version is invalid, because no recognition is possible at all. The pair with AD-N-S06 is what separates unsupported from invalid here.',
+  })
+}
+
+// Implementation ceilings are not conformance failures.
+{
+  // Force-signed: the issuer applies the same ceiling and refuses to mint it, which is
+  // the same answer seen from the issuing side.
+  const body = mutate(BODY_R, (b: any) => { b.subject = `did:example:${'x'.repeat(1100)}` })
+  pushChainCase({
+    id: 'AD-R-L01', title: 'An identifier longer than this implementation ceiling',
+    chain: [forceSign(body, 'principal')], expectedState: 'indeterminate', expectedCode: 'RESOURCE_LIMIT', expectedIndex: 0,
+    provenance: 'ruling-derived', lines: 'L426-427',
+    note: 'The draft states no maximum length for issuer, subject or verification_method. Ruled: an implementation ceiling says this implementation declines to judge the record, reported under its own code and mapped to indeterminate, never as a conformance failure.',
+  })
+}
+
+{
+  const overLong = Array.from({ length: 257 }, () => R)
+  pushChainCase({
+    id: 'AD-R-L02', title: 'A chain longer than this implementation record ceiling',
+    chain: overLong, expectedState: 'indeterminate', expectedCode: 'RESOURCE_LIMIT', expectedIndex: null,
+    provenance: 'ruling-derived', lines: 'L578-586',
+    note: 'The draft states no maximum chain length. Same ruling: the ceiling is this implementation declining to judge, not the protocol refusing the chain. A container that is not a chain at all stays invalid, which AD-N-S01 covers.',
+  })
+}
+
+// Section 3.3 is phase major over the whole chain.
+{
+  const tampered = JSON.parse(JSON.stringify(R))
+  tampered.delegation_id = `sha256:${'0'.repeat(64)}`
+  pushChainCase({
+    id: 'AD-R-P01', title: 'Two faults in different phases: the earlier listed phase decides',
+    chain: [R, tampered], expectedState: 'invalid', expectedCode: 'ID_MISMATCH', expectedIndex: 1,
+    provenance: 'ruling-derived', lines: 'L580-586',
+    note: 'Member 1 repeats member 0 identifier and also fails its own content address. Ruled: section 3.3 is phase major over the whole chain, delegation_id is phase 2 and duplicate identifiers is phase 4, so the id mismatch decides. A member-major pass could report either.',
+  })
+}
+
+{
+  const first = JSON.parse(JSON.stringify(R))
+  const second = JSON.parse(JSON.stringify(R))
+  first.delegation_id = `sha256:${'1'.repeat(64)}`
+  second.delegation_id = `sha256:${'2'.repeat(64)}`
+  pushChainCase({
+    id: 'AD-R-P02', title: 'Two faults inside one phase: the lowest member index wins',
+    chain: [first, second], expectedState: 'invalid', expectedCode: 'ID_MISMATCH', expectedIndex: 0,
+    provenance: 'ruling-derived', lines: 'L580-586',
+    note: 'Both members fail phase 2. Ruled: the lowest member index within the failing phase wins. Two faults inside one phase that the draft does not order have no normative winner, and this is not that case: the order here is by member index, which the ruling fixes.',
+  })
+}
+
+// Key resolution outcomes, section 2.5, each apart from the others.
+for (const [id, outcome, state, code] of [
+  ['AD-R-K01', 'not_found', 'indeterminate', 'KEY_NOT_FOUND'],
+  ['AD-R-K02', 'ambiguous', 'indeterminate', 'KEY_AMBIGUOUS'],
+  ['AD-R-K03', 'unreachable', 'indeterminate', 'KEY_UNREACHABLE'],
+  ['AD-R-K04', 'malformed', 'indeterminate', 'KEY_MATERIAL_MALFORMED'],
+  ['AD-R-K05', 'unsupported_scheme', 'unsupported', 'KEY_SCHEME_UNSUPPORTED'],
+] as const) {
+  pushChainCase({
+    id, title: `Key resolution outcome: ${outcome}`, chain: [R],
+    contextOverrides: { key_resolution: { mode: 'outcome', outcome } },
+    expectedState: state, expectedCode: code, expectedIndex: 0,
+    provenance: 'ruling-derived', lines: 'L360-369',
+    note: 'Lines 360 to 364 require a resolver to keep six outcomes apart; the draft does not map each to a verification state. Ruled: an unsupported identifier scheme is unsupported, the rest are indeterminate, each under its own code, and none is a signature failure because no signature check ran.',
+  })
+}
+
+{
+  pushChainCase({
+    id: 'AD-R-K06', title: 'Key material that is not a 32-byte Ed25519 key', chain: [R],
+    contextOverrides: { key_resolution: { mode: 'material', material: 'ab'.repeat(16) } },
+    expectedState: 'indeterminate', expectedCode: 'KEY_MATERIAL_MALFORMED', expectedIndex: 0,
+    provenance: 'ruling-derived', lines: 'L365-367',
+    note: 'The resolver named no outcome and returned 16 bytes. Material that is not a usable key must not reach the signature check, which returns false on a length mismatch and used to report SIGNATURE_INVALID for bytes nothing had checked. A well-formed key that did not sign the record is still SIGNATURE_INVALID, which AD-N-C07 covers.',
+  })
+}
 
 // -------------------------------------------------------------------------
 // Wire cases: parseAuthorityDelegationJson over raw JSON text
@@ -1876,13 +2032,21 @@ const provenance_definitions = {
     'and are recomputed independently by the cross-check script. For an expected state, the draft leaves the mapping ' +
     'open and the withheld list below says so; the case then records the state both SDKs return, and its derivation ' +
     'note says what is open.',
+  'ruling-derived':
+    'the draft names the case but does not fix its outcome, and the expected outcome comes from a ruling ' +
+    "recorded by the principal for this programme. The case's derivation note says which question it answers. " +
+    'These are the cases a later revision would have to state in normative text for the expectation to become ' +
+    'draft-derived.',
 }
 
 const conventions = {
   key_resolution:
     'The key resolver in a chain case\'s context is called with (issuer, verification_method, issued_at) and ' +
     'returns the public_key_hex of the context.keys entry whose issuer and verification_method both match, else ' +
-    'no key (TypeScript null, Python None).',
+    'no key (TypeScript null, Python None). A case that carries context.key_resolution overrides that: ' +
+    '{"mode":"outcome","outcome":...} makes the resolver answer with one of the section 2.5 outcomes instead of ' +
+    'a key, and {"mode":"material","material":"..."} makes it answer with that literal string, for the cases ' +
+    'that turn on how an answer is reported rather than on the chain.',
   trust:
     'context.trust of {"mode":"table","trusted_root_ids":[...]} accepts the chain head exactly when its ' +
     'delegation_id is listed; {"mode":"unavailable"} means the trust policy raises.',
@@ -1905,16 +2069,12 @@ const conventions = {
 }
 
 const withheld = [
-  { topic: 'Multi-fault chains', reason: 'Every chain negative changes exactly one thing in an otherwise valid chain. In AD-N-S08, AD-N-S09, AD-N-S10, AD-N-S11, AD-N-S12, AD-N-S13, AD-N-S53, AD-N-S55, AD-N-S56, AD-N-U08, AD-N-H01, AD-N-H02 and AD-N-H10, that one change necessarily fails more than one check; each of those cases\' own note names the other checks it cannot avoid also failing. Chains built from two independent faults are withheld instead, because the draft does not settle which failure decides when two unrelated checks fail together. That includes the precedence inside one record between an I-JSON failure and an unknown version (formerly AD-N-S68, which paired an unsupported version with a non-I-JSON subject and is now removed) or an unsupported facet profile (formerly AD-N-S62, which paired an unsupported scope profile with a non-I-JSON record and is now removed).' },
-  { topic: 'Spend unit grammar and wire number spelling (open question)', reason: 'A spend unit outside ^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$, and JSON number spellings such as 2.0 or 1e2 in wire input; whether the draft admits them is an open question.' },
-  { topic: 'An unknown record_type string: reported unsupported and still judged by the v1 schema', reason: 'A record_type naming some other string is unsupported (UNSUPPORTED_VERSION) but is still judged by the v1 body schema, unlike a recognised record_type paired with an unknown version, which is not. No rule states whether it should be judged.' },
-  { topic: 'A reserve naming an action_ref whose reservation was cancelled', reason: 'L621-622 say an identical retry is idempotent and conflicting reuse is rejected, and do not say which of those a retry after cancellation is. Both SDKs book a fresh reservation, checking every limit again, because a cancelled reservation holds nothing and reporting it as idempotent would name a reservation no counter holds; refusing it outright would be defensible too. No case pins the choice.' },
-  { topic: 'Key-resolution outcome structure', reason: 'not found, ambiguous, malformed, unreachable, unsupported scheme (L360-369), and which of the four verification states each one maps to: an open question. AD-N-C05 and AD-N-C06 cover a key the resolver does not return, labelled ts-conformant-regression for that reason, and no case here derives a state for the other outcomes.' },
+  { topic: 'Two faults inside one verification phase', reason: 'Section 3.3 is phase major over the whole root-to-leaf chain: the first failing listed phase determines the state and the code, and the lowest member index within it wins. That is ruled, and AD-R-P01 and AD-R-P02 pin it. What stays withheld is narrower: two faults inside ONE phase, which the draft does not order, have no normative winner, so no case here claims one. Every single-fault chain negative remains a one-change case; where one change necessarily fails more than one check, that case\'s own note names the others.' },
   { topic: 'Runtime reputation and unresolved action reversibility', reason: 'L542-545 and L566 are action-time rules, not chain verification.' },
   { topic: 'Revocation records and cascade completion', reason: 'Sections 3.5 and 3.5.1: no wire format is fixed and no implementation exists.' },
-  { topic: 'Grammars and limits the draft does not state', reason: 'Both the Python and TypeScript SDKs share these choices: at most 256 records per chain, 1 MiB of wire input, 1024 UTF-8 bytes per identifier, the scope segment grammar aps-hierarchical-v1, and the values identifier grammar aps-values-identifiers-v1. The two grammars reject values the draft text admits: line 516 says only that scope grants use ASCII colon-separated segments, and line 547 only that values identifiers are profile-defined. All five are provisional choices pending a protocol ruling, and no vector depends on any of them.' },
   { topic: "A child whose not_before is earlier than its parent's not_before, as a single fault", reason: "Impossible: the child's not_before is not before its issued_at, which is not before the parent's not_before." },
   { topic: "Issuer refusal when the parent's delegation_id does not match its content", reason: "The draft requires the issuer to verify the parent's signature and temporal validity (L696-698); it does not name the content address. Both the Python and TypeScript issuers recompute the parent's delegation_id and refuse with ID_MISMATCH when it does not match; no vector, because the draft names only signature and temporal validity, not the content address." },
+  { topic: 'Resolved and withdrawn from this list', reason: 'Five topics were withheld here and are now ruled, so this file carries cases for them instead, labelled ruling-derived: the spend unit grammar and the wire number spelling; an unknown record_type string; the key-resolution outcome structure; the grammars and implementation ceilings the draft does not state; and a reserve naming a cancelled action_ref. Each is named in the case notes that replaced it.' },
 ]
 
 const document = {

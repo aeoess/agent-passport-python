@@ -77,6 +77,11 @@ _SPECIAL: dict[tuple[str, str, int | None], tuple[bool, bool]] = {
     ("AD-N-S55", "chain", 0): (False, True),
     ("AD-N-S56", "chain", 0): (True, False),
     ("AD-I08", "parent", None): (True, False),
+    # AD-R-P02 gives both members a delegation_id that is not their content address, to
+    # put two faults in one phase. The signature covers the record including
+    # delegation_id, so neither signature verifies either; both are deliberate.
+    ("AD-R-P02", "chain", 0): (False, False),
+    ("AD-R-P02", "chain", 1): (False, False),
 }
 
 

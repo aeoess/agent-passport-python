@@ -75,10 +75,34 @@ def _revocation(spec, chain):
 def test_vector_file_shape():
     counts = _VECTORS["counts"]
     assert len(_CASES) == counts["total"]
-    assert {case["expected_provenance"] for case in _CASES} <= {"draft-derived", "ts-conformant-regression"}
+    assert {case["expected_provenance"] for case in _CASES} <= {
+        "draft-derived",
+        "ts-conformant-regression",
+        "ruling-derived",
+    }
+    # A ruling-derived case is one the draft names without fixing its outcome. The count
+    # is asserted so that silently relabelling one as draft-derived breaks a test.
+    assert counts["by_provenance"]["ruling-derived"] == 18
     for kind, number in counts["by_kind"].items():
         assert len(_by_kind(kind)) == number, kind
     assert len({case["id"] for case in _CASES}) == len(_CASES)
+
+
+def _verification_key(context):
+    """The key resolver a case asks for.
+
+    The default consults the case's key table. A case that carries key_resolution
+    overrides it: "outcome" answers with one of the section 2.5 resolution outcomes
+    (draft lines 360-364) instead of a key, and "material" answers with a literal
+    string, for the cases that turn on how an answer is reported rather than on the
+    chain itself.
+    """
+    spec = context.get("key_resolution") or {"mode": "table"}
+    if spec["mode"] == "outcome":
+        return lambda issuer, method, issued_at: {"outcome": spec["outcome"]}
+    if spec["mode"] == "material":
+        return lambda issuer, method, issued_at: spec["material"]
+    return _key_resolver(context["keys"])
 
 
 @pytest.mark.parametrize("case", _by_kind("chain"), ids=[c["id"] for c in _by_kind("chain")])
@@ -87,7 +111,7 @@ def test_chain(case):
     result = verify_authority_delegation_chain(
         case["chain"],
         now=context["now"],
-        resolve_verification_key=_key_resolver(context["keys"]),
+        resolve_verification_key=_verification_key(context),
         trust_root=_trust(context["trust"]),
         resolve_revocation=_revocation(context["revocation"], case["chain"]),
     )

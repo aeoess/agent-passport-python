@@ -33,6 +33,7 @@ issuing anything.
 from __future__ import annotations
 
 import copy
+import re
 import secrets
 
 from .canonical import (
@@ -44,7 +45,12 @@ from .canonical import (
 )
 from .compare import compare_authority
 from .schema import is_canonical_timestamp, validate_authority_delegation_shape
-from .types import AuthorityDelegationError, AuthorityFailure
+from .types import AuthorityDelegationError, AuthorityFailure, KEY_RESOLUTION_OUTCOME_CODES
+
+# Well-formed Ed25519 public key material: 32 bytes as hexadecimal. A resolver that
+# hands back anything else has produced structurally malformed material, and the
+# signature check must not run on it (see verify.py's identical _KEY_MATERIAL for why).
+_KEY_MATERIAL = re.compile(r"^[0-9a-fA-F]{64}$")
 
 
 def _assert_bare_body(body) -> None:
@@ -195,14 +201,21 @@ def issue_sub_authority_delegation(
     Checks run in this order, raising AuthorityDelegationError at the first
     one that fails: `now` is a canonical UTC-millisecond timestamp; the
     parent's shape; the parent's delegation_id against its own body; the
-    parent's signing key resolves and its signature verifies; the parent is
-    valid at `now`; the parent's revocation resolves to exactly "active";
-    the child body is a bare object carrying neither delegation_id nor
-    signature (see _assert_bare_body); the child body's shape (after nonce
-    generation); the child's parent_delegation_id; the child's issuer
-    against the parent's subject; the child's issued_at against the
-    parent's validity window; and the seven-facet attenuation of the child
-    under the parent.
+    parent's signing key resolves to a well-formed key and its signature
+    verifies. A resolver may answer with one of the draft section 2.5
+    outcomes (see types.KEY_RESOLUTION_OUTCOME_CODES) instead of a key
+    string or None; this function's coded error then names that outcome
+    (KEY_SCHEME_UNSUPPORTED, KEY_NOT_FOUND, KEY_AMBIGUOUS, KEY_UNREACHABLE,
+    or KEY_MATERIAL_MALFORMED), falling back to KEY_RESOLUTION_FAILED when
+    the resolver answered with nothing usable and said why. A resolved
+    string that is not 32 bytes of hexadecimal is also KEY_MATERIAL_MALFORMED,
+    and does not reach the signature check. Then: the parent is valid at
+    `now`; the parent's revocation resolves to exactly "active"; the child
+    body is a bare object carrying neither delegation_id nor signature (see
+    _assert_bare_body); the child body's shape (after nonce generation); the
+    child's parent_delegation_id; the child's issuer against the parent's
+    subject; the child's issued_at against the parent's validity window; and
+    the seven-facet attenuation of the child under the parent.
 
     Once the parent has passed its shape check it is copied, and every check
     from there on reads that copy. `resolve_revocation` is handed a copy of
@@ -249,11 +262,25 @@ def issue_sub_authority_delegation(
         parent_key = resolve_verification_key(parent["issuer"], parent["verification_method"], parent["issued_at"])
     except Exception:
         parent_key = None
-    if parent_key is None:
+    # The child issuer applies the same section 2.5 distinction the chain verifier
+    # does (see verify.py's _key_resolution_failure): it refuses either way, but its
+    # coded error names the outcome its resolver gave, rather than the generic
+    # KEY_RESOLUTION_FAILED for every non-string answer.
+    if type(parent_key) is not str:
+        outcome = parent_key.get("outcome") if type(parent_key) is dict else None
+        code = KEY_RESOLUTION_OUTCOME_CODES.get(outcome) if type(outcome) is str else None
+        code = code or "KEY_RESOLUTION_FAILED"
         raise AuthorityDelegationError(
-            "KEY_RESOLUTION_FAILED",
+            code,
             (AuthorityFailure(
-                code="KEY_RESOLUTION_FAILED", message="parent issuer verification key could not be resolved",
+                code=code, message="parent issuer verification key could not be resolved",
+            ),),
+        )
+    if not _KEY_MATERIAL.fullmatch(parent_key):
+        raise AuthorityDelegationError(
+            "KEY_MATERIAL_MALFORMED",
+            (AuthorityFailure(
+                code="KEY_MATERIAL_MALFORMED", message="parent issuer key material is structurally malformed",
             ),),
         )
     if not verify_authority_delegation_signature(parent, parent_key):
