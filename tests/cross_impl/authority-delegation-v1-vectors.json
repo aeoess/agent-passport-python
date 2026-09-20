@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6",
   "generated_from": {
     "repository": "agent-passport-system",
-    "commit": "cde04a337fdf772fcbf9cf652bf37771ebb33e6b"
+    "commit": "7c16f0f6e7386e4618d69d0d505fdb27a618a914"
   },
   "provenance_definitions": {
     "draft-derived": "the expected state, outcome or rejection follows from the draft text, directly or by an analogy the case's derivation note states, with RFC 3339 or RFC 7493 where cited; TypeScript output was not consulted to decide it.",
