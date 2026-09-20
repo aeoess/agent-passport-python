@@ -582,6 +582,30 @@ def test_serialized_route_reports_a_resource_ceiling_as_indeterminate():
     assert bad_config["errors"][0] == "parse_error"
 
 
+def test_a_deeply_nested_document_never_escapes_or_reads_as_malformed():
+    """A stack or decoder ceiling is this implementation stopping, not a bad artifact.
+
+    The depth walk used to recurse once per nesting level, so a valid document nested past
+    the interpreter's recursion limit raised an uncaught RecursionError out of the public
+    entry point when a caller raised max_depth. It now walks iteratively, and a decoder
+    recursion ceiling, reachable on interpreters whose json module still recurses, carries
+    the resource-limit class rather than reading as invalid JSON.
+    """
+    for depth in (1000, 5000, 50000):
+        raw = '{"a":' * depth + "1" + "}" * depth
+        result = verify_receipt_v1_serialized(raw, _resolve, max_depth=10_000_000)
+        # Parsed through to the validator, which rejects it for what it actually is: a
+        # document that is not a receipt. Never a parse failure, never an escape.
+        assert result["status"] == "invalid"
+        assert result["errors"][0] != "parse_error"
+        assert "RESOURCE_LIMIT" not in result["errors"]
+
+    # The configured ceiling still reports itself, and still on the resource axis.
+    at_ceiling = verify_receipt_v1_serialized('{"a":' * 200 + "1" + "}" * 200, _resolve)
+    assert at_ceiling["status"] == "indeterminate"
+    assert at_ceiling["errors"][0] == "RESOURCE_LIMIT"
+
+
 # --- rule A: only required signatures decide a receipt's state -------------------------
 # Draft line 1041 has a verifier verify every REQUIRED signature, and line 999 names one:
 # "one signature MUST be from issuer". Draft lines 1003-1009 compute receipt_id with
