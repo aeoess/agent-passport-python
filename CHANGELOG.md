@@ -1,14 +1,89 @@
 # Changelog
 
-## Unreleased
+## 4.0.0 (2026-09-20)
 
-### Added
-- **`compute_action_ref_v2`, `compute_payload_ref_v1` and the other entry points in `src/agent_passport/v2/action_reference/v2.py`** (profile `aps-action-ref-v2`): the draft-pidlisnyi-aps-03 section 4.1 native action reference.
+Reconciles three surfaces against draft-pidlisnyi-aps-03: action references,
+AuthorityDelegationV1 and ReceiptV1. Major, because previously accepted inputs can now
+return `invalid`, `unsupported` or `indeterminate`, so a caller that branches on
+verification state can observe different behaviour without changing its own code. This is
+not a claim of complete draft-03 implementation, and it does not close the surface gap with
+the TypeScript SDK. See the reachability section below.
+
+### New
+
+- **`compute_action_ref_v2`, `compute_payload_ref_v1` and the other entry points in `src/agent_passport/v2/action_reference/v2.py`** (profile `aps-action-ref-v2`): the draft-pidlisnyi-aps-03 section 4.1 native action reference. The existing `compute_action_ref` stays the pre-draft compatibility digest over a different preimage and is not relabelled as either draft-03 construction.
 - **`compute_external_action_ref_v1`** (`src/agent_passport/external_action_ref.py`, label `action-ref-v1-jcs-sha256`): the section 4.2 external correlation form.
 - **`verify_authority_delegation_chain`, `issue_authority_delegation`, `issue_sub_authority_delegation` and the rest of `src/agent_passport/v2/authority_delegation/`**: AuthorityDelegationV1, the draft-pidlisnyi-aps-03 section 3 delegated authority record, with chain verification, issuance that checks the parent before signing a child, strict wire parsing and an in-memory spend ledger. Distinct from the legacy delegation functions, which are unchanged.
+- `verify_receipt_v1_serialized`, which rejects duplicate object members. `json.loads`
+  followed by `verify_receipt_v1` cannot detect them, because by then the later member has
+  already overwritten the earlier one.
 
 ### Corrected
+
 - The 2.8.0 entry below described `compute_action_ref` as the native APS `action_ref` of draft-pidlisnyi-aps-03 section 4.1. That was wrong: `compute_action_ref` is a pre-draft-03 compatibility digest, unchanged by this release, and must not be presented as an `action_ref` or as `action-ref-v1-jcs-sha256`.
+
+### Breaking
+
+- Receipt verification applies the section 5.3 stage rules. `verify_receipt_v1` and
+  `verify_receipt_v1_serialized` return `invalid` for a record that breaks its own stage and
+  `unsupported` for a `receipt_type` outside section 5.3.
+- `delegation_ref` must be `sha256:` followed by 64 lowercase hex. A bare digest, accepted
+  before by both the envelope validator and the issuer, is refused.
+- Only required signatures decide the aggregate receipt state. A non-required signature
+  appended by a third party can no longer flip a conforming receipt. Because signatures sit
+  outside the `receipt_id` preimage, such an append does not change `receipt_id`. A
+  malformed signature descriptor still makes the envelope invalid.
+- Key resolution is reported on its own axis, with unsupported scheme as `unsupported` and
+  not found, ambiguous, malformed key material and unreachable resolution as distinct
+  `indeterminate` outcomes. Malformed key material no longer falls through to
+  `signature_invalid`.
+- The serialized verifier's own nesting-depth and wire-size ceilings return `indeterminate`
+  with the code `RESOURCE_LIMIT` rather than `invalid` with `parse_error`. Malformed input
+  stays `invalid` with `parse_error`, and an unusable limit argument remains an argument
+  error.
+- An artifact under another envelope profile is `unsupported`.
+- A receipt string containing a Unicode noncharacter is refused. Section 4.1 also rejects
+  Unicode noncharacters, and an empty `scope_required` is refused unless applicable profile
+  context permits it.
+- Trust and revocation callbacks receive a copy of the record rather than the caller's own
+  dict, so a callback cannot mutate what later steps inspect and cannot identity-compare
+  against what it passed in.
+- A reservation made again after cancellation is a fresh reservation and rechecks its
+  limits. Container subclasses, inexact types, cycles and integers beyond binary64 range are
+  `SCHEMA_INVALID` on the verifier and issuer paths, and the ledger rejects invalid
+  reservation input with `CONFLICT`.
+
+### Fixed
+
+- Year 0000 is accepted and the timestamp check no longer depends on the platform's
+  `strftime` zero-padding, which closes a silent divergence from the TypeScript SDK.
+- The SDK's own recursive walks over receipt content, strict I-JSON validation,
+  canonicalization, the snapshot copy and the depth walk, are iterative, so deep input no
+  longer escapes as `RecursionError`. On interpreters whose JSON decoder still recurses,
+  decoder recursion exhaustion is reported as `indeterminate` with `RESOURCE_LIMIT` rather
+  than as malformed input. The decoder itself is not made iterative.
+
+### Unchanged
+
+Timestamp handling accepts second 60 only at 23:59 on the last calendar day of a month, and
+no leap-second table is consulted. The new action-reference paths match the TypeScript
+implementation byte for byte on the shared vectors.
+
+### What a valid result does not establish
+
+A structurally valid stage result does not bind `delegation_ref` to a supplied chain,
+recompute `action_ref`, resolve `prev`, recompute `effect_ref`, or perform section 5.5
+evidence resolution.
+
+### Public reachability, and where this differs from the TypeScript SDK
+
+`agent_passport.v2.authority_delegation` exports 36 names and the package root re-exports
+21, including both issuers, the verifiers, the parser, the ledger and `compare_authority`.
+The action-reference constructions are root-exported. The ReceiptV1 surface is not:
+`verify_receipt_v1`, `verify_receipt_v1_serialized` and the stage validator are reachable
+under `agent_passport.receipt_core` only. There is no composite verifier here, so the
+decision-binding check exists in TypeScript alone.
+
 
 ## 3.0.1 (2026-09-04)
 
