@@ -231,18 +231,10 @@ def canonicalize_for_write(obj, path: str = "$") -> str:
     return json.dumps(obj, ensure_ascii=False)
 
 
-def canonicalize_jcs(obj) -> str:
-    """RFC 8785 JSON Canonicalization Scheme (strict).
-
-    Unlike canonicalize() above, this preserves null values inside objects.
-    Used by Mutual Authentication v1 and other modules that need strict
-    RFC 8785 compatibility with the TypeScript SDK's canonicalizeJCS().
-
-    Args:
-        obj: Any JSON-serializable Python object.
-
-    Returns:
-        RFC 8785 canonical JSON string.
+def _canonicalize_jcs_scalar(obj):
+    """The canonicalize_jcs formatting for anything that is not a list or a
+    dict, or None when obj is a list or a dict. Split out of canonicalize_jcs
+    so the iterative walk below can call it once per value without recursing.
     """
     if obj is None:
         return "null"
@@ -278,22 +270,103 @@ def canonicalize_jcs(obj) -> str:
     if isinstance(obj, str):
         _assert_no_lone_surrogate(obj)
         return json.dumps(obj, ensure_ascii=False)
-    if isinstance(obj, list):
-        return "[" + ",".join(canonicalize_jcs(item) for item in obj) + "]"
-    if isinstance(obj, dict):
-        # Preserve null values in objects (unlike legacy canonicalize)
+    if isinstance(obj, list) or isinstance(obj, dict):
+        return None
+    return json.dumps(obj, ensure_ascii=False)
+
+
+class _JcsListFrame:
+    __slots__ = ("items", "index", "parts")
+
+    def __init__(self, items):
+        self.items = items
+        self.index = 0
+        self.parts: list[str] = []
+
+
+class _JcsDictFrame:
+    __slots__ = ("keys", "obj", "index", "parts", "pending_key")
+
+    def __init__(self, obj):
+        # Preserve null values in objects (unlike legacy canonicalize).
         # Validate keys before sorting: _canonical_keys encodes each key as
-        # utf-16-be, which itself raises on a lone surrogate. Check first so the
-        # failure is the clean typed error, not a raw UnicodeEncodeError.
+        # utf-16-be, which itself raises on a lone surrogate. Check first so
+        # the failure is the clean typed error, not a raw UnicodeEncodeError.
         for key in obj.keys():
             _assert_no_lone_surrogate(key)
-        pairs = []
-        for key in _canonical_keys(obj.keys()):
-            pairs.append(
-                json.dumps(key, ensure_ascii=False) + ":" + canonicalize_jcs(obj[key])
-            )
-        return "{" + ",".join(pairs) + "}"
-    return json.dumps(obj, ensure_ascii=False)
+        self.keys = _canonical_keys(obj.keys())
+        self.obj = obj
+        self.index = 0
+        self.parts: list[str] = []
+        self.pending_key = None
+
+
+def canonicalize_jcs(obj) -> str:
+    """RFC 8785 JSON Canonicalization Scheme (strict).
+
+    Unlike canonicalize() above, this preserves null values inside objects.
+    Used by Mutual Authentication v1 and other modules that need strict
+    RFC 8785 compatibility with the TypeScript SDK's canonicalizeJCS().
+
+    Iterative, with an explicit stack of open list or dict frames, rather
+    than one Python call per nesting level. A receipt whose result nests
+    several hundred levels deep exhausted the call stack in the previous,
+    recursive form, before the receipt ever reached a schema check. Every
+    list is walked in element order and every dict in the same canonical key
+    order `_canonical_keys` already produced, so the assembled string is
+    identical to what the recursive form built.
+
+    Args:
+        obj: Any JSON-serializable Python object.
+
+    Returns:
+        RFC 8785 canonical JSON string.
+    """
+    root = _canonicalize_jcs_scalar(obj)
+    if root is not None:
+        return root
+
+    stack: list = [_JcsListFrame(obj) if isinstance(obj, list) else _JcsDictFrame(obj)]
+    result_from_child: str | None = None
+
+    while stack:
+        frame = stack[-1]
+        if isinstance(frame, _JcsListFrame):
+            if result_from_child is not None:
+                frame.parts.append(result_from_child)
+                result_from_child = None
+            if frame.index >= len(frame.items):
+                stack.pop()
+                result_from_child = "[" + ",".join(frame.parts) + "]"
+                continue
+            item = frame.items[frame.index]
+            frame.index += 1
+            scalar = _canonicalize_jcs_scalar(item)
+            if scalar is not None:
+                frame.parts.append(scalar)
+            else:
+                stack.append(_JcsListFrame(item) if isinstance(item, list) else _JcsDictFrame(item))
+        else:
+            if result_from_child is not None:
+                frame.parts.append(json.dumps(frame.pending_key, ensure_ascii=False) + ":" + result_from_child)
+                frame.pending_key = None
+                result_from_child = None
+            if frame.index >= len(frame.keys):
+                stack.pop()
+                result_from_child = "{" + ",".join(frame.parts) + "}"
+                continue
+            key = frame.keys[frame.index]
+            frame.index += 1
+            value = frame.obj[key]
+            scalar = _canonicalize_jcs_scalar(value)
+            if scalar is not None:
+                frame.parts.append(json.dumps(key, ensure_ascii=False) + ":" + scalar)
+            else:
+                frame.pending_key = key
+                stack.append(_JcsListFrame(value) if isinstance(value, list) else _JcsDictFrame(value))
+
+    assert result_from_child is not None
+    return result_from_child
 
 
 def canonicalize_jcs_for_write(obj, path: str = "$") -> str:

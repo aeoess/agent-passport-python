@@ -25,10 +25,12 @@ what is admitted, never what is hashed: no marker enters the preimage, so
 the digest of a permitted empty array is the digest of that input. Known
 differences from the TypeScript SDK: the order of checks is similar but not
 identical, so an input with several faults can be reported under a
-different code; values nested beyond this implementation's recursion limit
-are rejected with ``nesting_limit``. Canonicalization goes through the
-strict new-write I-JSON JCS in :mod:`agent_passport.receipt_core.jcs`, not
-the legacy canonicalizer.
+different code. Canonicalization goes through the strict new-write I-JSON
+JCS in :mod:`agent_passport.receipt_core.jcs`, not the legacy canonicalizer;
+that module's validator and canonicalizer are iterative, not recursive, so
+a deeply nested value is processed rather than rejected. The ``nesting_limit``
+code below is kept for a future engine limit this port does not defend
+against today, not for ordinary deep nesting.
 
 Also rejects Unicode noncharacters (U+FDD0 through U+FDEF, and every code
 point whose low 16 bits are 0xFFFE or 0xFFFF) in any object key or string
@@ -106,8 +108,10 @@ class ActionReferenceError(ValueError):
     ``bad_timestamp``, ``scope_not_array``, ``scope_not_canonical``,
     ``lone_surrogate``, ``non_i_json``, ``empty_scope_required``,
     ``nesting_limit``, so a caller can branch on the failure without parsing
-    the message. ``nesting_limit`` is an implementation limit of this Python
-    port, not a rule of the draft; the TypeScript SDK accepts deeper values.
+    the message. ``nesting_limit`` is not a rule of the draft; it names a
+    resource ceiling this port might one day need, not one it has today,
+    since :mod:`agent_passport.receipt_core.jcs` validates and canonicalizes
+    iteratively rather than recursively.
 
     Subclasses ``ValueError`` so an existing fail-closed handler that catches
     ``ValueError`` around validation or canonicalization keeps working.
