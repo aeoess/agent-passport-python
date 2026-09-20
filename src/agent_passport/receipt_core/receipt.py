@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import copy
 import hashlib
 import re
 from collections.abc import Iterable
 
 from ..crypto import sign, verify
-from .jcs import assert_exact_keys, parse_strict_i_json, strict_jcs
+from .jcs import assert_exact_keys, parse_strict_i_json, snapshot_i_json_shape, strict_jcs
 
 RECEIPT_ID_TAG = "APS-RECEIPT-ID-V1"
 RECEIPT_SIG_TAG = "APS-RECEIPT-SIG-V1"
@@ -67,7 +66,7 @@ def _is_exact_utc_milliseconds(value: str) -> bool:
 
 
 def _without(receipt: dict, *keys: str) -> dict:
-    return {key: copy.deepcopy(value) for key, value in receipt.items() if key not in keys}
+    return {key: snapshot_i_json_shape(value) for key, value in receipt.items() if key not in keys}
 
 
 def receipt_id_payload_v1(receipt: dict) -> str:
@@ -79,7 +78,7 @@ def compute_receipt_id_v1(receipt: dict) -> str:
 
 
 def receipt_signature_payload_v1(receipt: dict, descriptor: dict) -> str:
-    form = {"receipt": _without(receipt, "signatures"), "signer": copy.deepcopy(descriptor)}
+    form = {"receipt": _without(receipt, "signatures"), "signer": snapshot_i_json_shape(descriptor)}
     return f"{RECEIPT_SIG_TAG}\0{strict_jcs(form)}"
 
 
@@ -211,7 +210,7 @@ def validate_receipt_v1(receipt: dict, require_values: bool = True) -> None:
 def create_receipt_v1(fields: dict, signers: list[dict]) -> dict:
     if not signers:
         raise ValueError("ReceiptV1: at least one signer")
-    receipt = copy.deepcopy(fields)
+    receipt = snapshot_i_json_shape(fields)
     receipt["evidence_refs"] = sorted(receipt["evidence_refs"], key=lambda ref: (ref["artifact_type"].encode("utf-8"), ref["sha256"].encode("utf-8")))
     descriptors = sorted(signers, key=lambda item: (item["signer"].encode("utf-8"), item["key_id"].encode("utf-8")))
     receipt["receipt_id"] = "0" * 64
