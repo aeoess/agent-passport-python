@@ -594,11 +594,19 @@ def test_a_deeply_nested_document_never_escapes_or_reads_as_malformed():
     for depth in (1000, 5000, 50000):
         raw = '{"a":' * depth + "1" + "}" * depth
         result = verify_receipt_v1_serialized(raw, _resolve, max_depth=10_000_000)
-        # Parsed through to the validator, which rejects it for what it actually is: a
-        # document that is not a receipt. Never a parse failure, never an escape.
-        assert result["status"] == "invalid"
+        # The invariant, on every supported interpreter: no escape, and runtime exhaustion is
+        # never reported as malformed input.
         assert result["errors"][0] != "parse_error"
-        assert "RESOURCE_LIMIT" not in result["errors"]
+        if result["status"] == "indeterminate":
+            # The decoder reached its own recursion ceiling before the document could be
+            # walked. Mapped to the resource axis, which is the intended behaviour on
+            # interpreters whose json module still recurses.
+            assert result["errors"][0] == "RESOURCE_LIMIT"
+        else:
+            # The decoder got through, so the document reached the validator and is rejected
+            # for what it actually is: not a receipt.
+            assert result["status"] == "invalid"
+            assert "RESOURCE_LIMIT" not in result["errors"]
 
     # The configured ceiling still reports itself, and still on the resource axis.
     at_ceiling = verify_receipt_v1_serialized('{"a":' * 200 + "1" + "}" * 200, _resolve)
