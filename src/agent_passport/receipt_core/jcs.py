@@ -91,6 +91,109 @@ def assert_i_json(value, path: str = "$", ancestors: set[int] | None = None) -> 
             visit(sub, f"{parent_path}.{key}")
 
 
+class _SnapshotListFrame:
+    __slots__ = ("identity", "items", "index", "out")
+
+    def __init__(self, items: list) -> None:
+        self.identity = id(items)
+        self.items = items
+        self.index = 0
+        self.out: list = []
+
+
+class _SnapshotDictFrame:
+    __slots__ = ("identity", "keys", "obj", "index", "out", "pending_key")
+
+    def __init__(self, obj: dict) -> None:
+        self.identity = id(obj)
+        self.keys = list(obj.keys())
+        self.obj = obj
+        self.index = 0
+        self.out: dict = {}
+        self.pending_key: object = None
+
+
+_SNAPSHOT_MISSING = object()
+
+
+def snapshot_i_json_shape(value):
+    """Return an independent copy of `value`, rebuilding only the container
+    shapes I-JSON admits (exact `list` and exact `dict`). Anything else,
+    including a `list` or `dict` subclass, is returned by reference rather
+    than copied: it is not one of the shapes this function reconstructs, the
+    same way `assert_i_json`'s exact-type dispatch does not walk into it, and
+    whatever calls this alongside `assert_i_json` rejects it regardless, so
+    aliasing it here changes nothing observable.
+
+    Iterative, with an explicit stack, in place of `copy.deepcopy`, which
+    recurses once per nesting level. A receipt or supporting record whose
+    result or body nests a few hundred levels deep overflowed the call stack
+    here, the same way `assert_i_json` and `canonicalize_jcs` did before they
+    were made iterative, and independently of that fix: this function runs
+    before either of them in `receipt_core.receipt.create_receipt_v1`, and
+    after both in `receipt_id_payload_v1` and its neighbours, but never
+    through them.
+
+    Detects a genuine cycle (a container that contains itself, directly or
+    through another container) the same way `assert_i_json` does, and raises
+    the same `IJsonValidationError`: a cyclic value was always going to be
+    rejected by the I-JSON check that runs beside every caller of this
+    function, so this only moves where that rejection happens, never what it
+    is.
+    """
+    if type(value) not in (list, dict):
+        return value
+    ancestors: set[int] = set()
+    root_frame = _SnapshotListFrame(value) if type(value) is list else _SnapshotDictFrame(value)
+    ancestors.add(root_frame.identity)
+    stack: list = [root_frame]
+    result_from_child = _SNAPSHOT_MISSING
+    while stack:
+        frame = stack[-1]
+        if isinstance(frame, _SnapshotListFrame):
+            if result_from_child is not _SNAPSHOT_MISSING:
+                frame.out.append(result_from_child)
+                result_from_child = _SNAPSHOT_MISSING
+            if frame.index >= len(frame.items):
+                stack.pop()
+                ancestors.discard(frame.identity)
+                result_from_child = frame.out
+                continue
+            item = frame.items[frame.index]
+            frame.index += 1
+            if type(item) in (list, dict):
+                item_id = id(item)
+                if item_id in ancestors:
+                    raise IJsonValidationError("$: cyclic value")
+                ancestors.add(item_id)
+                stack.append(_SnapshotListFrame(item) if type(item) is list else _SnapshotDictFrame(item))
+            else:
+                frame.out.append(item)
+        else:
+            if result_from_child is not _SNAPSHOT_MISSING:
+                frame.out[frame.pending_key] = result_from_child
+                frame.pending_key = None
+                result_from_child = _SNAPSHOT_MISSING
+            if frame.index >= len(frame.keys):
+                stack.pop()
+                ancestors.discard(frame.identity)
+                result_from_child = frame.out
+                continue
+            key = frame.keys[frame.index]
+            frame.index += 1
+            item = frame.obj[key]
+            if type(item) in (list, dict):
+                item_id = id(item)
+                if item_id in ancestors:
+                    raise IJsonValidationError("$: cyclic value")
+                ancestors.add(item_id)
+                frame.pending_key = key
+                stack.append(_SnapshotListFrame(item) if type(item) is list else _SnapshotDictFrame(item))
+            else:
+                frame.out[key] = item
+    return result_from_child
+
+
 def strict_jcs(value) -> str:
     assert_i_json(value)
     return canonicalize_jcs(value)

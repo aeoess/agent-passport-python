@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import copy
 from datetime import datetime, timezone
 import hashlib
 import re
 
 from ..crypto import sign, verify
-from .jcs import assert_exact_keys, strict_jcs
+from .jcs import assert_exact_keys, snapshot_i_json_shape, strict_jcs
 
 SUPPORTING_RECORD_ID_TAG = "APS-SUPPORTING-RECORD-ID-V1"
 SUPPORTING_RECORD_SIG_TAG = "APS-SUPPORTING-RECORD-SIG-V1"
@@ -32,7 +31,7 @@ def _is_exact_utc_milliseconds(value: str) -> bool:
 
 
 def _without(record: dict, *keys: str) -> dict:
-    return {key: copy.deepcopy(value) for key, value in record.items() if key not in keys}
+    return {key: snapshot_i_json_shape(value) for key, value in record.items() if key not in keys}
 
 
 def supporting_record_id_payload_v1(record: dict) -> str:
@@ -70,7 +69,7 @@ def validate_supporting_record_v1(record: dict, require_crypto: bool = True) -> 
 
 
 def create_supporting_record_v1(fields: dict, private_key: str) -> dict:
-    record = copy.deepcopy(fields)
+    record = snapshot_i_json_shape(fields)
     record.update({"record_id": "0" * 64, "sig": ""})
     validate_supporting_record_v1(record, False)
     record["record_id"] = compute_supporting_record_id_v1(record)
@@ -198,7 +197,7 @@ def build_evidence_bundle_proof_v2(entries: list[dict], member_id: str) -> dict:
         level = next_level
     return {
         "profile": "aps-evidence-proof-v2",
-        "member": copy.deepcopy(entries[leaf_index]),
+        "member": snapshot_i_json_shape(entries[leaf_index]),
         "leaf_index": leaf_index,
         "leaf_count": len(entries),
         "path": path,
