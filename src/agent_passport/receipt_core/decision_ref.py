@@ -45,7 +45,9 @@ def compute_decision_ref_v1(value: dict) -> str:
     return _sha256_hex(f"{DECISION_REF_TAG}\0{strict_jcs(value)}")
 
 
-def normalize_core_decision_output_v1(value: dict) -> dict:
+def _assert_core_decision_output_shape_v1(value: dict) -> None:
+    """The five-member shape of CoreDecisionOutputV1, draft lines 1074-1091, everything
+    except the canonical form of the constraints array. Both entry points below run this."""
     keys = {"profile", "verdict", "effective_authority_ref", "constraints", "valid_until"}
     assert_exact_keys(value, keys, keys, "CoreDecisionOutputV1")
     strict_jcs(value)
@@ -55,6 +57,7 @@ def normalize_core_decision_output_v1(value: dict) -> dict:
     if verdict not in {"permit", "deny", "narrow"}:
         raise ValueError("CoreDecisionOutputV1: verdict")
     effective = value["effective_authority_ref"]
+    # isinstance checked before the pattern: a non-string must not reach HEX64.fullmatch.
     if effective is not None and (not isinstance(effective, str) or not HEX64.fullmatch(effective)):
         raise ValueError("CoreDecisionOutputV1: effective_authority_ref")
     if verdict == "deny" and effective is not None:
@@ -70,7 +73,37 @@ def normalize_core_decision_output_v1(value: dict) -> dict:
             raise ValueError("CoreDecisionOutputV1: deny requires null valid_until")
     elif not isinstance(valid_until, str) or not _is_exact_utc_milliseconds(valid_until):
         raise ValueError("CoreDecisionOutputV1: permit/narrow require valid_until as exact UTC milliseconds")
-    normalized = sorted({unicodedata.normalize("NFC", item) for item in constraints})
+
+
+def validate_core_decision_output_v1(value: dict) -> dict:
+    """Validate a CoreDecisionOutputV1 exactly as received, repairing nothing.
+
+    Draft line 1086 says constraints is a duplicate-free array of NFC strings sorted by
+    UTF-8 bytes; section 5.6 makes a structural failure invalid, so a received array that
+    is unsorted, duplicated, or not in NFC is rejected here rather than quietly repaired.
+    Lines 822-824 state the same principle for the other canonical array in this protocol.
+
+    normalize_core_decision_output_v1 keeps repairing, for the issuing side, where the
+    caller is building the value it is about to sign.
+    """
+    _assert_core_decision_output_shape_v1(value)
+    constraints = value["constraints"]
+    previous = None
+    for index, item in enumerate(constraints):
+        if unicodedata.normalize("NFC", item) != item:
+            raise ValueError(f"CoreDecisionOutputV1: constraints[{index}] is not in NFC")
+        if previous is not None:
+            if previous == item:
+                raise ValueError("CoreDecisionOutputV1: duplicate constraint")
+            if previous.encode("utf-8") > item.encode("utf-8"):
+                raise ValueError("CoreDecisionOutputV1: constraints not sorted by UTF-8 bytes")
+        previous = item
+    return value
+
+
+def normalize_core_decision_output_v1(value: dict) -> dict:
+    _assert_core_decision_output_shape_v1(value)
+    normalized = sorted({unicodedata.normalize("NFC", item) for item in value["constraints"]}, key=lambda s: s.encode("utf-8"))
     return {**value, "constraints": normalized}
 
 
