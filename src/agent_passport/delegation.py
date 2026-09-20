@@ -26,6 +26,16 @@ def create_delegation(
 ) -> dict:
     """Create a signed delegation from one agent to another.
 
+    Legacy Delegation, a pre-draft compatibility surface. Deprecated.
+
+    The delegated authority record of draft-pidlisnyi-aps-03 is AuthorityDelegationV1
+    (section 3.1, record_type "aps:authority-delegation:v1"), in
+    agent_passport.v2.authority_delegation. This record is not that one: it predates the
+    draft's wire format, carries a different member set, and is not on the draft path. It
+    is kept so existing deployments keep working, and its authority semantics are frozen.
+    New work uses issue_authority_delegation, issue_sub_authority_delegation and
+    verify_authority_delegation_chain.
+
     Args:
         delegated_by: Public key of the delegator.
         delegated_to: Public key of the delegate.
@@ -62,6 +72,11 @@ def create_delegation(
 
 def verify_delegation(delegation: dict) -> dict:
     """Verify a delegation's signature and status.
+
+    Pre-draft compatibility surface, deprecated and frozen: see create_delegation. This is
+    not the draft-03 chain verifier. Section 3.3 runs a root-to-leaf chain through a fixed
+    order of checks and returns one of valid, invalid, indeterminate or unsupported; that
+    is verify_authority_delegation_chain. This function checks one legacy record.
 
     Returns:
         DelegationStatus dict with valid, revoked, expired, errors.
@@ -141,6 +156,18 @@ def sub_delegate(
     """Create a sub-delegation from an existing delegation.
 
     Enforces scope narrowing, spend limits, and depth limits.
+
+    Pre-draft compatibility surface, deprecated and frozen: see create_delegation.
+
+    Scope narrowing here is exact membership: a child scope string must appear in the
+    parent's list. That is stricter than both of the other two rules in play. Draft
+    section 3.2 (published lines 516 to 521) lets "*" cover every grant and a terminal
+    "p:*" cover p and every grant beginning "p:", so it admits narrowing "*" to
+    "data:read", which this function rejects. The TypeScript legacy rule additionally lets
+    a bare grant "p" cover "p:x", which section 3.2 does not allow. The three rules are
+    deliberately not converged: changing any of them would change what records already
+    signed under it authorize. The draft-path narrowing check is compare_authority in
+    agent_passport.v2.authority_delegation.
 
     Raises:
         ValueError: If depth limit exceeded or scope escalation attempted.
@@ -238,12 +265,23 @@ def revoke_delegation(
 
 
 def scope_covers(parent_scope: list[str], child_scope: list[str]) -> bool:
-    """Check if parent scope covers all child scopes."""
+    """Check if parent scope covers all child scopes.
+
+    Pre-draft scope matching, not the section 3.2 rule: here a bare grant "p" covers
+    "p:x", and "*" is an ordinary string with no wildcard meaning. Draft lines 516 to 521
+    give the section 3.2 rule, implemented by scope_grant_covers in
+    agent_passport.v2.authority_delegation.scope. Frozen: draft-path code uses
+    scope_grant_covers and never this.
+    """
     return all(any(s == c or c.startswith(s + ":") for s in parent_scope) for c in child_scope)
 
 
 def scope_authorizes(delegation_scope: list[str], required: str) -> bool:
-    """Check if a delegation scope list authorizes a required scope."""
+    """Check if a delegation scope list authorizes a required scope.
+
+    Pre-draft scope matching, with the same difference from section 3.2 that
+    scope_covers documents. Frozen.
+    """
     for s in delegation_scope:
         if s == required or required.startswith(s + ":"):
             return True
