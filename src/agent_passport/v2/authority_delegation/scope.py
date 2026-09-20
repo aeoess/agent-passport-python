@@ -22,10 +22,16 @@ def is_valid_scope_grant(grant: str) -> bool:
     for the whole grant are not stated by the draft at all. All three are
     kept identical to the TypeScript SDK.
     """
-    if grant == "*":
-        return True
+    # The type test comes first: ``grant == "*"`` on a caller-supplied object runs
+    # that object's own __eq__, which can raise out of this function and out of
+    # grants_are_canonical below, both of which this package exports. The TypeScript
+    # twin compares with === and never coerces. Chain verification and the issuers are
+    # unaffected either way, since the closed schema types every grant before calling
+    # here.
     if type(grant) is not str or len(grant) == 0 or len(grant) > 255:
         return False
+    if grant == "*":
+        return True
     parts = grant.split(":")
     if len(parts) > 16:
         return False

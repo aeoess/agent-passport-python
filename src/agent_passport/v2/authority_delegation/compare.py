@@ -9,7 +9,21 @@ from __future__ import annotations
 from .scope import scope_narrows
 from .types import AuthorityFailure
 
+# draft-pidlisnyi-aps-03 lines 553-565 order reversibility from narrowest to widest as
+# tentative, compensable, irreversible, and require a child ceiling not to move to the
+# right. The order is defined over exactly those three values, so a ceiling outside it
+# is not in the order and cannot be shown to be no wider: _reversibility_rank returns
+# None for it and the comparison below reports REVERSIBILITY_WIDENING rather than
+# raising KeyError out of this function, which the package root re-exports. A validated
+# record never reaches that, because the closed schema refuses such a ceiling first; a
+# caller of the exported comparison can. The TypeScript SDK answers the same way.
 _REVERSIBILITY_RANK = {"tentative": 0, "compensable": 1, "irreversible": 2}
+
+
+def _reversibility_rank(ceiling) -> int | None:
+    if type(ceiling) is not str:
+        return None
+    return _REVERSIBILITY_RANK.get(ceiling)
 
 
 def _fail(failures: list[AuthorityFailure], code: str, facet: str, message: str) -> None:
@@ -65,7 +79,10 @@ def compare_authority(parent: dict, child: dict) -> list[AuthorityFailure]:
 
     if child["reversibility"]["profile"] != parent["reversibility"]["profile"]:
         _fail(failures, "UNSUPPORTED_PROFILE", "reversibility", "reversibility profile changes are incomparable")
-    elif _REVERSIBILITY_RANK[child["reversibility"]["ceiling"]] > _REVERSIBILITY_RANK[parent["reversibility"]["ceiling"]]:
-        _fail(failures, "REVERSIBILITY_WIDENING", "reversibility", "child reversibility ceiling exceeds parent")
+    else:
+        child_rank = _reversibility_rank(child["reversibility"]["ceiling"])
+        parent_rank = _reversibility_rank(parent["reversibility"]["ceiling"])
+        if child_rank is None or parent_rank is None or child_rank > parent_rank:
+            _fail(failures, "REVERSIBILITY_WIDENING", "reversibility", "child reversibility ceiling exceeds parent")
 
     return failures

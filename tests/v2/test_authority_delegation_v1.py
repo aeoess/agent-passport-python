@@ -36,6 +36,7 @@ from agent_passport.v2.authority_delegation import (
     InMemoryAuthorityBudgetLedger,
     authority_delegation_body,
     compute_authority_delegation_id_for_write,
+    compare_authority,
     grants_are_canonical,
     is_canonical_timestamp,
     is_valid_scope_grant,
@@ -895,6 +896,58 @@ class TestReserveUnitTypeChecked:
 
         assert result.ok is True
         assert result.code == "RESERVED"
+
+
+class TestUnrankedReversibilityCeiling:
+    """draft-pidlisnyi-aps-03 lines 553-565 order reversibility over exactly
+    tentative, compensable and irreversible. A ceiling outside that order is
+    not in it and cannot be shown to be no wider, so the comparison reports
+    REVERSIBILITY_WIDENING instead of raising KeyError out of a function the
+    package root re-exports. The TypeScript SDK answers the same way. A
+    validated record never reaches this: the closed schema refuses such a
+    ceiling first."""
+
+    @pytest.mark.parametrize("ceiling", ["destructive", "TENTATIVE", "", 5, None, ("tentative",)])
+    def test_an_unranked_child_or_parent_ceiling_is_widening(self, ceiling):
+        parent = _authority()
+        child = _authority(depth={"remaining": 1})
+        assert [item.code for item in compare_authority(parent, child)] == []
+
+        widened_child = copy.deepcopy(child)
+        widened_child["reversibility"]["ceiling"] = ceiling
+        assert [item.code for item in compare_authority(parent, widened_child)] == ["REVERSIBILITY_WIDENING"]
+
+        unranked_parent = copy.deepcopy(parent)
+        unranked_parent["reversibility"]["ceiling"] = ceiling
+        assert [item.code for item in compare_authority(unranked_parent, child)] == ["REVERSIBILITY_WIDENING"]
+
+
+class TestScopeHelpersTypeBeforeTheyCompare:
+    """is_valid_scope_grant and grants_are_canonical are exported, so they take
+    caller-supplied values. Typing a grant before comparing it keeps a hostile
+    __eq__ from running, the rule verify.py and budget.py already follow for
+    the chain container. The TypeScript twins answer false for the same
+    values."""
+
+    @staticmethod
+    def _hostile_grant():
+        class HostileGrant:
+            def __eq__(self, other):
+                raise RuntimeError("hostile __eq__ ran")
+
+            __hash__ = None
+
+        return HostileGrant()
+
+    def test_a_grant_whose_eq_raises_is_not_valid(self):
+        assert is_valid_scope_grant(self._hostile_grant()) is False
+
+    def test_grants_are_canonical_is_false_for_such_a_grant(self):
+        assert grants_are_canonical([self._hostile_grant()]) is False
+
+    def test_a_plain_star_grant_is_still_valid(self):
+        assert is_valid_scope_grant("*") is True
+        assert grants_are_canonical(["*"]) is True
 
 
 class TestReserveRetriedAfterCancellation:
