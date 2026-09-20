@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import copy
-from datetime import datetime, timezone
 import hashlib
 import re
 
@@ -14,21 +13,51 @@ RECEIPT_ID_TAG = "APS-RECEIPT-ID-V1"
 RECEIPT_SIG_TAG = "APS-RECEIPT-SIG-V1"
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 HEX128 = re.compile(r"^[0-9a-f]{128}$")
-UTC_MS = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$")
+UTC_MS = re.compile(r"^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.\d{3}Z$")
+# delegation_ref carries the "sha256:" prefix of a delegation_id, not a bare digest
+# (draft-pidlisnyi-aps-03 lines 964, 982, 484: the envelope example writes it as
+# "sha256:<64 lowercase hexadecimal characters>", and section 3.1 gives delegation_id
+# that exact form). Binding the value to a leaf needs a supplied chain, which is a
+# section 5.6 composition point; this is the standalone structural form only.
+DELEGATION_REF = re.compile(r"^sha256:[0-9a-f]{64}$")
+_DAYS_IN_MONTH = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
 
 def _sha256_hex(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def _is_leap_year(year: int) -> bool:
+    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+
+
+def _days_in_month(year: int, month: int) -> int:
+    if month == 2 and _is_leap_year(year):
+        return 29
+    return _DAYS_IN_MONTH[month - 1]
+
+
 def _is_exact_utc_milliseconds(value: str) -> bool:
-    if not UTC_MS.fullmatch(value):
+    # Regex plus integer calendar arithmetic, no datetime.strptime/strftime: strftime's
+    # platform-dependent zero-padding below year 1000 and datetime's refusal of year 0000
+    # are not rules the draft states (draft line 986). Second 60 is RFC 3339 section 5.7
+    # with Appendix D: valid only at 23:59 on the last day of its month; no leap-second
+    # table is consulted or needed.
+    match = UTC_MS.fullmatch(value)
+    if not match:
         return False
-    try:
-        parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ").replace(tzinfo=timezone.utc)
-    except ValueError:
+    year, month, day, hour, minute, second = (int(part) for part in match.groups())
+    if not 1 <= month <= 12:
         return False
-    return parsed.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z" == value
+    if not 1 <= day <= _days_in_month(year, month):
+        return False
+    if not 0 <= hour <= 23:
+        return False
+    if not 0 <= minute <= 59:
+        return False
+    if second == 60:
+        return hour == 23 and minute == 59 and day == _days_in_month(year, month)
+    return 0 <= second <= 59
 
 
 def _without(receipt: dict, *keys: str) -> dict:
@@ -48,16 +77,85 @@ def receipt_signature_payload_v1(receipt: dict, descriptor: dict) -> str:
     return f"{RECEIPT_SIG_TAG}\0{strict_jcs(form)}"
 
 
+# The 66 Unicode noncharacters: U+FDD0 through U+FDEF, and U+xFFFE/U+xFFFF for each of the
+# 17 planes. Rejected anywhere in a receipt (draft line 1213). strict_jcs already rejects an
+# unpaired surrogate but not a noncharacter, and it is shared with other record families, so
+# this check is local to receipt.py rather than a change to jcs.py's assert_i_json. Same
+# shape as agent_passport.v2.action_reference.v2._check_no_noncharacters and
+# agent_passport.v2.authority_delegation.schema._is_surrogate_or_noncharacter.
+_NONCHARACTER_LOW_16 = frozenset({0xFFFE, 0xFFFF})
+
+
+def _is_noncharacter(code_point: int) -> bool:
+    if 0xFDD0 <= code_point <= 0xFDEF:
+        return True
+    return (code_point & 0xFFFF) in _NONCHARACTER_LOW_16
+
+
+class _NoncharacterWalkExit:
+    """Stack marker for leaving a list or dict during `_assert_no_noncharacters_v1`."""
+
+    __slots__ = ("identity",)
+
+    def __init__(self, identity: int) -> None:
+        self.identity = identity
+
+
+def _assert_no_noncharacters_v1(root) -> None:
+    """Iteratively walk `root` (already known to be I-JSON, so only list/dict/str/other
+    scalars remain), raising ValueError if any string value or object key, at any depth,
+    contains a Unicode noncharacter. Non-recursive and cycle-safe for the same reasons as
+    the two established implementations cited above.
+    """
+    ancestors: set[int] = set()
+    stack: list = [root]
+    while stack:
+        item = stack.pop()
+        if type(item) is _NoncharacterWalkExit:
+            ancestors.discard(item.identity)
+            continue
+        if isinstance(item, str):
+            for char in item:
+                if _is_noncharacter(ord(char)):
+                    raise ValueError(f"ReceiptV1: noncharacter U+{ord(char):04X}")
+            continue
+        if type(item) is list:
+            identity = id(item)
+            if identity in ancestors:
+                continue
+            ancestors.add(identity)
+            stack.append(_NoncharacterWalkExit(identity))
+            stack.extend(item)
+            continue
+        if type(item) is dict:
+            identity = id(item)
+            if identity in ancestors:
+                continue
+            ancestors.add(identity)
+            stack.append(_NoncharacterWalkExit(identity))
+            for key, value in item.items():
+                if isinstance(key, str):
+                    for char in key:
+                        if _is_noncharacter(ord(char)):
+                            raise ValueError(f"ReceiptV1: noncharacter U+{ord(char):04X} in object key")
+                stack.append(value)
+            continue
+        # None, bool, int, float: no characters to check.
+
+
 def validate_receipt_v1(receipt: dict, require_values: bool = True) -> None:
     allowed = {"profile", "receipt_id", "receipt_type", "issuer", "subject_agent", "action_ref", "delegation_ref", "decision_ref", "issued_at", "evidence_refs", "result", "prev", "signatures"}
     required = allowed - {"decision_ref", "prev"}
     assert_exact_keys(receipt, allowed, required, "ReceiptV1")
     strict_jcs(receipt)
+    _assert_no_noncharacters_v1(receipt)
     if receipt["profile"] != "aps-receipt-v1":
         raise ValueError("ReceiptV1: profile")
-    for key in ("receipt_type", "issuer", "subject_agent", "delegation_ref"):
+    for key in ("receipt_type", "issuer", "subject_agent"):
         if not isinstance(receipt[key], str) or not receipt[key]:
             raise ValueError("ReceiptV1: empty identifier")
+    if not isinstance(receipt["delegation_ref"], str) or not DELEGATION_REF.fullmatch(receipt["delegation_ref"]):
+        raise ValueError("ReceiptV1: delegation_ref")
     if require_values and (not isinstance(receipt["receipt_id"], str) or not HEX64.fullmatch(receipt["receipt_id"])):
         raise ValueError("ReceiptV1: receipt_id")
     if not isinstance(receipt["action_ref"], str) or not HEX64.fullmatch(receipt["action_ref"]):
@@ -122,11 +220,37 @@ def create_receipt_v1(fields: dict, signers: list[dict]) -> dict:
     return receipt
 
 
+def _declares_foreign_profile(receipt) -> bool:
+    """True when `receipt` names an envelope profile other than aps-receipt-v1. Such an
+    artifact is unsupported (draft section 5.6 line 1226) rather than invalid, and is not
+    judged against the aps-receipt-v1 schema, which is not its schema."""
+    if not isinstance(receipt, dict):
+        return False
+    profile = receipt.get("profile")
+    return isinstance(profile, str) and profile != "aps-receipt-v1"
+
+
 def verify_receipt_v1(receipt: dict, resolve_key) -> dict:
+    if _declares_foreign_profile(receipt):
+        return {
+            "valid": False,
+            "status": "unsupported",
+            "receipt_id_valid": False,
+            "signer_authority": "not_checked",
+            "signature_results": [],
+            "errors": ["unsupported_profile"],
+        }
     try:
         validate_receipt_v1(receipt)
     except (TypeError, ValueError) as exc:
-        return {"valid": False, "receipt_id_valid": False, "signature_results": [], "errors": [str(exc)]}
+        return {
+            "valid": False,
+            "status": "invalid",
+            "receipt_id_valid": False,
+            "signer_authority": "not_checked",
+            "signature_results": [],
+            "errors": [str(exc)],
+        }
     id_valid = compute_receipt_id_v1(receipt) == receipt["receipt_id"]
     errors = [] if id_valid else ["receipt_id_mismatch"]
     results = []
@@ -141,6 +265,32 @@ def verify_receipt_v1(receipt: dict, resolve_key) -> dict:
             continue
         descriptor = {"signer": proof["signer"], "key_id": proof["key_id"], "alg": proof["alg"]}
         results.append({"signer": proof["signer"], "key_id": proof["key_id"], "valid": verify(receipt_signature_payload_v1(receipt, descriptor), proof["value"], public_key)})
-    if any(not item["valid"] for item in results):
+    # An unresolved key and a signature that fails verification are different findings: the
+    # former never had its bytes checked, so it must not also raise "signature_invalid"
+    # (draft section 2.4 line 322, section 2.5 lines 360-369, section 5.6 line 1226).
+    unresolved = [item for item in results if item.get("reason") in ("key_unresolved", "key_resolution_error")]
+    bad_bytes = [item for item in results if not item["valid"] and "reason" not in item]
+    if bad_bytes:
         errors.append("signature_invalid")
-    return {"valid": not errors, "receipt_id_valid": id_valid, "signature_results": results, "errors": errors}
+    if unresolved:
+        errors.append("signer_authority_indeterminate")
+    if bad_bytes:
+        signer_authority = "invalid"
+    elif unresolved:
+        signer_authority = "not_established"
+    else:
+        signer_authority = "verified"
+    if bad_bytes or not id_valid:
+        status = "invalid"
+    elif unresolved:
+        status = "indeterminate"
+    else:
+        status = "valid"
+    return {
+        "valid": status == "valid",
+        "status": status,
+        "receipt_id_valid": id_valid,
+        "signer_authority": signer_authority,
+        "signature_results": results,
+        "errors": errors,
+    }

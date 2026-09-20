@@ -27,8 +27,15 @@ KAT = {
     # Repinned: build_decision_ref_v1 now normalizes before hashing, so the decision output
     # must be a valid five-member CoreDecisionOutputV1. Was 2157809a9a722314ae19dce7a242ea3b54a8948230fab2fab5d5dc15bd663dc2.
     "decision_ref": "e474f27bc7e228cd515d4192936cd5525ac8f362fa95173c82eaff02059389e7",
-    "receipt_id": "89b0b77807e99845aab403f01bcdaa2f02949f6c9db84e1aca6c0a8449e4d023",
-    "receipt_sig": "83deb713568bbdf0c85e1a6d46345530e84dbe86cdefe1cb608b0f14372c176a9e69e0033db11c4c44ff84be3de3bee5e212707eb84206f6c34455206d37f90b",
+    # Repinned: the old fixture carried receipt_type "aps:action:v1" with a bare-hex
+    # delegation_ref, a decision_ref, no prev and a free-form result, which names no stage
+    # in draft section 5.3. Re-minted as a conforming action-intent record (delegation_ref
+    # now requires the "sha256:" prefix, task A1). Values recomputed by the TypeScript SDK
+    # for the identical record. Was receipt_id
+    # 89b0b77807e99845aab403f01bcdaa2f02949f6c9db84e1aca6c0a8449e4d023 and receipt_sig
+    # 83deb713568bbdf0c85e1a6d46345530e84dbe86cdefe1cb608b0f14372c176a9e69e0033db11c4c44ff84be3de3bee5e212707eb84206f6c34455206d37f90b.
+    "receipt_id": "4b947cacb9a135b90fe840424a589aaefe56143730ab580ddb9c751e35cb3ccf",
+    "receipt_sig": "e0d1764b2c10ec4fe4f166539dd411089eac92655debbe1d44adb4dc046754e9feea4bd51fe2ea9f02e83e3b3df51d229e543616bd91d2130a7f4e64c5dd4a05",
     "merkle_root": "03700eeba1b453086063612d3df73f711827735c3fe30cf8a8a2a6379a6f6d5f",
     "record_id": "7d73684a65444088e841f2b30f0ecf139fbadbeab277d57d20d1a2ef5fe2a7b2",
     "record_sig": "56a2116eb4e259a336c36a646e69322cf2e7850b7202f2093c5957e4e6a100cf4cae8048cb4647bbc557447bea531dd7e69c117e9298515cc767110cf0f7d809",
@@ -72,12 +79,12 @@ def test_decision_ref_is_content_derived_and_normalizes_constraints():
 
 def test_receipt_binds_id_signer_descriptor_and_content():
     receipt = create_receipt_v1({
-        "profile": "aps-receipt-v1", "receipt_type": "aps:action:v1", "issuer": "did:example:issuer",
-        "subject_agent": "did:example:agent", "action_ref": hx("a"), "delegation_ref": hx("b"),
-        "decision_ref": hx("c"), "issued_at": "2026-07-18T12:00:00.000Z",
+        "profile": "aps-receipt-v1", "receipt_type": "aps:action-intent:v1", "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent", "action_ref": hx("a"), "delegation_ref": "sha256:" + hx("b"),
+        "issued_at": "2026-07-18T12:00:00.000Z",
         "evidence_refs": [{"artifact_type": "z", "sha256": hx("e")}, {"artifact_type": "a", "sha256": hx("d")}],
-        "result": {"status": "success", "detail": None},
-    }, [{"signer": "did:example:issuer", "key_id": "key-1", "private_key": PRIVATE_KEY}])
+        "result": {"profile": "aps-action-intent-result-v1", "status": "declared"},
+    }, [{"signer": "did:example:agent", "key_id": "key-1", "private_key": PRIVATE_KEY}])
     assert receipt["receipt_id"] == compute_receipt_id_v1(receipt)
     assert receipt["receipt_id"] == KAT["receipt_id"]
     assert receipt["signatures"][0]["value"] == KAT["receipt_sig"]
@@ -86,7 +93,7 @@ def test_receipt_binds_id_signer_descriptor_and_content():
     relabeled["signatures"][0]["key_id"] = "key-2"
     assert not verify_receipt_v1(relabeled, lambda *_: PUBLIC_KEY)["valid"]
     tampered = copy.deepcopy(receipt)
-    tampered["result"]["status"] = "failure"
+    tampered["result"]["status"] = "revoked"
     assert not verify_receipt_v1(tampered, lambda *_: PUBLIC_KEY)["valid"]
 
 

@@ -10,6 +10,7 @@ from .decision_ref import (
     compute_decision_component_ref_v1,
     compute_decision_ref_v1,
     normalize_core_decision_output_v1,
+    validate_core_decision_output_v1,
 )
 from .receipt import (
     compute_receipt_id_v1,
@@ -18,6 +19,10 @@ from .receipt import (
     receipt_signature_payload_v1,
     validate_receipt_v1,
     verify_receipt_v1,
+)
+from .stage import (
+    RECEIPT_STAGE_TYPES_V1,
+    validate_receipt_stage_v1,
 )
 from .supporting_record import (
     build_evidence_bundle_body_v2,
