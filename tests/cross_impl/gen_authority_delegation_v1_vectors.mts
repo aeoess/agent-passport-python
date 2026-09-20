@@ -1870,9 +1870,12 @@ const provenance_definitions = {
     "the expected state, outcome or rejection follows from the draft text, directly or by an analogy the case's " +
     'derivation note states, with RFC 3339 or RFC 7493 where cited; TypeScript output was not consulted to decide it.',
   'ts-conformant-regression':
-    'the expected bytes were computed by the TypeScript reference for a construction whose TypeScript ' +
-    'implementation was found to follow the draft (delegation_id and signature, draft section 3.1), and are recomputed ' +
-    'independently by the cross-check script.',
+    'the expected value pins what both SDKs do today rather than something the draft text fixes. It covers two ' +
+    'kinds of case. For an expected record, the bytes were computed by the TypeScript reference for a construction ' +
+    'whose TypeScript implementation was found to follow the draft (delegation_id and signature, draft section 3.1), ' +
+    'and are recomputed independently by the cross-check script. For an expected state, the draft leaves the mapping ' +
+    'open and the withheld list below says so; the case then records the state both SDKs return, and its derivation ' +
+    'note says what is open.',
 }
 
 const conventions = {
@@ -1905,6 +1908,7 @@ const withheld = [
   { topic: 'Multi-fault chains', reason: 'Every chain negative changes exactly one thing in an otherwise valid chain. In AD-N-S08, AD-N-S09, AD-N-S10, AD-N-S11, AD-N-S12, AD-N-S13, AD-N-S53, AD-N-S55, AD-N-S56, AD-N-U08, AD-N-H01, AD-N-H02 and AD-N-H10, that one change necessarily fails more than one check; each of those cases\' own note names the other checks it cannot avoid also failing. Chains built from two independent faults are withheld instead, because the draft does not settle which failure decides when two unrelated checks fail together. That includes the precedence inside one record between an I-JSON failure and an unknown version (formerly AD-N-S68, which paired an unsupported version with a non-I-JSON subject and is now removed) or an unsupported facet profile (formerly AD-N-S62, which paired an unsupported scope profile with a non-I-JSON record and is now removed).' },
   { topic: 'Spend unit grammar and wire number spelling (open question)', reason: 'A spend unit outside ^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$, and JSON number spellings such as 2.0 or 1e2 in wire input; whether the draft admits them is an open question.' },
   { topic: 'An unknown record_type string: reported unsupported and still judged by the v1 schema', reason: 'A record_type naming some other string is unsupported (UNSUPPORTED_VERSION) but is still judged by the v1 body schema, unlike a recognised record_type paired with an unknown version, which is not. No rule states whether it should be judged.' },
+  { topic: 'A reserve naming an action_ref whose reservation was cancelled', reason: 'L621-622 say an identical retry is idempotent and conflicting reuse is rejected, and do not say which of those a retry after cancellation is. Both SDKs book a fresh reservation, checking every limit again, because a cancelled reservation holds nothing and reporting it as idempotent would name a reservation no counter holds; refusing it outright would be defensible too. No case pins the choice.' },
   { topic: 'Key-resolution outcome structure', reason: 'not found, ambiguous, malformed, unreachable, unsupported scheme (L360-369), and which of the four verification states each one maps to: an open question. AD-N-C05 and AD-N-C06 cover a key the resolver does not return, labelled ts-conformant-regression for that reason, and no case here derives a state for the other outcomes.' },
   { topic: 'Runtime reputation and unresolved action reversibility', reason: 'L542-545 and L566 are action-time rules, not chain verification.' },
   { topic: 'Revocation records and cascade completion', reason: 'Sections 3.5 and 3.5.1: no wire format is fixed and no implementation exists.' },

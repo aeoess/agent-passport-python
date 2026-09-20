@@ -3,11 +3,11 @@
   "draft": "draft-pidlisnyi-aps-03 sections 3.1, 3.2, 3.3, 3.4 and 3.6",
   "generated_from": {
     "repository": "agent-passport-system",
-    "commit": "7c16f0f6e7386e4618d69d0d505fdb27a618a914"
+    "commit": "1311829bc72886ccacd37ebcae5e8e44c28b9702"
   },
   "provenance_definitions": {
     "draft-derived": "the expected state, outcome or rejection follows from the draft text, directly or by an analogy the case's derivation note states, with RFC 3339 or RFC 7493 where cited; TypeScript output was not consulted to decide it.",
-    "ts-conformant-regression": "the expected bytes were computed by the TypeScript reference for a construction whose TypeScript implementation was found to follow the draft (delegation_id and signature, draft section 3.1), and are recomputed independently by the cross-check script."
+    "ts-conformant-regression": "the expected value pins what both SDKs do today rather than something the draft text fixes. It covers two kinds of case. For an expected record, the bytes were computed by the TypeScript reference for a construction whose TypeScript implementation was found to follow the draft (delegation_id and signature, draft section 3.1), and are recomputed independently by the cross-check script. For an expected state, the draft leaves the mapping open and the withheld list below says so; the case then records the state both SDKs return, and its derivation note says what is open."
   },
   "keys": [
     {
@@ -24978,6 +24978,10 @@
     {
       "topic": "An unknown record_type string: reported unsupported and still judged by the v1 schema",
       "reason": "A record_type naming some other string is unsupported (UNSUPPORTED_VERSION) but is still judged by the v1 body schema, unlike a recognised record_type paired with an unknown version, which is not. No rule states whether it should be judged."
+    },
+    {
+      "topic": "A reserve naming an action_ref whose reservation was cancelled",
+      "reason": "L621-622 say an identical retry is idempotent and conflicting reuse is rejected, and do not say which of those a retry after cancellation is. Both SDKs book a fresh reservation, checking every limit again, because a cancelled reservation holds nothing and reporting it as idempotent would name a reservation no counter holds; refusing it outright would be defensible too. No case pins the choice."
     },
     {
       "topic": "Key-resolution outcome structure",
