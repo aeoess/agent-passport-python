@@ -240,18 +240,31 @@ def parse_strict_i_json(raw: str, max_utf8_bytes: int = 1_048_576, max_depth: in
         )
     except IJsonValidationError:
         raise
-    except (ValueError, TypeError, RecursionError) as exc:
+    except RecursionError as exc:
+        # The decoder's own C-level recursion ceiling, reached before this parser's
+        # configured depth limit. That is this implementation declining to finish reading
+        # the document, exactly like the configured ceiling below, so it carries the same
+        # class and never reports the document as malformed.
+        raise IJsonResourceLimitError("$: JSON decoder recursion limit exceeded") from exc
+    except (ValueError, TypeError) as exc:
         raise IJsonValidationError("$: invalid JSON") from exc
 
-    def check_depth(item, depth=1):
-        if depth > max_depth:
-            raise IJsonResourceLimitError("$: JSON nesting limit exceeded")
-        if type(item) is list:
-            for child in item:
-                check_depth(child, depth + 1)
-        elif type(item) is dict:
-            for child in item.values():
-                check_depth(child, depth + 1)
+    def check_depth(root) -> None:
+        # Iterative, for the same reason assert_i_json, canonicalize_jcs and
+        # snapshot_i_json_shape are: a walk that recurses once per nesting level turns a
+        # deep document into an uncaught RecursionError out of a public entry point, and
+        # a caller may configure max_depth above the interpreter's recursion limit.
+        stack = [(root, 1)]
+        while stack:
+            item, depth = stack.pop()
+            if depth > max_depth:
+                raise IJsonResourceLimitError("$: JSON nesting limit exceeded")
+            if type(item) is list:
+                for child in item:
+                    stack.append((child, depth + 1))
+            elif type(item) is dict:
+                for child in item.values():
+                    stack.append((child, depth + 1))
 
     check_depth(value)
     assert_i_json(value)
