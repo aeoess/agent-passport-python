@@ -3,7 +3,7 @@
   "draft": "draft-pidlisnyi-aps-03 sections 5.1, 5.2, 5.3 and 5.6",
   "generated_from": {
     "repository": "agent-passport-system",
-    "commit": "c587a40dd6e2feb52b77604de93b749922fb1aea"
+    "commit": "ebbd015078fe65d0cfad2b1aab8c4c23b7c22b5a"
   },
   "provenance_definitions": {
     "draft-derived": "the expected acceptance, rejection or state follows from the draft text, with RFC 3339 where cited; TypeScript output was not consulted to decide it.",
@@ -38,15 +38,15 @@
     "Evidence resolution under section 5.5, implemented nowhere in either SDK."
   ],
   "counts": {
-    "total": 71,
+    "total": 80,
     "by_kind": {
       "envelope": 25,
       "stage": 41,
-      "verify": 5
+      "verify": 14
     },
     "by_provenance": {
       "draft-derived": 63,
-      "ruling-derived": 8
+      "ruling-derived": 17
     }
   },
   "cases": [
@@ -3351,6 +3351,465 @@
         "sdk_errors": [
           "unsupported_profile"
         ]
+      }
+    },
+    {
+      "id": "RC-V06",
+      "kind": "verify",
+      "title": "The resolver names: subject or key not found",
+      "expected_provenance": "ruling-derived",
+      "derivation": {
+        "lines": "L360-364",
+        "note": "Section 2.5 requires a resolver to keep six outcomes apart. The draft does not map each to a verification state, so the mapping here comes from a recorded ruling: not found is indeterminate, under its own reason."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          }
+        ]
+      },
+      "signed": true,
+      "resolver": "not_found",
+      "public_keys": {
+        "did:example:agent": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+        "did:example:gateway": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+      },
+      "other_public_key": "a09aa5f47a6759802ff955f8dc2d2a14a5c99d23be97f864127ff9383455a4f0",
+      "expected": {
+        "status": "indeterminate",
+        "signer_authority": "not_established",
+        "sdk_errors": [
+          "signer_authority_indeterminate"
+        ],
+        "sdk_reasons": {
+          "did:example:agent": "key_not_found"
+        }
+      }
+    },
+    {
+      "id": "RC-V07",
+      "kind": "verify",
+      "title": "The resolver names: ambiguous, including duplicate key identifiers",
+      "expected_provenance": "ruling-derived",
+      "derivation": {
+        "lines": "L360-364, L357-358",
+        "note": "A key set in which a key identifier is duplicated is malformed for the set as a whole. Ruled indeterminate, under its own reason."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          }
+        ]
+      },
+      "signed": true,
+      "resolver": "ambiguous",
+      "public_keys": {
+        "did:example:agent": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+        "did:example:gateway": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+      },
+      "other_public_key": "a09aa5f47a6759802ff955f8dc2d2a14a5c99d23be97f864127ff9383455a4f0",
+      "expected": {
+        "status": "indeterminate",
+        "signer_authority": "not_established",
+        "sdk_errors": [
+          "signer_authority_indeterminate"
+        ],
+        "sdk_reasons": {
+          "did:example:agent": "key_ambiguous"
+        }
+      }
+    },
+    {
+      "id": "RC-V08",
+      "kind": "verify",
+      "title": "The resolver names: transport unreachability",
+      "expected_provenance": "ruling-derived",
+      "derivation": {
+        "lines": "L360-369",
+        "note": "Ruled indeterminate. A deployment MAY adopt a fail-open policy for transport unreachability only, and a degraded outcome is still not a positive verification."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          }
+        ]
+      },
+      "signed": true,
+      "resolver": "unreachable",
+      "public_keys": {
+        "did:example:agent": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+        "did:example:gateway": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+      },
+      "other_public_key": "a09aa5f47a6759802ff955f8dc2d2a14a5c99d23be97f864127ff9383455a4f0",
+      "expected": {
+        "status": "indeterminate",
+        "signer_authority": "not_established",
+        "sdk_errors": [
+          "signer_authority_indeterminate"
+        ],
+        "sdk_reasons": {
+          "did:example:agent": "key_unreachable"
+        }
+      }
+    },
+    {
+      "id": "RC-V09",
+      "kind": "verify",
+      "title": "The resolver names: structurally malformed key material",
+      "expected_provenance": "ruling-derived",
+      "derivation": {
+        "lines": "L365-367",
+        "note": "Malformed material that loads but is wrong fails closed even under a fail-open policy, and is never a signature failure: no signature check ran."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          }
+        ]
+      },
+      "signed": true,
+      "resolver": "malformed",
+      "public_keys": {
+        "did:example:agent": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+        "did:example:gateway": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+      },
+      "other_public_key": "a09aa5f47a6759802ff955f8dc2d2a14a5c99d23be97f864127ff9383455a4f0",
+      "expected": {
+        "status": "indeterminate",
+        "signer_authority": "not_established",
+        "sdk_errors": [
+          "signer_authority_indeterminate"
+        ],
+        "sdk_reasons": {
+          "did:example:agent": "key_material_malformed"
+        }
+      }
+    },
+    {
+      "id": "RC-V10",
+      "kind": "verify",
+      "title": "The resolver names: an unsupported identifier scheme",
+      "expected_provenance": "ruling-derived",
+      "derivation": {
+        "lines": "L360-364, L1226-1227",
+        "note": "The one outcome of the six that is unsupported rather than indeterminate, which is what line 1226 says of an unknown required profile and is how the ruling maps it."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          }
+        ]
+      },
+      "signed": true,
+      "resolver": "unsupported_scheme",
+      "public_keys": {
+        "did:example:agent": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+        "did:example:gateway": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+      },
+      "other_public_key": "a09aa5f47a6759802ff955f8dc2d2a14a5c99d23be97f864127ff9383455a4f0",
+      "expected": {
+        "status": "unsupported",
+        "signer_authority": "not_established",
+        "sdk_errors": [
+          "signer_key_scheme_unsupported"
+        ],
+        "sdk_reasons": {
+          "did:example:agent": "key_scheme_unsupported"
+        }
+      }
+    },
+    {
+      "id": "RC-V11",
+      "kind": "verify",
+      "title": "Key material that is not a 32-byte Ed25519 key",
+      "expected_provenance": "ruling-derived",
+      "derivation": {
+        "lines": "L365-367",
+        "note": "The resolver named no outcome; the material it returned is 16 bytes. It must not reach the signature check, which returns false on a length mismatch and would report a failed signature for bytes nothing checked."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          }
+        ]
+      },
+      "signed": true,
+      "resolver": "malformed_material",
+      "public_keys": {
+        "did:example:agent": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+        "did:example:gateway": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+      },
+      "other_public_key": "a09aa5f47a6759802ff955f8dc2d2a14a5c99d23be97f864127ff9383455a4f0",
+      "expected": {
+        "status": "indeterminate",
+        "signer_authority": "not_established",
+        "sdk_errors": [
+          "signer_authority_indeterminate"
+        ],
+        "sdk_reasons": {
+          "did:example:agent": "key_material_malformed"
+        }
+      }
+    },
+    {
+      "id": "RC-V12",
+      "kind": "verify",
+      "title": "A signature from another signer that does not verify",
+      "expected_provenance": "ruling-derived",
+      "derivation": {
+        "lines": "L999, L1041, L1003-1009",
+        "note": "Line 999 requires one signature from issuer and line 1041 has a verifier verify every REQUIRED signature. Signatures sit outside receipt_id, so a third party can append one to a published receipt without changing a digest. Ruled: a failure outside the required set does not change the aggregate state and is reported on its own axis."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          },
+          {
+            "signer": "did:example:bystander",
+            "key_id": "did:example:bystander#k",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": true,
+      "resolver": "correct",
+      "appended_signature_key_id": "did:example:bystander#k",
+      "public_keys": {
+        "did:example:agent": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+        "did:example:gateway": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+      },
+      "other_public_key": "a09aa5f47a6759802ff955f8dc2d2a14a5c99d23be97f864127ff9383455a4f0",
+      "expected": {
+        "status": "valid",
+        "signer_authority": "verified",
+        "sdk_errors": [],
+        "other_signatures": "not_all_verified"
+      }
+    },
+    {
+      "id": "RC-V13",
+      "kind": "verify",
+      "title": "A second signature from the issuer that does not verify",
+      "expected_provenance": "ruling-derived",
+      "derivation": {
+        "lines": "L999, L1041",
+        "note": "The same append from the issuer, who is in the required set, does decide. The pair with RC-V12 is what shows the axis is the required set and not the count."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          },
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-2",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": true,
+      "resolver": "correct",
+      "appended_signature_key_id": "did:example:agent#key-2",
+      "public_keys": {
+        "did:example:agent": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+        "did:example:gateway": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+      },
+      "other_public_key": "a09aa5f47a6759802ff955f8dc2d2a14a5c99d23be97f864127ff9383455a4f0",
+      "expected": {
+        "status": "invalid",
+        "signer_authority": "invalid",
+        "sdk_errors": [
+          "signature_invalid"
+        ],
+        "other_signatures": "none"
+      }
+    },
+    {
+      "id": "RC-V14",
+      "kind": "verify",
+      "title": "A verifier requires a signer the receipt does not carry",
+      "expected_provenance": "ruling-derived",
+      "derivation": {
+        "lines": "L1041",
+        "note": "The required set is the issuer plus what the applicable profile or the verifier requires. A named signer carrying no descriptor at all is a missing required signature."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          }
+        ]
+      },
+      "signed": true,
+      "resolver": "correct",
+      "required_signers": [
+        "did:example:cosigner"
+      ],
+      "public_keys": {
+        "did:example:agent": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+        "did:example:gateway": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+      },
+      "other_public_key": "a09aa5f47a6759802ff955f8dc2d2a14a5c99d23be97f864127ff9383455a4f0",
+      "expected": {
+        "status": "invalid",
+        "signer_authority": "verified",
+        "sdk_errors": [
+          "required_signature_missing"
+        ],
+        "other_signatures": "none"
       }
     }
   ]

@@ -175,15 +175,28 @@ interface StageCase {
 interface VerifyCase {
   id: string
   kind: 'verify'
+  provenance?: Provenance
+  /** A descriptor appended to the minted record, keeping the issuer's real signature.
+   *  This is what a third party can do to a published receipt: signatures sit outside
+   *  receipt_id, so appending one changes no digest. */
+  appendSignature?: Record<string, Json>
   title: string
   base: BaseName
   mutate?: Mutation
-  /** How the key resolver behaves for this case. */
-  resolver: 'correct' | 'none' | 'raises' | 'other_key'
+  /** How the key resolver behaves for this case. The five named outcomes are the ones
+   *  draft section 2.5 lines 360-364 require a resolver to keep apart. */
+  resolver:
+    | 'correct' | 'none' | 'raises' | 'other_key' | 'malformed_material'
+    | 'not_found' | 'ambiguous' | 'unreachable' | 'malformed' | 'unsupported_scheme'
+  /** Signers this verifier requires beyond the issuer. */
+  requiredSigners?: string[]
   expect: {
     status: 'valid' | 'invalid' | 'indeterminate' | 'unsupported'
     signer_authority: 'verified' | 'not_established' | 'invalid' | 'not_checked'
     errors: string[]
+    other_signatures?: 'none' | 'all_verified' | 'not_all_verified'
+    /** Per-signature reason by signer, for the cases that turn on it. */
+    reasons?: Record<string, string>
   }
   lines: string
   note: string
@@ -399,7 +412,48 @@ const VERIFY: VerifyCase[] = [
     lines: 'L1226-1228', note: 'Unsupported is its own answer and is not collapsed into invalid or into valid.' },
 ]
 
-const CASES: Case[] = [...ENVELOPE, ...STAGE, ...VERIFY]
+const RULED: VerifyCase[] = [
+  { id: 'RC-V06', kind: 'verify', title: 'The resolver names: subject or key not found', base: 'intent', resolver: 'not_found',
+    provenance: 'ruling-derived',
+    expect: { status: 'indeterminate', signer_authority: 'not_established', errors: ['signer_authority_indeterminate'], reasons: { [AGENT]: 'key_not_found' } },
+    lines: 'L360-364', note: 'Section 2.5 requires a resolver to keep six outcomes apart. The draft does not map each to a verification state, so the mapping here comes from a recorded ruling: not found is indeterminate, under its own reason.' },
+  { id: 'RC-V07', kind: 'verify', title: 'The resolver names: ambiguous, including duplicate key identifiers', base: 'intent', resolver: 'ambiguous',
+    provenance: 'ruling-derived',
+    expect: { status: 'indeterminate', signer_authority: 'not_established', errors: ['signer_authority_indeterminate'], reasons: { [AGENT]: 'key_ambiguous' } },
+    lines: 'L360-364, L357-358', note: 'A key set in which a key identifier is duplicated is malformed for the set as a whole. Ruled indeterminate, under its own reason.' },
+  { id: 'RC-V08', kind: 'verify', title: 'The resolver names: transport unreachability', base: 'intent', resolver: 'unreachable',
+    provenance: 'ruling-derived',
+    expect: { status: 'indeterminate', signer_authority: 'not_established', errors: ['signer_authority_indeterminate'], reasons: { [AGENT]: 'key_unreachable' } },
+    lines: 'L360-369', note: 'Ruled indeterminate. A deployment MAY adopt a fail-open policy for transport unreachability only, and a degraded outcome is still not a positive verification.' },
+  { id: 'RC-V09', kind: 'verify', title: 'The resolver names: structurally malformed key material', base: 'intent', resolver: 'malformed',
+    provenance: 'ruling-derived',
+    expect: { status: 'indeterminate', signer_authority: 'not_established', errors: ['signer_authority_indeterminate'], reasons: { [AGENT]: 'key_material_malformed' } },
+    lines: 'L365-367', note: 'Malformed material that loads but is wrong fails closed even under a fail-open policy, and is never a signature failure: no signature check ran.' },
+  { id: 'RC-V10', kind: 'verify', title: 'The resolver names: an unsupported identifier scheme', base: 'intent', resolver: 'unsupported_scheme',
+    provenance: 'ruling-derived',
+    expect: { status: 'unsupported', signer_authority: 'not_established', errors: ['signer_key_scheme_unsupported'], reasons: { [AGENT]: 'key_scheme_unsupported' } },
+    lines: 'L360-364, L1226-1227', note: 'The one outcome of the six that is unsupported rather than indeterminate, which is what line 1226 says of an unknown required profile and is how the ruling maps it.' },
+  { id: 'RC-V11', kind: 'verify', title: 'Key material that is not a 32-byte Ed25519 key', base: 'intent', resolver: 'malformed_material',
+    provenance: 'ruling-derived',
+    expect: { status: 'indeterminate', signer_authority: 'not_established', errors: ['signer_authority_indeterminate'], reasons: { [AGENT]: 'key_material_malformed' } },
+    lines: 'L365-367', note: 'The resolver named no outcome; the material it returned is 16 bytes. It must not reach the signature check, which returns false on a length mismatch and would report a failed signature for bytes nothing checked.' },
+  { id: 'RC-V12', kind: 'verify', title: 'A signature from another signer that does not verify', base: 'intent',
+    appendSignature: { signer: 'did:example:bystander', key_id: 'did:example:bystander#k', alg: 'Ed25519', value: '0'.repeat(128) },
+    resolver: 'correct', provenance: 'ruling-derived',
+    expect: { status: 'valid', signer_authority: 'verified', errors: [], other_signatures: 'not_all_verified' },
+    lines: 'L999, L1041, L1003-1009', note: 'Line 999 requires one signature from issuer and line 1041 has a verifier verify every REQUIRED signature. Signatures sit outside receipt_id, so a third party can append one to a published receipt without changing a digest. Ruled: a failure outside the required set does not change the aggregate state and is reported on its own axis.' },
+  { id: 'RC-V13', kind: 'verify', title: 'A second signature from the issuer that does not verify', base: 'intent',
+    appendSignature: { signer: AGENT, key_id: `${AGENT}#key-2`, alg: 'Ed25519', value: '0'.repeat(128) },
+    resolver: 'correct', provenance: 'ruling-derived',
+    expect: { status: 'invalid', signer_authority: 'invalid', errors: ['signature_invalid'], other_signatures: 'none' },
+    lines: 'L999, L1041', note: 'The same append from the issuer, who is in the required set, does decide. The pair with RC-V12 is what shows the axis is the required set and not the count.' },
+  { id: 'RC-V14', kind: 'verify', title: 'A verifier requires a signer the receipt does not carry', base: 'intent',
+    resolver: 'correct', requiredSigners: ['did:example:cosigner'], provenance: 'ruling-derived',
+    expect: { status: 'invalid', signer_authority: 'verified', errors: ['required_signature_missing'], other_signatures: 'none' },
+    lines: 'L1041', note: 'The required set is the issuer plus what the applicable profile or the verifier requires. A named signer carrying no descriptor at all is a missing required signature.' },
+]
+
+const CASES: Case[] = [...ENVELOPE, ...STAGE, ...VERIFY, ...RULED]
 
 // -------------------------------------------------------------------------
 // Build each record, run the reference, and stop on any disagreement.
@@ -486,25 +540,62 @@ for (const testCase of CASES) {
     continue
   }
 
-  const resolvers = {
+  // A descriptor appended after minting is not the reference issuer's output, so the
+  // byte-parity check must not try to verify it. The case records which one it is.
+  let appendedKeyId: string | null = null
+  if (testCase.appendSignature) {
+    const signatures = receipt.signatures as unknown as Record<string, Json>[]
+    appendedKeyId = String(testCase.appendSignature.key_id)
+    signatures.push(testCase.appendSignature)
+    signatures.sort((a, b) => {
+      const bySigner = String(a.signer) < String(b.signer) ? -1 : String(a.signer) > String(b.signer) ? 1 : 0
+      if (bySigner !== 0) return bySigner
+      return String(a.key_id) < String(b.key_id) ? -1 : String(a.key_id) > String(b.key_id) ? 1 : 0
+    })
+  }
+  const outcome = (name: string) => () => ({ outcome: name })
+  const resolvers: Record<string, unknown> = {
     correct: (signer: string) => publicKeys[signer],
     none: () => undefined,
     raises: () => { throw new Error('resolver unavailable') },
     other_key: () => publicKeyFromPrivate(OTHER_KEY),
+    malformed_material: () => 'ab'.repeat(16),
+    not_found: outcome('not_found'),
+    ambiguous: outcome('ambiguous'),
+    unreachable: outcome('unreachable'),
+    malformed: outcome('malformed'),
+    unsupported_scheme: outcome('unsupported_scheme'),
   }
-  const actual = verifyReceiptV1(receipt as never, resolvers[testCase.resolver] as never)
+  const requirements = testCase.requiredSigners ? { requiredSigners: testCase.requiredSigners } : {}
+  const actual = verifyReceiptV1(receipt as never, resolvers[testCase.resolver] as never, {}, requirements)
   if (actual.status !== testCase.expect.status) fail(`${testCase.id}: expected status ${testCase.expect.status}, got ${actual.status} (${actual.errors.join(',')})`)
   if (actual.signer_authority !== testCase.expect.signer_authority) fail(`${testCase.id}: expected signer_authority ${testCase.expect.signer_authority}, got ${actual.signer_authority}`)
   const expectedErrors = [...testCase.expect.errors].sort().join(',')
   if ([...actual.errors].sort().join(',') !== expectedErrors) fail(`${testCase.id}: expected errors ${expectedErrors}, got ${actual.errors.join(',')}`)
+  if (testCase.expect.other_signatures !== undefined && actual.other_signatures !== testCase.expect.other_signatures) {
+    fail(`${testCase.id}: expected other_signatures ${testCase.expect.other_signatures}, got ${actual.other_signatures}`)
+  }
+  for (const [signer, reason] of Object.entries(testCase.expect.reasons ?? {})) {
+    const entry = (actual.signature_results as { signer: string; reason?: string }[]).find(item => item.signer === signer)
+    if (!entry) fail(`${testCase.id}: no signature result for ${signer}`)
+    if (entry!.reason !== reason) fail(`${testCase.id}: expected reason ${reason} for ${signer}, got ${entry!.reason}`)
+  }
   out.push({
-    id: testCase.id, kind: 'verify', title: testCase.title, expected_provenance: 'draft-derived',
+    id: testCase.id, kind: 'verify', title: testCase.title, expected_provenance: testCase.provenance ?? 'draft-derived',
     derivation: { lines: testCase.lines, note: testCase.note },
     receipt: receipt as Json, signed,
     resolver: testCase.resolver,
+    ...(appendedKeyId ? { appended_signature_key_id: appendedKeyId } : {}),
+    ...(testCase.requiredSigners ? { required_signers: testCase.requiredSigners } : {}),
     public_keys: publicKeys as unknown as Json,
     other_public_key: publicKeyFromPrivate(OTHER_KEY),
-    expected: { status: testCase.expect.status, signer_authority: testCase.expect.signer_authority, sdk_errors: testCase.expect.errors },
+    expected: {
+      status: testCase.expect.status,
+      signer_authority: testCase.expect.signer_authority,
+      sdk_errors: testCase.expect.errors,
+      ...(testCase.expect.other_signatures !== undefined ? { other_signatures: testCase.expect.other_signatures } : {}),
+      ...(testCase.expect.reasons ? { sdk_reasons: testCase.expect.reasons } : {}),
+    },
   })
 }
 
@@ -513,7 +604,7 @@ const counts = {
   by_kind: {
     envelope: ENVELOPE.length,
     stage: STAGE.length,
-    verify: VERIFY.length,
+    verify: VERIFY.length + RULED.length,
   },
   by_provenance: {
     'draft-derived': out.filter(c => (c as { expected_provenance: string }).expected_provenance === 'draft-derived').length,

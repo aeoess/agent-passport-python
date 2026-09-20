@@ -1,3 +1,5 @@
+import copy
+
 import pytest
 
 from agent_passport.crypto import public_key_from_private
@@ -549,3 +551,164 @@ def test_serialized_route_reports_a_size_limit_rather_than_parsing():
     result = verify_receipt_v1_serialized(raw, _resolve, max_utf8_bytes=10)
     assert result["errors"][0] == "parse_error"
     assert result["status"] == "invalid"
+
+
+# --- rule A: only required signatures decide a receipt's state -------------------------
+# Draft line 1041 has a verifier verify every REQUIRED signature, and line 999 names one:
+# "one signature MUST be from issuer". Draft lines 1003-1009 compute receipt_id with
+# signatures absent, so the signatures array sits outside the content address and a third
+# party can append a descriptor to a published receipt without changing any digest.
+
+
+def test_appended_non_required_signature_does_not_flip_a_conforming_receipt():
+    receipt = build_receipt(action_intent_fields())
+    control = verify_receipt_v1(receipt, lambda *_: PUBLIC_KEY)
+    assert control["status"] == "valid"
+    assert control["other_signatures"] == "none"
+
+    tampered = copy.deepcopy(receipt)
+    tampered["signatures"].append({
+        "signer": "did:example:bystander",
+        "key_id": "did:example:bystander#k",
+        "alg": "Ed25519",
+        "value": "0" * 128,
+    })
+    result = verify_receipt_v1(tampered, lambda *_: PUBLIC_KEY)
+    assert result["status"] == "valid"
+    assert result["other_signatures"] == "not_all_verified"
+    assert "signature_invalid" not in result["errors"]
+    by_signer = {item["signer"]: item for item in result["signature_results"]}
+    assert by_signer[AGENT]["required"] is True
+    assert by_signer["did:example:bystander"]["required"] is False
+    assert by_signer["did:example:bystander"]["valid"] is False
+
+
+def test_appended_second_issuer_signature_that_fails_makes_it_invalid():
+    """The pair with the test above: appending from the issuer, who IS in the required
+    set, decides the aggregate state; appending from a bystander, who is not, does not.
+    The axis is the required set, not the signature count."""
+    receipt = build_receipt(action_intent_fields())
+    control = verify_receipt_v1(receipt, lambda *_: PUBLIC_KEY)
+    assert control["status"] == "valid"
+
+    tampered = copy.deepcopy(receipt)
+    tampered["signatures"].append({
+        "signer": AGENT,
+        "key_id": "key-2",
+        "alg": "Ed25519",
+        "value": "0" * 128,
+    })
+    result = verify_receipt_v1(tampered, lambda *_: PUBLIC_KEY)
+    assert result["status"] == "invalid"
+    assert result["signer_authority"] == "invalid"
+    assert "signature_invalid" in result["errors"]
+    assert result["other_signatures"] == "none"
+    by_key_id = {item["key_id"]: item for item in result["signature_results"]}
+    assert by_key_id["key-1"]["required"] is True
+    assert by_key_id["key-2"]["required"] is True
+
+
+def test_required_signer_the_receipt_does_not_carry_is_missing():
+    receipt = build_receipt(action_intent_fields())
+    control = verify_receipt_v1(receipt, lambda *_: PUBLIC_KEY)
+    assert control["status"] == "valid"
+
+    result = verify_receipt_v1(receipt, lambda *_: PUBLIC_KEY, required_signers=["did:example:cosigner"])
+    assert result["status"] == "invalid"
+    assert "required_signature_missing" in result["errors"]
+    # The signer that IS present still verified; the missing one is a separate finding
+    # from signer authority, which describes only the signatures actually carried.
+    assert result["signer_authority"] == "verified"
+
+
+# --- rule B: key resolution outcomes are kept apart -------------------------------------
+# Draft section 2.5 lines 360-364 require a resolver to distinguish six outcomes: resolved;
+# subject or key not found; ambiguous; structurally malformed key material; transport
+# unreachability; and an unsupported identifier scheme.
+
+
+@pytest.mark.parametrize(
+    "outcome,expected_reason,expected_status,expected_error",
+    [
+        ("not_found", "key_not_found", "indeterminate", "signer_authority_indeterminate"),
+        ("ambiguous", "key_ambiguous", "indeterminate", "signer_authority_indeterminate"),
+        ("unreachable", "key_unreachable", "indeterminate", "signer_authority_indeterminate"),
+        ("malformed", "key_material_malformed", "indeterminate", "signer_authority_indeterminate"),
+        ("unsupported_scheme", "key_scheme_unsupported", "unsupported", "signer_key_scheme_unsupported"),
+    ],
+)
+def test_resolver_outcome_mapping(outcome, expected_reason, expected_status, expected_error):
+    receipt = build_receipt(action_intent_fields())
+    control = verify_receipt_v1(receipt, lambda *_: PUBLIC_KEY)
+    assert control["status"] == "valid"
+
+    result = verify_receipt_v1(receipt, lambda *_: {"outcome": outcome})
+    assert result["status"] == expected_status
+    assert expected_error in result["errors"]
+    assert "signature_invalid" not in result["errors"]
+    entry = next(item for item in result["signature_results"] if item["signer"] == AGENT)
+    assert entry["reason"] == expected_reason
+
+
+def test_resolver_returning_none_keeps_key_unresolved():
+    receipt = build_receipt(action_intent_fields())
+    control = verify_receipt_v1(receipt, lambda *_: PUBLIC_KEY)
+    assert control["status"] == "valid"
+
+    result = verify_receipt_v1(receipt, lambda *_: None)
+    assert result["status"] == "indeterminate"
+    entry = next(item for item in result["signature_results"] if item["signer"] == AGENT)
+    assert entry["reason"] == "key_unresolved"
+    assert "signature_invalid" not in result["errors"]
+
+
+def test_resolver_raising_keeps_key_resolution_error():
+    receipt = build_receipt(action_intent_fields())
+    control = verify_receipt_v1(receipt, lambda *_: PUBLIC_KEY)
+    assert control["status"] == "valid"
+
+    def raises(*_):
+        raise RuntimeError("resolver unavailable")
+
+    result = verify_receipt_v1(receipt, raises)
+    assert result["status"] == "indeterminate"
+    entry = next(item for item in result["signature_results"] if item["signer"] == AGENT)
+    assert entry["reason"] == "key_resolution_error"
+    assert "signature_invalid" not in result["errors"]
+
+
+@pytest.mark.parametrize(
+    "bad_key",
+    ["ab" * 16, "ab" * 33, "g" + "0" * 63, ""],
+    ids=["too_short", "too_long", "non_hex_character", "empty_string"],
+)
+def test_malformed_key_material_never_reaches_the_signature_check(bad_key):
+    """Material that is not 32 bytes of hexadecimal must not reach the signature check.
+    Before this, it reached the check, which returns False on a length mismatch, so it
+    was reported as signature_invalid, saying the bytes were checked and failed when
+    nothing was checked."""
+    receipt = build_receipt(action_intent_fields())
+    control = verify_receipt_v1(receipt, lambda *_: PUBLIC_KEY)
+    assert control["status"] == "valid"
+
+    result = verify_receipt_v1(receipt, lambda *_: bad_key)
+    assert result["status"] == "indeterminate"
+    assert result["signer_authority"] == "not_established"
+    assert "signature_invalid" not in result["errors"]
+    entry = next(item for item in result["signature_results"] if item["signer"] == AGENT)
+    assert entry["reason"] == "key_material_malformed"
+
+
+def test_well_formed_wrong_key_is_still_signature_invalid():
+    """Control for the malformed-key-material cases above: a key that IS well-formed (32
+    bytes of hex) but simply did not sign the receipt reaches the check and fails it,
+    which is a real signature_invalid, not a resolution failure."""
+    receipt = build_receipt(action_intent_fields())
+    control = verify_receipt_v1(receipt, lambda *_: PUBLIC_KEY)
+    assert control["status"] == "valid"
+
+    result = verify_receipt_v1(receipt, lambda *_: WRONG_PUBLIC_KEY)
+    assert result["status"] == "invalid"
+    assert "signature_invalid" in result["errors"]
+    entry = next(item for item in result["signature_results"] if item["signer"] == AGENT)
+    assert "reason" not in entry
