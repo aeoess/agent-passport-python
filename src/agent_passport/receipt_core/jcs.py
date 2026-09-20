@@ -18,41 +18,77 @@ def _assert_scalar_string(value: str, path: str) -> None:
             raise IJsonValidationError(f"{path}: unpaired UTF-16 surrogate")
 
 
+class _IJsonWalkExit:
+    """Stack marker for leaving a list or dict during `assert_i_json`."""
+
+    __slots__ = ("identity",)
+
+    def __init__(self, identity: int) -> None:
+        self.identity = identity
+
+
 def assert_i_json(value, path: str = "$", ancestors: set[int] | None = None) -> None:
-    """Validate without converting custom objects, keys, dates, or missing values."""
+    """Validate without converting custom objects, keys, dates, or missing values.
+
+    Iterative, with an explicit stack, rather than one Python call per nesting
+    level: a receipt result several hundred levels deep exhausted the call
+    stack here before this check ever reached a schema. A dict's own key is
+    validated at the moment its value is about to be visited, and the exit
+    marker below removes a container's id from `ancestors` only after every
+    one of its own children has been visited, so a document with more than
+    one fault still names the same first fault this function found before,
+    in the same left-to-right, depth-first order a recursive walk visits it.
+    """
     if ancestors is None:
         ancestors = set()
-    if value is None or type(value) is bool:
-        return
-    if type(value) is str:
-        _assert_scalar_string(value, path)
-        return
-    if type(value) is int:
-        if abs(value) > 9_007_199_254_740_991:
-            raise IJsonValidationError(f"{path}: integer exceeds the interoperable IEEE 754 range")
-        return
-    if type(value) is float:
-        if not math.isfinite(value):
-            raise IJsonValidationError(f"{path}: non-finite number")
-        if value.is_integer() and abs(value) > 9_007_199_254_740_991:
-            raise IJsonValidationError(f"{path}: integer exceeds the interoperable IEEE 754 range")
-        return
-    if type(value) not in (list, dict):
-        raise IJsonValidationError(f"{path}: unsupported {type(value).__name__}")
-    identity = id(value)
-    if identity in ancestors:
-        raise IJsonValidationError(f"{path}: cyclic value")
-    ancestors.add(identity)
-    if type(value) is list:
-        for index, item in enumerate(value):
-            assert_i_json(item, f"{path}[{index}]", ancestors)
-    else:
-        for key, item in value.items():
+
+    stack: list = []
+
+    def visit(current, current_path: str) -> None:
+        if current is None or type(current) is bool:
+            return
+        if type(current) is str:
+            _assert_scalar_string(current, current_path)
+            return
+        if type(current) is int:
+            if abs(current) > 9_007_199_254_740_991:
+                raise IJsonValidationError(f"{current_path}: integer exceeds the interoperable IEEE 754 range")
+            return
+        if type(current) is float:
+            if not math.isfinite(current):
+                raise IJsonValidationError(f"{current_path}: non-finite number")
+            if current.is_integer() and abs(current) > 9_007_199_254_740_991:
+                raise IJsonValidationError(f"{current_path}: integer exceeds the interoperable IEEE 754 range")
+            return
+        if type(current) not in (list, dict):
+            raise IJsonValidationError(f"{current_path}: unsupported {type(current).__name__}")
+        identity = id(current)
+        if identity in ancestors:
+            raise IJsonValidationError(f"{current_path}: cyclic value")
+        ancestors.add(identity)
+        stack.append(_IJsonWalkExit(identity))
+        if type(current) is list:
+            for index, item in reversed(list(enumerate(current))):
+                stack.append(("value", item, f"{current_path}[{index}]"))
+        else:
+            for key, item in reversed(list(current.items())):
+                stack.append(("dict_item", key, item, current_path))
+
+    visit(value, path)
+    while stack:
+        item = stack.pop()
+        if type(item) is _IJsonWalkExit:
+            ancestors.discard(item.identity)
+            continue
+        if item[0] == "value":
+            _, sub, sub_path = item
+            visit(sub, sub_path)
+        else:
+            _, key, sub, parent_path = item
             if not isinstance(key, str):
-                raise IJsonValidationError(f"{path}: object key is not a string")
-            _assert_scalar_string(key, f"{path} key")
-            assert_i_json(item, f"{path}.{key}", ancestors)
-    ancestors.remove(identity)
+                raise IJsonValidationError(f"{parent_path}: object key is not a string")
+            _assert_scalar_string(key, f"{parent_path} key")
+            visit(sub, f"{parent_path}.{key}")
 
 
 def strict_jcs(value) -> str:

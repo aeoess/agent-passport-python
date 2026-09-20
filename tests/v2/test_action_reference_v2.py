@@ -632,13 +632,17 @@ def test_json_path_extra_member_named_duplicate_object_member_is_not_misclassifi
     assert exc_info.value.code == "non_i_json"
 
 
-def test_deeply_nested_payload_raises_nesting_limit_not_recursionerror():
+def test_deeply_nested_payload_does_not_raise_recursionerror():
+    # The shared receipt_core.jcs validator and canonicalizer this function
+    # goes through are iterative, not recursive (implementation-hardening,
+    # matching the TypeScript SDK, which already accepted values this deep).
+    # A payload nested this far used to overflow the interpreter stack; it
+    # now hashes cleanly, the same as a shallow instance of the same shape.
     value: object = 0
     for _ in range(5000):
         value = {"n": value}
-    with pytest.raises(ActionReferenceError) as exc_info:
-        compute_payload_ref_v1(value)
-    assert exc_info.value.code == "nesting_limit"
+    digest = compute_payload_ref_v1(value)
+    assert re.fullmatch(r"[0-9a-f]{64}", digest)
 
 
 def test_create_rejects_empty_string_scope_before_the_duplicate_check():
