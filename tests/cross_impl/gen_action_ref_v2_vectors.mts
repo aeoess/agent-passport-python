@@ -88,6 +88,7 @@ const FAILURE_CODES = [
   { code: 'unknown_member', meaning: 'a member outside the eight', draft_lines: '813-814' },
   { code: 'duplicate_member', meaning: 'a member name occurs twice in the serialized document, compared after escape decoding', draft_lines: '814-817' },
   { code: 'wrong_profile', meaning: 'profile is not "aps-action-ref-v2"', draft_lines: '789' },
+  { code: 'empty_scope_required', meaning: 'scope_required is empty and no applicable profile permits it', draft_lines: '799-800' },
   { code: 'not_string', meaning: 'a string field holds a non-string (number, null, array, object)', draft_lines: '789-799' },
   { code: 'empty_string', meaning: 'a string field or a scope element is ""', draft_lines: '798-799' },
   { code: 'bad_hex', meaning: 'payload_ref not 64 lowercase hex, or nonce not 32 lowercase hex', draft_lines: '793-794, 797-798, 815' },
@@ -104,13 +105,12 @@ const FAILURE_DRAFT_LINES: Record<string, string> = Object.fromEntries(
   FAILURE_CODES.map((row) => [row.code, row.draft_lines]),
 )
 
-const WITHHELD = [
-  {
-    case: 'scope_required = []',
-    reason:
-      'draft lines 798-800 let a profile permit an empty scope_required array, but the input object names ' +
-      'no profile, so the default is not determined by the text.',
-  },
+const WITHHELD: { case: string; reason: string }[] = [
+  // Was: scope_required = [], withheld because lines 798-800 let a profile permit an
+  // empty array and the input object names no profile, so the default was not determined
+  // by the text. A recorded ruling now settles the default: the generic computation
+  // refuses, and a caller holding the applicable profile supplies context that permits
+  // it. Cases AR-N44 and AR-P44 carry both halves, labelled ruling-derived.
 ]
 
 const EXPECTED_PROVENANCE_VALUES = {
@@ -133,6 +133,13 @@ const EXPECTED_PROVENANCE_VALUES = {
     'section 2.2 states it only as interoperability advice); and a provenance_note case where the draft ' +
     'leaves the exact failure class open and this file pins whichever class the reviewed SDK actually ' +
     'reports.',
+  'ruling-derived':
+    'The draft names the case but does not fix its outcome, and the expected outcome comes from a ruling ' +
+    'recorded by the principal for this programme. Line 799 says all string fields MUST be non-empty ' +
+    '"except that a profile MAY permit an empty scope_required array", which leaves open whether the ' +
+    'generic computation may permit it itself. The ruling is that it may not: an empty scope_required is ' +
+    'refused unless the caller supplies profile context that permits it. These are the cases a later ' +
+    'revision would have to state in normative text for the expectation to become draft-derived.',
 }
 
 const CROSS_CHECKS = {
@@ -156,7 +163,7 @@ const TS_ERROR_MESSAGES_NOTE =
 // Helpers
 // -------------------------------------------------------------------------
 
-type Provenance = 'draft-derived' | 'ts-conformant-regression'
+type Provenance = 'draft-derived' | 'ts-conformant-regression' | 'ruling-derived'
 
 interface CaseResult {
   id: string
@@ -168,7 +175,7 @@ const cases: CaseResult[] = []
 const counts = {
   total: 0,
   by_entry: { payload: 0, object: 0, json: 0, create: 0 } as Record<string, number>,
-  by_expected_provenance: { 'draft-derived': 0, 'ts-conformant-regression': 0 } as Record<string, number>,
+  by_expected_provenance: { 'draft-derived': 0, 'ts-conformant-regression': 0, 'ruling-derived': 0 } as Record<string, number>,
 }
 
 function record(entry: CaseResult['entry'], provenance: Provenance): void {
@@ -489,6 +496,26 @@ const objectCases: ObjectCase[] = [
   { id: 'AR-N31', input: base({ scope_required: ['😀:y', '｡:x'] }), expected: { result: 'reject', failure: 'scope_not_canonical' } },
   { id: 'AR-N32', input: base({ scope_required: [''] }), expected: { result: 'reject', failure: 'empty_string' } },
   { id: 'AR-N33', input: base({ scope_required: [1] }), expected: { result: 'reject', failure: 'not_string' } },
+  {
+    id: 'AR-N44',
+    input: base({ scope_required: [] }),
+    expected: { result: 'reject', failure: 'empty_scope_required' },
+    provenance: 'ruling-derived',
+    provenance_note:
+      'Line 799 puts the permission to carry an empty scope_required in a profile, not in the generic ' +
+      'computation, so the generic one refuses. A caller holding the applicable profile supplies the ' +
+      'context that permits it, which case AR-P44 covers.',
+  },
+  {
+    id: 'AR-P44',
+    input: base({ scope_required: [] }),
+    profile_context: { emptyScopeRequiredPermitted: true },
+    expected: { result: 'accept' },
+    provenance: 'ruling-derived',
+    provenance_note:
+      'The same input as AR-N44 with profile context that permits an empty scope_required. The context ' +
+      'decides admission only: no marker enters the preimage, so this digest is the digest of this input.',
+  },
   { id: 'AR-N34', input: base({ agent_id: 'did:example:\uD800' }), expected: { result: 'reject', failure: 'lone_surrogate' } },
   { id: 'AR-N35', input: base({ scope_required: ['\uDC00:x'] }), expected: { result: 'reject', failure: 'lone_surrogate' } },
   { id: 'AR-N36', input: [base({})], expected: { result: 'reject', failure: 'not_object' } },
@@ -498,11 +525,16 @@ const objectCases: ObjectCase[] = [
 const actionRefById = new Map<string, string>()
 
 for (const c of objectCases) {
-  const provenance: Provenance = c.expected.result === 'accept' ? 'ts-conformant-regression' : 'draft-derived'
+  const provenance: Provenance = (c as { provenance?: Provenance }).provenance
+    ?? (c.expected.result === 'accept' ? 'ts-conformant-regression' : 'draft-derived')
   const draft_lines = c.expected.result === 'accept' ? '807-808' : draftLinesForFailure(c.expected.failure)
+  // Profile context a case supplies, for the one rule the draft puts in a profile rather
+  // than in the generic computation: an empty scope_required (line 799). It changes what
+  // is admitted and never what is hashed.
+  const profileContext = (c as { profile_context?: { emptyScopeRequiredPermitted?: boolean } }).profile_context
   let expectedOut: Record<string, unknown>
   try {
-    const ref = computeActionRefV2(c.input)
+    const ref = computeActionRefV2(c.input, profileContext ?? {})
     if (c.expected.result !== 'accept') {
       fail(`${c.id}: TS accepted an input expected to reject (${c.expected.failure})`)
     }
@@ -519,8 +551,10 @@ for (const c of objectCases) {
     id: c.id,
     entry: 'object',
     input: c.input,
+    ...(profileContext ? { profile_context: profileContext } : {}),
     expected: expectedOut,
     expected_provenance: provenance,
+    ...((c as { provenance_note?: string }).provenance_note ? { provenance_note: (c as { provenance_note?: string }).provenance_note } : {}),
     draft_lines,
   })
 }

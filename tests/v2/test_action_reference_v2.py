@@ -313,9 +313,57 @@ def test_non_i_json():
 
 
 def test_empty_scope_required():
+    # By default, with no profile context, an empty scope_required is still refused.
     doc = _base()
     doc["scope_required"] = []
     _expect_code(doc, "empty_scope_required")
+
+
+# ── rule C: an empty scope_required is a profile's permission to give ──────
+# Draft-pidlisnyi-aps-03 section 4.1 line 799: "All string fields MUST be non-empty
+# except that a profile MAY permit an empty scope_required array."
+
+
+def test_empty_scope_required_admitted_only_with_profile_context():
+    doc = _base()
+    doc["scope_required"] = []
+    _expect_code(doc, "empty_scope_required")
+    validate_action_reference_input_v2(doc, empty_scope_required_permitted=True)  # does not raise
+
+
+def test_empty_scope_required_digest_is_stable_across_permitted_runs():
+    doc = _base()
+    doc["scope_required"] = []
+    with pytest.raises(ActionReferenceError) as exc_info:
+        compute_action_ref_v2(doc)
+    assert exc_info.value.code == "empty_scope_required"
+
+    first = compute_action_ref_v2(doc, empty_scope_required_permitted=True)
+    second = compute_action_ref_v2(doc, empty_scope_required_permitted=True)
+    assert re.fullmatch(r"[0-9a-f]{64}", first)
+    assert first == second
+
+
+def test_empty_scope_required_context_does_not_affect_a_non_empty_array():
+    doc = _base()
+    without_context = compute_action_ref_v2(doc)
+    with_context = compute_action_ref_v2(doc, empty_scope_required_permitted=True)
+    assert without_context == with_context
+
+
+def test_json_path_and_from_json_forward_the_profile_context():
+    doc = _base()
+    doc["scope_required"] = []
+    clean = json.dumps(doc)
+
+    with pytest.raises(ActionReferenceError) as exc_info:
+        parse_action_reference_input_v2(clean)
+    assert exc_info.value.code == "empty_scope_required"
+
+    parsed = parse_action_reference_input_v2(clean, empty_scope_required_permitted=True)
+    assert parsed["scope_required"] == []
+    ref = compute_action_ref_v2_from_json(clean, empty_scope_required_permitted=True)
+    assert re.fullmatch(r"[0-9a-f]{64}", ref)
 
 
 # ── section 4.1 rejects noncharacters ───────────────────────────────────────
