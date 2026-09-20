@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import re
+from collections.abc import Iterable
 
 from ..crypto import sign, verify
 from .jcs import assert_exact_keys, parse_strict_i_json, strict_jcs
@@ -13,6 +14,11 @@ RECEIPT_ID_TAG = "APS-RECEIPT-ID-V1"
 RECEIPT_SIG_TAG = "APS-RECEIPT-SIG-V1"
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 HEX128 = re.compile(r"^[0-9a-f]{128}$")
+# Case-insensitive and deliberately separate from HEX64: a resolver's answer, unlike a
+# receipt member, is not itself subject to the envelope's lowercase-only hex rule (draft
+# section 2.5 lines 360-364). Anything matching this is usable Ed25519 key material;
+# anything else never reaches the signature check (see _key_resolution_reason).
+KEY_MATERIAL = re.compile(r"^[0-9a-fA-F]{64}$")
 UTC_MS = re.compile(r"^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.\d{3}Z$")
 # delegation_ref carries the "sha256:" prefix of a delegation_id, not a bare digest
 # (draft-pidlisnyi-aps-03 lines 964, 982, 484: the envelope example writes it as
@@ -220,6 +226,36 @@ def create_receipt_v1(fields: dict, signers: list[dict]) -> dict:
     return receipt
 
 
+# Draft section 2.5 lines 360-364 require a resolver to keep six outcomes apart: resolved;
+# subject or key not found; ambiguous; structurally malformed key material; transport
+# unreachability; and an unsupported identifier scheme. This SDK used to report every
+# unresolved case as the same "key_unresolved" answer.
+_KEY_OUTCOME_REASONS = {
+    "not_found": "key_not_found",
+    "ambiguous": "key_ambiguous",
+    "malformed": "key_material_malformed",
+    "unreachable": "key_unreachable",
+    "unsupported_scheme": "key_scheme_unsupported",
+}
+
+
+def _key_resolution_reason(resolved) -> str | None:
+    """The reason `resolved` (a receipt key resolver's answer) is not usable key material,
+    or None when it is usable and the signature check should run.
+
+    A string that is not 32 bytes of hexadecimal never reaches that check: the check
+    returns False on a length mismatch, which used to be reported as "signature_invalid",
+    saying the bytes were checked and failed when nothing was checked. A mapping names one
+    of the outcomes above; an unrecognised outcome, or any other value including None,
+    keeps "key_unresolved".
+    """
+    if isinstance(resolved, str):
+        return None if KEY_MATERIAL.fullmatch(resolved) else "key_material_malformed"
+    if isinstance(resolved, dict) and isinstance(resolved.get("outcome"), str):
+        return _KEY_OUTCOME_REASONS.get(resolved["outcome"], "key_unresolved")
+    return "key_unresolved"
+
+
 def _declares_foreign_profile(receipt) -> bool:
     """True when `receipt` names an envelope profile other than aps-receipt-v1. Such an
     artifact is unsupported (draft section 5.6 line 1226) rather than invalid, and is not
@@ -230,9 +266,28 @@ def _declares_foreign_profile(receipt) -> bool:
     return isinstance(profile, str) and profile != "aps-receipt-v1"
 
 
-def verify_receipt_v1(receipt: dict, resolve_key, *, expected_receipt_type=None, boundary_identity=None) -> dict:
+def verify_receipt_v1(
+    receipt: dict,
+    resolve_key,
+    *,
+    expected_receipt_type=None,
+    boundary_identity=None,
+    required_signers: Iterable[str] = (),
+) -> dict:
     """Verify a ReceiptV1: envelope, identifier, signatures and the section 5.3 stage
     rules for the record's own receipt_type.
+
+    Only a REQUIRED signature decides the aggregate state (draft line 1041). Draft line
+    999 names one required signer, the issuer; `required_signers` names any others the
+    applicable profile or this caller also requires. Every carried signature is checked
+    and reported in `signature_results`, marked `required` accordingly, but a non-required
+    signature that fails or cannot be resolved only moves the separate `other_signatures`
+    axis ("none" / "all_verified" / "not_all_verified"): draft lines 1003-1009 keep
+    signatures outside receipt_id, so a third party can append a descriptor to a published
+    receipt without changing its digest, and letting that flip a conforming receipt to
+    invalid would hand the outcome to that third party. A required signer that carries no
+    descriptor at all is a missing required signature: `required_signature_missing` is
+    added to `errors` and `status` becomes "invalid".
 
     The stage dispatch is part of this because draft line 1214 has a verifier enforce the
     closed ReceiptV1 schema AND the type-specific schema, and this function reports its
@@ -255,6 +310,7 @@ def verify_receipt_v1(receipt: dict, resolve_key, *, expected_receipt_type=None,
             "stage": "not_checked",
             "signer_authority": "not_checked",
             "signature_results": [],
+            "other_signatures": "none",
             "errors": ["unsupported_profile"],
         }
     try:
@@ -267,46 +323,79 @@ def verify_receipt_v1(receipt: dict, resolve_key, *, expected_receipt_type=None,
             "stage": "not_checked",
             "signer_authority": "not_checked",
             "signature_results": [],
+            "other_signatures": "none",
             "errors": [str(exc)],
         }
     id_valid = compute_receipt_id_v1(receipt) == receipt["receipt_id"]
     errors = [] if id_valid else ["receipt_id_mismatch"]
+
+    required_set = {receipt["issuer"], *required_signers}
     results = []
     for proof in receipt["signatures"]:
+        required = proof["signer"] in required_set
         try:
-            public_key = resolve_key(proof["signer"], proof["key_id"], receipt["issued_at"])
+            resolved = resolve_key(proof["signer"], proof["key_id"], receipt["issued_at"])
         except Exception:
-            results.append({"signer": proof["signer"], "key_id": proof["key_id"], "valid": False, "reason": "key_resolution_error"})
+            results.append({"signer": proof["signer"], "key_id": proof["key_id"], "valid": False, "required": required, "reason": "key_resolution_error"})
             continue
-        if public_key is None:
-            results.append({"signer": proof["signer"], "key_id": proof["key_id"], "valid": False, "reason": "key_unresolved"})
+        reason = _key_resolution_reason(resolved)
+        if reason is not None:
+            results.append({"signer": proof["signer"], "key_id": proof["key_id"], "valid": False, "required": required, "reason": reason})
             continue
         descriptor = {"signer": proof["signer"], "key_id": proof["key_id"], "alg": proof["alg"]}
-        results.append({"signer": proof["signer"], "key_id": proof["key_id"], "valid": verify(receipt_signature_payload_v1(receipt, descriptor), proof["value"], public_key)})
+        results.append({
+            "signer": proof["signer"],
+            "key_id": proof["key_id"],
+            "required": required,
+            "valid": verify(receipt_signature_payload_v1(receipt, descriptor), proof["value"], resolved),
+        })
+
+    for signer in required_set:
+        if not any(item["signer"] == signer for item in results):
+            errors.append("required_signature_missing")
+
+    required_results = [item for item in results if item["required"]]
+    other_results = [item for item in results if not item["required"]]
+
+    # key_scheme_unsupported is kept apart from the other unresolved reasons: it makes the
+    # receipt unsupported rather than indeterminate, so it is excluded from `unresolved`
+    # and tracked on its own (draft section 5.6 line 1226 makes an unsupported requirement
+    # its own state, not a form of indeterminate).
+    unsupported_scheme = any(item.get("reason") == "key_scheme_unsupported" for item in required_results)
+    unresolved = [item for item in required_results if item.get("reason") is not None and item["reason"] != "key_scheme_unsupported"]
     # An unresolved key and a signature that fails verification are different findings: the
     # former never had its bytes checked, so it must not also raise "signature_invalid"
-    # (draft section 2.4 line 322, section 2.5 lines 360-369, section 5.6 line 1226).
-    unresolved = [item for item in results if item.get("reason") in ("key_unresolved", "key_resolution_error")]
-    bad_bytes = [item for item in results if not item["valid"] and "reason" not in item]
+    # (draft section 2.4 line 322, section 2.5 lines 360-369, section 5.6 line 1226). Only
+    # a required signature's own failure counts here; see the docstring above.
+    bad_bytes = [item for item in required_results if not item["valid"] and "reason" not in item]
     if bad_bytes:
         errors.append("signature_invalid")
+    if unsupported_scheme:
+        errors.append("signer_key_scheme_unsupported")
     if unresolved:
         errors.append("signer_authority_indeterminate")
     if bad_bytes:
         signer_authority = "invalid"
-    elif unresolved:
+    elif unresolved or unsupported_scheme:
         signer_authority = "not_established"
     else:
         signer_authority = "verified"
+    other_signatures = (
+        "none"
+        if not other_results
+        else "all_verified"
+        if all(item["valid"] for item in other_results)
+        else "not_all_verified"
+    )
     stage = validate_receipt_stage_v1(
         receipt, expected_receipt_type=expected_receipt_type, boundary_identity=boundary_identity
     )
     if stage["status"] != "valid":
         errors.append(f"stage_{stage['status']}")
         errors.extend(failure["code"] for failure in stage["failures"])
-    if bad_bytes or not id_valid or stage["status"] == "invalid":
+    if bad_bytes or not id_valid or stage["status"] == "invalid" or "required_signature_missing" in errors:
         status = "invalid"
-    elif stage["status"] == "unsupported":
+    elif stage["status"] == "unsupported" or unsupported_scheme:
         status = "unsupported"
     elif unresolved or stage["status"] == "indeterminate":
         status = "indeterminate"
@@ -319,11 +408,21 @@ def verify_receipt_v1(receipt: dict, resolve_key, *, expected_receipt_type=None,
         "stage": stage,
         "signer_authority": signer_authority,
         "signature_results": results,
+        "other_signatures": other_signatures,
         "errors": errors,
     }
 
 
-def verify_receipt_v1_serialized(raw: str, resolve_key, *, expected_receipt_type=None, boundary_identity=None, max_utf8_bytes: int = 1_048_576, max_depth: int = 128) -> dict:
+def verify_receipt_v1_serialized(
+    raw: str,
+    resolve_key,
+    *,
+    expected_receipt_type=None,
+    boundary_identity=None,
+    max_utf8_bytes: int = 1_048_576,
+    max_depth: int = 128,
+    required_signers: Iterable[str] = (),
+) -> dict:
     """Verify a receipt from its serialized bytes.
 
     Draft line 1213 has a verifier parse bounded I-JSON WHILE PRESERVING DUPLICATE NAMES.
@@ -337,6 +436,8 @@ def verify_receipt_v1_serialized(raw: str, resolve_key, *, expected_receipt_type
     message, so it is distinguishable from a structural failure, which surfaces the
     validator's message with no code, and from a signature failure, which surfaces
     `signature_invalid`.
+
+    `required_signers` is forwarded to verify_receipt_v1 unchanged; see its docstring.
     """
     try:
         parsed = parse_strict_i_json(raw, max_utf8_bytes=max_utf8_bytes, max_depth=max_depth)
@@ -348,8 +449,13 @@ def verify_receipt_v1_serialized(raw: str, resolve_key, *, expected_receipt_type
             "stage": "not_checked",
             "signer_authority": "not_checked",
             "signature_results": [],
+            "other_signatures": "none",
             "errors": ["parse_error", str(exc)],
         }
     return verify_receipt_v1(
-        parsed, resolve_key, expected_receipt_type=expected_receipt_type, boundary_identity=boundary_identity
+        parsed,
+        resolve_key,
+        expected_receipt_type=expected_receipt_type,
+        boundary_identity=boundary_identity,
+        required_signers=required_signers,
     )

@@ -47,7 +47,7 @@ def test_vector_file_is_self_describing() -> None:
         assert count == sum(1 for case in CASES if case["expected_provenance"] == label)
     # A ruling-derived case is one the draft names without fixing its outcome. Its count is
     # asserted here so that silently relabelling a case as draft-derived breaks a test.
-    assert by_provenance["ruling-derived"] == 8
+    assert by_provenance["ruling-derived"] == 17
     for case in CASES:
         assert case["derivation"]["lines"], case["id"]
         assert case["derivation"]["note"], case["id"]
@@ -94,12 +94,38 @@ def test_verify_vectors(case: dict) -> None:
     def other_key(signer, key_id, issued_at):
         return other
 
-    resolver = {"correct": correct, "none": none, "raises": raises, "other_key": other_key}[case["resolver"]]
-    result = verify_receipt_v1(case["receipt"], resolver)
+    def malformed_material(signer, key_id, issued_at):
+        return "ab" * 16
+
+    def _outcome(name):
+        def resolve(signer, key_id, issued_at):
+            return {"outcome": name}
+
+        return resolve
+
+    resolver = {
+        "correct": correct,
+        "none": none,
+        "raises": raises,
+        "other_key": other_key,
+        "malformed_material": malformed_material,
+        "not_found": _outcome("not_found"),
+        "ambiguous": _outcome("ambiguous"),
+        "unreachable": _outcome("unreachable"),
+        "malformed": _outcome("malformed"),
+        "unsupported_scheme": _outcome("unsupported_scheme"),
+    }[case["resolver"]]
+    required_signers = case.get("required_signers") or []
+    result = verify_receipt_v1(case["receipt"], resolver, required_signers=required_signers)
     expected = case["expected"]
     assert result["status"] == expected["status"], result["errors"]
     assert result["signer_authority"] == expected["signer_authority"]
     assert sorted(result["errors"]) == sorted(expected["sdk_errors"])
+    if "other_signatures" in expected:
+        assert result["other_signatures"] == expected["other_signatures"]
+    for signer, reason in (expected.get("sdk_reasons") or {}).items():
+        entry = next(item for item in result["signature_results"] if item["signer"] == signer)
+        assert entry.get("reason") == reason, entry
 
 
 @pytest.mark.parametrize("case", [c for c in CASES if c["signed"]], ids=lambda case: case["id"])
@@ -108,7 +134,15 @@ def test_signed_records_reproduce_the_reference_bytes(case: dict) -> None:
     receipt = case["receipt"]
     assert compute_receipt_id_v1(receipt) == receipt["receipt_id"]
     keys = {entry["id"]: entry["public_key"] for entry in VECTORS["keys"].values() if isinstance(entry, dict) and "id" in entry}
+    # A descriptor the case appended after minting is not the reference issuer's output:
+    # it is what a third party can add to a published receipt, and one case deliberately
+    # carries an all-zero value from the issuer's own name. The parity claim covers the
+    # bytes the issuer produced, so that descriptor is skipped here and is what the
+    # verify case itself asserts on.
+    appended = case.get("appended_signature_key_id")
     for proof in receipt["signatures"]:
+        if appended is not None and proof["key_id"] == appended:
+            continue
         public_key = keys.get(proof["signer"])
         if public_key is None:
             continue
