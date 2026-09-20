@@ -1,0 +1,3221 @@
+{
+  "description": "Cross-implementation vectors for the ReceiptV1 envelope and the section 5.3 stage rules of draft-pidlisnyi-aps-03 (sections 5.1, 5.2, 5.3 and 5.6). Every expected acceptance, rejection and state is fixed in the generator from the draft text or from RFC 3339, cited per case in its derivation, and the generator exits without writing this file if the TypeScript reference disagrees with one of them. sdk_failure_codes and sdk_errors are this SDK pair own vocabulary, which the draft does not name: the draft fixes the state, not the code string, and the Python port sharing these strings is SDK parity rather than a protocol claim. A case whose signed flag is true carries a receipt_id and a signature value that are the output of the TypeScript reference issuer over that exact body, so they are bytes another implementation must reproduce. A case whose flag is false carries either an all-zero placeholder, because the record is one the issuer refuses to mint at all, or a signature that no longer covers the body because the case edits a member the issuer owns; either way the structural rule under test runs before any signature is examined, which is what makes those cases sound. This file is not \"TS verified\" and no case in it should be described that way.",
+  "draft": "draft-pidlisnyi-aps-03 sections 5.1, 5.2, 5.3 and 5.6",
+  "generated_from": {
+    "repository": "agent-passport-system",
+    "commit": "ab02006e71ff28b2223af6ba169692701870ab65"
+  },
+  "provenance_definitions": {
+    "draft-derived": "the expected acceptance, rejection or state follows from the draft text, with RFC 3339 where cited; TypeScript output was not consulted to decide it.",
+    "ruling-derived": "the draft names the case but does not fix its outcome, and the expected outcome comes from a ruling recorded by the principal for this programme. The case derivation says which question it answers. These are the cases a later revision of the draft would have to state in normative text for the expectation to become draft-derived."
+  },
+  "keys": {
+    "note": "Deterministic test keys. The private keys are the byte patterns below, which are test values and never key material for anything real.",
+    "agent": {
+      "id": "did:example:agent",
+      "private_key": "0000000000000000000000000000000000000000000000000000000000000000",
+      "public_key": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29"
+    },
+    "boundary": {
+      "id": "did:example:gateway",
+      "private_key": "1111111111111111111111111111111111111111111111111111111111111111",
+      "public_key": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+    },
+    "other": {
+      "private_key": "2222222222222222222222222222222222222222222222222222222222222222",
+      "public_key": "a09aa5f47a6759802ff955f8dc2d2a14a5c99d23be97f864127ff9383455a4f0"
+    }
+  },
+  "conventions": {
+    "envelope": "run the envelope validator over receipt in its full form, values included, and compare acceptance with expected.accepts. An unsigned fixture carries an all-zero receipt_id and an all-zero signature value, both of which satisfy the hexadecimal forms, so the case turns on the member under test.",
+    "stage": "run the stage validator over receipt with the context expected_receipt_type and boundary_identity when they are not null, and compare status, stage, boundary_identity and the failure code set.",
+    "verify": "run the receipt verifier with a key resolver of the named kind: correct returns the public key for the signer, none returns nothing, raises throws, other_key returns the unrelated public key. Compare status, signer_authority and the error set."
+  },
+  "withheld": [
+    "delegation_ref for an authority basis with no delegation: section 5.1 line 983 names the case and section 5 gives it no encoding anywhere. Only the \"sha256:\" form of a delegation_id is exercised here, and the binding of that value to a leaf is the section 5.6 composition point, which needs a chain and is not a single-record rule.",
+    "Recomputation of action_ref from an independently supplied action, recomputation of decision_ref from its components, and resolution of prev against the record it names: all three are section 5.6 composition points rather than stage rules, and a single-record vector cannot carry the second artifact.",
+    "The approval obligations of lines 1093 to 1099, which are enforcement-boundary state: expiry, atomic consumption of receipt_id, rechecking time and revocation, and completing the spend reservation.",
+    "Evidence resolution under section 5.5, implemented nowhere in either SDK."
+  ],
+  "counts": {
+    "total": 68,
+    "by_kind": {
+      "envelope": 22,
+      "stage": 41,
+      "verify": 5
+    },
+    "by_provenance": {
+      "draft-derived": 63,
+      "ruling-derived": 5
+    }
+  },
+  "cases": [
+    {
+      "id": "RC-E01",
+      "kind": "envelope",
+      "title": "A conforming action-intent record is accepted",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L938-999, L1052-1055",
+        "note": "The control. Every rejection below is a one-member change from this record, so a rejection is the rule firing and not a broken fixture."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          }
+        ]
+      },
+      "signed": true,
+      "expected": {
+        "accepts": true
+      },
+      "ts_behaviour": {
+        "message": null
+      }
+    },
+    {
+      "id": "RC-E02",
+      "kind": "envelope",
+      "title": "action_ref as a one-element array",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L981-982, L1652-1660",
+        "note": "action_ref is the aps-action-ref-v2 digest, a string. A malformed artifact gets a defined result and is not coerced into a conforming one."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ],
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: action_ref"
+      }
+    },
+    {
+      "id": "RC-E03",
+      "kind": "envelope",
+      "title": "receipt_id as a one-element array",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L959, L1652-1660",
+        "note": "receipt_id is 64 lowercase hexadecimal characters, a string."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ],
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: receipt_id"
+      }
+    },
+    {
+      "id": "RC-E04",
+      "kind": "envelope",
+      "title": "issuer as a number",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L980, L1652-1660",
+        "note": "issuer is the party responsible for the record, a string identifier."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": 1,
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: empty identifier"
+      }
+    },
+    {
+      "id": "RC-E05",
+      "kind": "envelope",
+      "title": "subject_agent as an object",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L981, L1652-1660",
+        "note": "subject_agent is the acting agent, a string identifier."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": {
+          "did": "x"
+        },
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: empty identifier"
+      }
+    },
+    {
+      "id": "RC-E06",
+      "kind": "envelope",
+      "title": "receipt_type as a number",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L979-980, L1652-1660",
+        "note": "receipt_type identifies a stage defined in section 5.3, a string."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": 1,
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: empty identifier"
+      }
+    },
+    {
+      "id": "RC-E07",
+      "kind": "envelope",
+      "title": "delegation_ref as a bare 64 hex digest",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L964, L982, L484",
+        "note": "delegation_ref identifies the selected AuthorityDelegationV1 leaf; the envelope example writes it with the \"sha256:\" prefix and section 3.1 gives delegation_id that exact form."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: delegation_ref"
+      }
+    },
+    {
+      "id": "RC-E08",
+      "kind": "envelope",
+      "title": "delegation_ref with uppercase hexadecimal",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L964, L484",
+        "note": "The digest is lowercase hexadecimal."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: delegation_ref"
+      }
+    },
+    {
+      "id": "RC-E09",
+      "kind": "envelope",
+      "title": "delegation_ref as an identifier that is not a digest",
+      "expected_provenance": "ruling-derived",
+      "derivation": {
+        "lines": "L964, L982-984",
+        "note": "The authority-basis case of line 983 has no encoding anywhere in section 5, so the only form this validator can check is the one the envelope example states. Recorded as a question, not as an accepted alternative."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "did:example:authority-basis",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: delegation_ref"
+      }
+    },
+    {
+      "id": "RC-E10",
+      "kind": "envelope",
+      "title": "evidence_refs sha256 as a one-element array",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L991-993, L1652-1660",
+        "note": "sha256 is the lowercase hexadecimal digest of the artifact bytes, a string."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [
+          {
+            "artifact_type": "a",
+            "sha256": [
+              "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+            ]
+          }
+        ],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "EvidenceRefV1: value"
+      }
+    },
+    {
+      "id": "RC-E11",
+      "kind": "envelope",
+      "title": "evidence_refs artifact_type as a number",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L991-993",
+        "note": "An evidence reference contains exactly artifact_type and sha256, and artifact_type names the rules that select the bytes."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [
+          {
+            "artifact_type": 2,
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        ],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "EvidenceRefV1: value"
+      }
+    },
+    {
+      "id": "RC-E12",
+      "kind": "envelope",
+      "title": "evidence_refs out of order",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L993-995",
+        "note": "References are sorted first by the UTF-8 bytes of artifact_type and then by the ASCII bytes of sha256."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [
+          {
+            "artifact_type": "z",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "artifact_type": "a",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        ],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "a42c53fc879e494cb89150fb161683412c6a6fb458b0c169e6f468ef7b53c8b5",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "eb1ca35a8e60e998005212d317ef8794de7588aa3eda36206782bf898c14d5f24f86512f05d83586065c2abb48c07500add02b99f0c4e70342a5b4ee8db29403"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: evidence_refs not sorted"
+      }
+    },
+    {
+      "id": "RC-E13",
+      "kind": "envelope",
+      "title": "A duplicate evidence reference",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L991",
+        "note": "evidence_refs is duplicate-free."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [
+          {
+            "artifact_type": "a",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          {
+            "artifact_type": "a",
+            "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        ],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: duplicate evidence_ref"
+      }
+    },
+    {
+      "id": "RC-E14",
+      "kind": "envelope",
+      "title": "An unknown envelope member",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L938, L938-989",
+        "note": "A ReceiptV1 is a closed JSON object."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "extra": "x",
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: unknown field extra"
+      }
+    },
+    {
+      "id": "RC-E15",
+      "kind": "envelope",
+      "title": "A not-applicable member present as null",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L988-989",
+        "note": "A member that is not applicable is absent, not null."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "decision_ref": null,
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: decision_ref"
+      }
+    },
+    {
+      "id": "RC-E16",
+      "kind": "envelope",
+      "title": "A conforming leap second in issued_at",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L986, RFC 3339 5.7 and Appendix D",
+        "note": "RFC 3339 admits time-second 60 for a leap second and writes it YYYY-MM-DDT23:59:60Z. No leap-second table is consulted; the hour, minute and day settle it."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-06-30T23:59:60.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "62ad37dc329ee60e687c498bd765ed0e841185fad18e8f5cacebcf3f327ac7a3",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "70b88123921a9e913a339277f3b7e67b3abdaed1e187e1d895d5dd8b311f3e3d6667e0336af7435d3fc94dd3a8dd2b5221293e71faca242aafecde44caad4500"
+          }
+        ]
+      },
+      "signed": true,
+      "expected": {
+        "accepts": true
+      },
+      "ts_behaviour": {
+        "message": null
+      }
+    },
+    {
+      "id": "RC-E17",
+      "kind": "envelope",
+      "title": "Second 60 that is not on the last day of a month",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L986, RFC 3339 5.7 and Appendix D",
+        "note": "Every second-60 value outside 23:59 on the last day of its month is invalid."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-06-29T23:59:60.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: issued_at"
+      }
+    },
+    {
+      "id": "RC-E18",
+      "kind": "envelope",
+      "title": "Second 60 that is not at 23:59",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L986, RFC 3339 5.7 and Appendix D",
+        "note": "Same rule, failing on the hour."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-06-30T22:59:60.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: issued_at"
+      }
+    },
+    {
+      "id": "RC-E19",
+      "kind": "envelope",
+      "title": "February 29 outside a leap year",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L986",
+        "note": "The timestamp must be a calendar instant, checked in the proleptic Gregorian calendar."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-02-29T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1: issued_at"
+      }
+    },
+    {
+      "id": "RC-E20",
+      "kind": "envelope",
+      "title": "A Unicode noncharacter in a string value",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1213",
+        "note": "A verifier parses bounded I-JSON. The same reading of I-JSON is applied on the section 4.1 and section 3 surfaces of these SDKs."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:a﷐",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:a﷐",
+            "key_id": "did:example:a﷐#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1.issuer: noncharacter U+FDD0"
+      }
+    },
+    {
+      "id": "RC-E21",
+      "kind": "envelope",
+      "title": "A Unicode noncharacter in an object key",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1213",
+        "note": "The rule covers member names as well as values."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared",
+          "k￿": "v"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "ReceiptV1.result key: noncharacter U+FFFF"
+      }
+    },
+    {
+      "id": "RC-E22",
+      "kind": "envelope",
+      "title": "An unpaired surrogate in a string",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L819-821, L1213",
+        "note": "A string containing an unpaired UTF-16 surrogate has no UTF-8 encoding and is rejected rather than repaired."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:a\ud800",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:a\ud800",
+            "key_id": "did:example:a\ud800#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "expected": {
+        "accepts": false
+      },
+      "ts_behaviour": {
+        "message": "$.issuer: unpaired high surrogate"
+      }
+    },
+    {
+      "id": "RC-S01",
+      "kind": "stage",
+      "title": "A conforming action intent",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1052-1058",
+        "note": "The control for the intent stage."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": null
+      },
+      "expected": {
+        "status": "valid",
+        "stage": "action-intent",
+        "boundary_identity": "not_applicable",
+        "sdk_failure_codes": []
+      }
+    },
+    {
+      "id": "RC-S02",
+      "kind": "stage",
+      "title": "An action intent issued by someone other than the acting agent",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1053",
+        "note": "issuer and subject_agent MUST be the acting agent."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": null
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "action-intent",
+        "boundary_identity": "not_applicable",
+        "sdk_failure_codes": [
+          "INTENT_ISSUER_NOT_ACTING_AGENT"
+        ]
+      }
+    },
+    {
+      "id": "RC-S03",
+      "kind": "stage",
+      "title": "An action intent carrying prev",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1053-1054, L986-988",
+        "note": "prev MUST be absent from an action-intent record."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "receipt_id": "308ebf06a243312a31eeddb23fa5fb734a60958eac22f4c42337c947ffba1236",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "4829071c7cb47872bec9ddf8dd64ba756e1b1b86fb30219bf74fa2f44dfd812061d5b9c1b4ac10f54dbb62ae952b30afde410fc13d8d2db61ada81438ab97a03"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": null
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "action-intent",
+        "boundary_identity": "not_applicable",
+        "sdk_failure_codes": [
+          "INTENT_PREV_PRESENT"
+        ]
+      }
+    },
+    {
+      "id": "RC-S04",
+      "kind": "stage",
+      "title": "An action intent carrying decision_ref",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1053-1054, L984-986",
+        "note": "decision_ref MUST be absent from an action-intent record."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "receipt_id": "23cec3aba30e85a6cf3dfc265ab0862ac81b8e1dfaf77977f41761a8f4d0da07",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "8e3df5fb1ed894850f03f45277b497fb8b86756316569a2695a396f14280eefb9098426b5341469322f2c3eb7803e194586554b29574186a0d4d87e4856ec904"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": null
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "action-intent",
+        "boundary_identity": "not_applicable",
+        "sdk_failure_codes": [
+          "INTENT_DECISION_REF_PRESENT"
+        ]
+      }
+    },
+    {
+      "id": "RC-S05",
+      "kind": "stage",
+      "title": "An action intent whose result status is not declared",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1054-1055",
+        "note": "result MUST contain exactly profile aps-action-intent-result-v1 and status declared."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "succeeded"
+        },
+        "receipt_id": "285987c7ff4c579ce76010e47f946ddea86c1ba22c9a008f926978bbb87e6cca",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "e855aa61cb389498e6f940a5e10eddf1b382a16661647cb2ec068d41f736294390d45ece03217d8dea7c9f4152791c89848978daaf59ee171fd43f6cb31fe708"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": null
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "action-intent",
+        "boundary_identity": "not_applicable",
+        "sdk_failure_codes": [
+          "INTENT_RESULT_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "RC-S06",
+      "kind": "stage",
+      "title": "An action intent whose result carries an extra member",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1054-1055, L995-996",
+        "note": "Exactly those two members: the result is the closed typed object defined by receipt_type."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared",
+          "extra": 1
+        },
+        "receipt_id": "65192840ff46d44d5efeba3baf5736100126350170698bba034c912a361d7319",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "1e2782616e277da2d181992cccfc3298850bc11ffba31a7a745340d17624dff182cb1dbe30092123588e7ddf2d106d2c1467af79db37a65bb63f93d830e59e07"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": null
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "action-intent",
+        "boundary_identity": "not_applicable",
+        "sdk_failure_codes": [
+          "INTENT_RESULT_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "RC-S07",
+      "kind": "stage",
+      "title": "An action intent under another result profile",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1054-1055",
+        "note": "A wrong result profile for a stage that is recognised is invalid, not unsupported: that result object is closed."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v2",
+          "status": "declared"
+        },
+        "receipt_id": "807a1a731034193f4777c87f8d7858eca0fde5615211072831a67f427ff0208b",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "2c43f9ff6a20bd504d6eefeeee1bf01bfc711f5ff142e76c5140a089b6014b80fdbcdadf45edb08501a3a0984ea2acfcd8f804a50d6dd3b162d3251e63e3520f"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": null
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "action-intent",
+        "boundary_identity": "not_applicable",
+        "sdk_failure_codes": [
+          "INTENT_RESULT_PROFILE"
+        ]
+      }
+    },
+    {
+      "id": "RC-S08",
+      "kind": "stage",
+      "title": "A conforming policy decision with the boundary identity supplied",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1069-1091",
+        "note": "The control for the decision stage."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "permit",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [],
+          "valid_until": "2026-07-18T12:00:05.000Z"
+        },
+        "receipt_id": "87cf122579224bc22c215c66b49133ecf54992ce8e3b9753acac245fbd892186",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "9c5dca262402021e34bae94526bd7e88f497f76653923b6ab50f7aa65bbae3467b7f8d8c2083887eea168ea52d61cf9edb8ef1c0b8e1acd4648c52acb28f850c"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "valid",
+        "stage": "policy-decision",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": []
+      }
+    },
+    {
+      "id": "RC-S09",
+      "kind": "stage",
+      "title": "The same decision with no boundary identity supplied",
+      "expected_provenance": "ruling-derived",
+      "derivation": {
+        "lines": "L1072, L1226-1228",
+        "note": "The expected boundary identity is verifier trust input. Unestablished is indeterminate and never valid, and a caller may not collapse it into valid."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "permit",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [],
+          "valid_until": "2026-07-18T12:00:05.000Z"
+        },
+        "receipt_id": "87cf122579224bc22c215c66b49133ecf54992ce8e3b9753acac245fbd892186",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "9c5dca262402021e34bae94526bd7e88f497f76653923b6ab50f7aa65bbae3467b7f8d8c2083887eea168ea52d61cf9edb8ef1c0b8e1acd4648c52acb28f850c"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": null
+      },
+      "expected": {
+        "status": "indeterminate",
+        "stage": "policy-decision",
+        "boundary_identity": "not_established",
+        "sdk_failure_codes": []
+      }
+    },
+    {
+      "id": "RC-S10",
+      "kind": "stage",
+      "title": "A decision whose issuer is not the supplied boundary",
+      "expected_provenance": "ruling-derived",
+      "derivation": {
+        "lines": "L1072",
+        "note": "A mismatch against a supplied identity is invalid."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "permit",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [],
+          "valid_until": "2026-07-18T12:00:05.000Z"
+        },
+        "receipt_id": "87cf122579224bc22c215c66b49133ecf54992ce8e3b9753acac245fbd892186",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "9c5dca262402021e34bae94526bd7e88f497f76653923b6ab50f7aa65bbae3467b7f8d8c2083887eea168ea52d61cf9edb8ef1c0b8e1acd4648c52acb28f850c"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:other-gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "policy-decision",
+        "boundary_identity": "mismatch",
+        "sdk_failure_codes": [
+          "BOUNDARY_IDENTITY_MISMATCH"
+        ]
+      }
+    },
+    {
+      "id": "RC-S11",
+      "kind": "stage",
+      "title": "A decision whose issuer equals its subject_agent",
+      "expected_provenance": "ruling-derived",
+      "derivation": {
+        "lines": "L1072",
+        "note": "The draft states no rule that issuer differs from subject_agent for this stage. None is invented: the record stands or falls on the supplied boundary identity."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "permit",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [],
+          "valid_until": "2026-07-18T12:00:05.000Z"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:agent"
+      },
+      "expected": {
+        "status": "valid",
+        "stage": "policy-decision",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": []
+      }
+    },
+    {
+      "id": "RC-S12",
+      "kind": "stage",
+      "title": "A decision with no prev",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L986-987, L1072-1073",
+        "note": "prev is REQUIRED for a policy-decision record and is the receipt_id of the action-intent record."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "permit",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [],
+          "valid_until": "2026-07-18T12:00:05.000Z"
+        },
+        "receipt_id": "5e6a9ae7e9e0b49a818460aa208ea43224bf1aa247b8ab94f223f85e57c45ea9",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "d8ea89040db4d7db39314e2a0dfd83a6adaccf14ef1c54d627666c89af6f6a83b33c8ec41a49e8d34b03fd075135ba95a9a96876c081156625d45f8a1b289007"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "policy-decision",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "DECISION_PREV_MISSING"
+        ]
+      }
+    },
+    {
+      "id": "RC-S13",
+      "kind": "stage",
+      "title": "A decision with no decision_ref",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L984-985, L1073-1074",
+        "note": "decision_ref is REQUIRED for a policy-decision record."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "permit",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [],
+          "valid_until": "2026-07-18T12:00:05.000Z"
+        },
+        "receipt_id": "0fc398cb2e71844ae8d076bf30a3a13206d75227f059539a86b26ea155056dc6",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "4fcd61f9d5b6301aec35bd11751905ade3620bd505228cf3f62d3d115a58822d780d8a510b8036740f3d741f5fd8836a315e01e03b54dbd4c588629094d94901"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "policy-decision",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "DECISION_REF_MISSING"
+        ]
+      }
+    },
+    {
+      "id": "RC-S14",
+      "kind": "stage",
+      "title": "A verdict outside the three the draft names",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1086",
+        "note": "verdict is permit, deny, or narrow."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "approve",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [],
+          "valid_until": "2026-07-18T12:00:05.000Z"
+        },
+        "receipt_id": "1cbfd4bb1fc364e64955d6718af39a4e64b52e56edd342bd4abd07ea0a7ea664",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "3cd50a7dbe3395c847aeb7792c7e51e4098ebb70c05e9bec2be8d154c1e196167cfb9a3a3aa53fe7c737c81db7d2b407e18a281e508c595611220ea78940db0f"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "policy-decision",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "DECISION_RESULT_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "RC-S15",
+      "kind": "stage",
+      "title": "A permit with a null effective_authority_ref",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1089-1090",
+        "note": "effective_authority_ref is null for deny and a digest for permit or narrow."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "permit",
+          "effective_authority_ref": null,
+          "constraints": [],
+          "valid_until": "2026-07-18T12:00:05.000Z"
+        },
+        "receipt_id": "82774476fb52e2c7acfe615b422838bf1be42f4bf8b1b46ed6b31a51507b147e",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "483373f6f3e17b7194d012c7e0902595d76d24e47f52ca5b84075196544bed707d01f95fa2c2475907e318a4912a64f247e3cfa72eb7a2feff5cecb808b27e09"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "policy-decision",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "DECISION_RESULT_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "RC-S16",
+      "kind": "stage",
+      "title": "A permit with a null valid_until",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1090-1091",
+        "note": "valid_until is null for deny and a timestamp later than issued_at for permit or narrow."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "permit",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [],
+          "valid_until": null
+        },
+        "receipt_id": "c91f37e5f8152e22c2c8fb65fd9e999b68d02dd0c1ad4ea991747de633ac0a64",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "3084ab00ebaaea03bacbe6703eb6c11a46e7a9f3be4b53c1ff5d8f68abcd85951315054646e20d614119128d1ba548f15b741e58eaf381952023924777fe0905"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "policy-decision",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "DECISION_RESULT_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "RC-S17",
+      "kind": "stage",
+      "title": "A conforming deny decision",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1089-1091",
+        "note": "A deny decision carries both nulls by rule. It is a conforming record, not a temporal failure."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "deny",
+          "effective_authority_ref": null,
+          "constraints": [],
+          "valid_until": null
+        },
+        "receipt_id": "91cfe52239f9897c2374ee5238c526b3ad364908b2c35991be1611ac90135d41",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "936a748b935caf65fb0e92bcbcb2d03dc19dff8e47d28e753fe4ca4ab2b454f11eae07618b3e1620f4dcf28fa42d522522a81a1495603d9681a0a23fd704600a"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "valid",
+        "stage": "policy-decision",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": []
+      }
+    },
+    {
+      "id": "RC-S18",
+      "kind": "stage",
+      "title": "A deny decision that still carries an effective_authority_ref",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1089-1090",
+        "note": "Null for deny is a rule in both directions."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "deny",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [],
+          "valid_until": null
+        },
+        "receipt_id": "343e424fb5c547c3f9bc1d4823e8f31ea724915e8e9a6d46ac4f08519202e0fe",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "3359039a5f92abadc7ef98b8363b3b6d41c311dda9844af8cfcca3f20d6022446102c3e5aa830385ea6748bb6f9b3c3e9e6cb65c35eaa867ddf58d36dcdd5a0f"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "policy-decision",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "DECISION_RESULT_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "RC-S19",
+      "kind": "stage",
+      "title": "valid_until equal to issued_at",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1090-1091",
+        "note": "Later than issued_at is strict, and the comparison is against this record own issuance time."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "permit",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [],
+          "valid_until": "2026-07-18T12:00:00.000Z"
+        },
+        "receipt_id": "4e1f50f277f90ae6ab983af6804dc32cf3f512a4505da9bdff7a3ae3b8035383",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "85dce23474be386b81d9fe301103230843bed5a7467d27f402d865a6168497957c640ee883fdfc41fc3f61ad946d8ac5989365e9415d1c068aab8e7426755f03"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "policy-decision",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "DECISION_VALID_UNTIL_NOT_AFTER_ISSUED_AT"
+        ]
+      }
+    },
+    {
+      "id": "RC-S20",
+      "kind": "stage",
+      "title": "Constraints not sorted by UTF-8 bytes",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1086-1087, L822-824",
+        "note": "constraints is a duplicate-free array of NFC strings sorted by UTF-8 bytes. A verifier accepts the canonical form and does not normalize an untrusted wire object."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "permit",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [
+            "b",
+            "a"
+          ],
+          "valid_until": "2026-07-18T12:00:05.000Z"
+        },
+        "receipt_id": "e32d7b3976f3157360e2d96145014b98e1f551b8355eb2085b0781ca07e45b11",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "4a11d8eb8d000fdb057c50d115aa5393e0ba4bab2f7a63e568343d5b6725f93c652d441dbd49ed0a88f511300ed6f5315a83b9f51754855d9d9db4111a95550f"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "policy-decision",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "DECISION_RESULT_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "RC-S21",
+      "kind": "stage",
+      "title": "A duplicate constraint",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1086-1087",
+        "note": "Duplicate-free."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "permit",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [
+            "a",
+            "a"
+          ],
+          "valid_until": "2026-07-18T12:00:05.000Z"
+        },
+        "receipt_id": "3c8c65e7668872030c2f5ba49e144ea5b1fa10e5ccacff087d27bff0eadec820",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "83a883b91923be00d6cc8518db0aa1f8c1b48ce6fbcf0d643b67e65aa2a421f2522f9503bbdefcca040a10204da4a7ad46fcd3835d28d1fd03dab57fc0d1be0d"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "policy-decision",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "DECISION_RESULT_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "RC-S22",
+      "kind": "stage",
+      "title": "A constraint that is not in NFC",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1086-1087",
+        "note": "The decomposed form of the same character is not the NFC form."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "permit",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [
+            "é"
+          ],
+          "valid_until": "2026-07-18T12:00:05.000Z"
+        },
+        "receipt_id": "7c31f694dcaf251b73a1eb72a65b0b1824cd3693d58effe3080fa14096888cc6",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "66bc26a190a2cd6cf230820d011d83f9cfc0931d28ae7724519413d75b26bc888ba85fd73fd21a56da7ff09935c3883058edf9b61a8d071d4fa3e780d24bae02"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "policy-decision",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "DECISION_RESULT_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "RC-S23",
+      "kind": "stage",
+      "title": "Canonical constraints are accepted",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1086-1087",
+        "note": "The control for the three rejections above."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v1",
+          "verdict": "permit",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [
+            "a",
+            "b"
+          ],
+          "valid_until": "2026-07-18T12:00:05.000Z"
+        },
+        "receipt_id": "d879531cd45df23ccdf43028479073212b08f76675f0cca2c0fc6e674e198e75",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "809bbc182281405e085798fcf2f08d5200e514913bedad9756f2f2da546097d06cc31ea5da161ea9b15c6fe718d1ebbc52358eb81e28ef83f490f6e4fa153209"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "valid",
+        "stage": "policy-decision",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": []
+      }
+    },
+    {
+      "id": "RC-S24",
+      "kind": "stage",
+      "title": "A decision result under another profile",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1078, L1226-1227",
+        "note": "A wrong result profile for a recognised stage is invalid, where an unknown envelope profile is unsupported."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:policy-decision:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-core-decision-output-v2",
+          "verdict": "permit",
+          "effective_authority_ref": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "constraints": [],
+          "valid_until": "2026-07-18T12:00:05.000Z"
+        },
+        "receipt_id": "dd28e609c41cba3921b7253ee2261750ac8f8636d4a173c521cb2b873191cfa4",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "4145d0a1b7d82978acecce41fd816de9de1adbfc1f8b2633c61c6b1d2e73ba91a3d2fd00ee91531adb1d9c2579576e971d92757ce167c8695a26ee0d8d9e560e"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "policy-decision",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "DECISION_RESULT_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "RC-S25",
+      "kind": "stage",
+      "title": "A conforming succeeded action result",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1101-1130",
+        "note": "The control for the result stage."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-result:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-result-v1",
+          "status": "succeeded",
+          "effect_ref": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "error_code": null
+        },
+        "receipt_id": "d8d7f0e4263c01464b7afc29519781c565d19a7b983d2e5187e308d9f59a570f",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "dbbb0519daf77a0cde563533a95d9053c1659fc3b65aea2709b948a5126f2af49c523630fcdb7f745331184b6cd65eb7ba2786ad9f31f6f99624c0c588f0210b"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "valid",
+        "stage": "action-result",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": []
+      }
+    },
+    {
+      "id": "RC-S26",
+      "kind": "stage",
+      "title": "succeeded with no effect_ref",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1125-1126",
+        "note": "For succeeded, effect_ref is REQUIRED."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-result:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-result-v1",
+          "status": "succeeded",
+          "effect_ref": null,
+          "error_code": null
+        },
+        "receipt_id": "c9a2e79d884a9ccbfeebb9cb3590712103032ccc7c7876dec1286e1aaaa3b7c7",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "f8c3b342aa29b73bd61d501d68876afbc930eb4e1566acbd74a202b7c1ee48f3f30c2558510664bf5040d9025e4af6d7f4b77381fa78298cbf4d655af1d4dd05"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "action-result",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "RESULT_EFFECT_REF_REQUIRED"
+        ]
+      }
+    },
+    {
+      "id": "RC-S27",
+      "kind": "stage",
+      "title": "succeeded carrying an error_code",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1125-1126",
+        "note": "For succeeded, error_code is null."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-result:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-result-v1",
+          "status": "succeeded",
+          "effect_ref": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "error_code": "E_X"
+        },
+        "receipt_id": "60e5982fc9bcda1884d950b76b2a7aa79881710bd398f298a30321609db41301",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "b15f624dc2f3bb1e4e45d44b2a2595e5ce221426518821282f5ac45421408fb3fc828860a5f93d1b772e59ba85ddf9450035dca50ebf30153d6ad63e7c9cbc05"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "action-result",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "RESULT_ERROR_CODE_PRESENT"
+        ]
+      }
+    },
+    {
+      "id": "RC-S28",
+      "kind": "stage",
+      "title": "A conforming failed result with no effect artifact",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1126-1128",
+        "note": "For failed, effect_ref is either a digest of a returned error artifact or null."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-result:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-result-v1",
+          "status": "failed",
+          "effect_ref": null,
+          "error_code": "E_TIMEOUT"
+        },
+        "receipt_id": "15ff543d3ab5ae487224ccbfafff8c8c488cc30c0b1ecae023d059afee2a2e7d",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "4352144f4fefb7e1094aa590899da662e09605a3aff5c3895b121e3027a6e77bffdee823dcf06d8dfab4c1c81eb2fb722cb5f4a084e11ec23ae6829de8f60003"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "valid",
+        "stage": "action-result",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": []
+      }
+    },
+    {
+      "id": "RC-S29",
+      "kind": "stage",
+      "title": "A conforming failed result with an error artifact digest",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1126-1128",
+        "note": "The other admitted pairing for failed."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-result:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-result-v1",
+          "status": "failed",
+          "effect_ref": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "error_code": "E_TIMEOUT"
+        },
+        "receipt_id": "a0b9eb8b48c143eea4966d9adc3276d5ee3cf66716450df9718b73bedb3c98dc",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "6825c5883e2f56788d7983201a3b94edb04230242dda48644ef1b475f85c4f0b7587416e8c18b9c15c0d8c11775fee30d808bc29d57986903a7be4362c8a9306"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "valid",
+        "stage": "action-result",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": []
+      }
+    },
+    {
+      "id": "RC-S30",
+      "kind": "stage",
+      "title": "failed with an empty error_code",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1126-1127",
+        "note": "For failed, error_code is a non-empty stable identifier. Stability is not machine-checkable and is not claimed."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-result:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-result-v1",
+          "status": "failed",
+          "effect_ref": null,
+          "error_code": ""
+        },
+        "receipt_id": "f11a6ba2a17681743b24bcc75fec8f76719c6d55bdb16150a7890f745a3a8ae2",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "2c23741d22e6e8545feb96e436fd514d42fef9d1ea50ee4a43d124c581bedf94e3762e19d615d95157c6141f21aa4882c65d22368a2711e94edbd9cb78fcbd04"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "action-result",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "RESULT_ERROR_CODE_REQUIRED"
+        ]
+      }
+    },
+    {
+      "id": "RC-S31",
+      "kind": "stage",
+      "title": "A conforming unknown result",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1128",
+        "note": "For unknown, both are null."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-result:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-result-v1",
+          "status": "unknown",
+          "effect_ref": null,
+          "error_code": null
+        },
+        "receipt_id": "51fa30aed3172634b210d5842dacc172e93bd1b4ac0686c94591e8852c15f08a",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "fa255270b2d96096b7dee516469786be044d5f7df94277b37bc53e24dfb6a81b27b5d7eb6f328000970b0d1497868b077506f48e780d9908b9ca13d356da4106"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "valid",
+        "stage": "action-result",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": []
+      }
+    },
+    {
+      "id": "RC-S32",
+      "kind": "stage",
+      "title": "unknown carrying an effect_ref",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1128",
+        "note": "Both null means both."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-result:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-result-v1",
+          "status": "unknown",
+          "effect_ref": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "error_code": null
+        },
+        "receipt_id": "869b2fe7de3961ef411710f647a58abf9377e49191950309b2fdfdb46030fb9a",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "20d857724516727e0c877602b68cfdcce51ff2e18f840aa1de2e7a943d47e67d061153c249d1ec3cbede5cd8d3e5f8ececd99e4477e0d6236338bac298a34f04"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "action-result",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "RESULT_UNKNOWN_NOT_NULL"
+        ]
+      }
+    },
+    {
+      "id": "RC-S33",
+      "kind": "stage",
+      "title": "A status outside the three the draft names",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1125",
+        "note": "status is succeeded, failed, or unknown."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-result:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-result-v1",
+          "status": "partial",
+          "effect_ref": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "error_code": null
+        },
+        "receipt_id": "4083268fa6b4904d689232feade1a32f6e8762ae0ac44c941f4cb8184ba95592",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "083ec4fec3cab0fcb52bdf0bde5a9bd7d56587b6bebc1c92706c017e1885c00d81fcc5bab040b1db72ff19a871849ea9d75951750eac4931c8a253bf9e66d806"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "action-result",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "RESULT_STATUS"
+        ]
+      }
+    },
+    {
+      "id": "RC-S34",
+      "kind": "stage",
+      "title": "An action result missing a result member",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1106-1114",
+        "note": "result contains exactly profile, status, effect_ref and error_code."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-result:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-result-v1",
+          "status": "succeeded",
+          "effect_ref": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        },
+        "receipt_id": "ecda6e0099b426f13c442359668ea06511f2754597b982b7d887ea92a9c39ab7",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "4eff5a7f2105466e9bd447a5095dc99e8b10ccfe54bc098ad6f6ebdd9751db874afd71e4c885924b5379a3fac4e37f0580d154b22be1dc19382fc092267bbe03"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "action-result",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "RESULT_MEMBERS"
+        ]
+      }
+    },
+    {
+      "id": "RC-S35",
+      "kind": "stage",
+      "title": "effect_ref as a one-element array",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1128-1130, L1652-1660",
+        "note": "A non-null effect_ref is a lowercase hexadecimal digest, a string."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-result:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-result-v1",
+          "status": "succeeded",
+          "effect_ref": [
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+          ],
+          "error_code": null
+        },
+        "receipt_id": "3c4c2c3c8ca3e5d5d4cc3535b0d52252e40536ec251f3040c6eccfd7be3a1a9b",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "b9354ccd29bfde966d0d9dc0e512c0067c6527ad56e9887b866e87e7b3897850f95dbcc1242ce819865ec6b84bb6afc18fb72c1eb7bbddd7013cdffed007c00c"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "action-result",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "RESULT_EFFECT_REF"
+        ]
+      }
+    },
+    {
+      "id": "RC-S36",
+      "kind": "stage",
+      "title": "An action result under another result profile",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1110",
+        "note": "profile is aps-action-result-v1."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-result:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "decision_ref": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "prev": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-result-v2",
+          "status": "succeeded",
+          "effect_ref": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "error_code": null
+        },
+        "receipt_id": "5936e3fc210364ff964a292557bfbc3c6bc5e4cd1e64c66284b5d711ad01feac",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "4ca80ce6c3ffd5f8e51ce01ba7b63260763426e70d6473c9818c4cbd8c8b4cc2ad0446ed6ea9f3176dd3254e21a393980c1b1816e6dd8359724444a5ad9c7b06"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "action-result",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "RESULT_PROFILE"
+        ]
+      }
+    },
+    {
+      "id": "RC-S37",
+      "kind": "stage",
+      "title": "An action result with no prev and no decision_ref",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L984-988, L1104-1106",
+        "note": "Both are REQUIRED for an action-result record."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-result:v1",
+        "issuer": "did:example:gateway",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-result-v1",
+          "status": "succeeded",
+          "effect_ref": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "error_code": null
+        },
+        "receipt_id": "eab2faff76a31ef672247b333b8af9bda5b17e6da50c03d06f1261ab9bf189cf",
+        "signatures": [
+          {
+            "signer": "did:example:gateway",
+            "key_id": "did:example:gateway#key-1",
+            "alg": "Ed25519",
+            "value": "81e1282b68f610400516442834287bf17cca7419d20573697571bd6c5edd3278a7449fb63a030a3071d263920d383d9ddef20d16cc4251a07f6b691096057704"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": "did:example:gateway"
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": "action-result",
+        "boundary_identity": "verified",
+        "sdk_failure_codes": [
+          "RESULT_PREV_MISSING",
+          "RESULT_DECISION_REF_MISSING"
+        ]
+      }
+    },
+    {
+      "id": "RC-S38",
+      "kind": "stage",
+      "title": "A receipt_type outside section 5.3",
+      "expected_provenance": "ruling-derived",
+      "derivation": {
+        "lines": "L979-980, L1226-1228",
+        "note": "receipt_type identifies a stage defined in section 5.3. A value outside those three is unsupported and never valid, and its body is not judged against a stage schema it may not belong to. Section 5.1 does not state this case, so it is recorded as ruled rather than as draft text."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "6fc2da28efc6e0c3e7ccf66e6f0124c815fed018b1c5d1c5fcb5dd73e1198c12",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "027e1b084f503500d0610537d0b1b214ede98980c1d0b03fce6e01ad870dd1f798dd931e075c1ac40b6f0278bdc8345780ae67c837cfdecc9989efc69a00880d"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": null
+      },
+      "expected": {
+        "status": "unsupported",
+        "stage": null,
+        "boundary_identity": "not_applicable",
+        "sdk_failure_codes": [
+          "UNSUPPORTED_RECEIPT_TYPE"
+        ]
+      }
+    },
+    {
+      "id": "RC-S39",
+      "kind": "stage",
+      "title": "Another envelope profile",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L979, L1226-1227",
+        "note": "An unknown required profile is unsupported."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v2",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": null
+      },
+      "expected": {
+        "status": "unsupported",
+        "stage": null,
+        "boundary_identity": "not_applicable",
+        "sdk_failure_codes": [
+          "UNSUPPORTED_PROFILE"
+        ]
+      }
+    },
+    {
+      "id": "RC-S40",
+      "kind": "stage",
+      "title": "A malformed envelope with a known stage type",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L986, L1213-1215",
+        "note": "The closed envelope check runs before the stage rules, and a structural failure is invalid whatever the receipt_type says."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "yesterday",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "context": {
+        "expected_receipt_type": null,
+        "boundary_identity": null
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": null,
+        "boundary_identity": "not_applicable",
+        "sdk_failure_codes": [
+          "SCHEMA_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "RC-S41",
+      "kind": "stage",
+      "title": "The caller expects a stage the record does not name",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L979-980, L1219-1220",
+        "note": "The stage comes from the record. A caller-supplied expectation that disagrees with receipt_type is itself a failure, not a way to select the rules."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          }
+        ]
+      },
+      "signed": true,
+      "context": {
+        "expected_receipt_type": "aps:policy-decision:v1",
+        "boundary_identity": null
+      },
+      "expected": {
+        "status": "invalid",
+        "stage": null,
+        "boundary_identity": "not_applicable",
+        "sdk_failure_codes": [
+          "STAGE_MISMATCH"
+        ]
+      }
+    },
+    {
+      "id": "RC-V01",
+      "kind": "verify",
+      "title": "A resolvable key and a good signature",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1036-1039",
+        "note": "The control."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          }
+        ]
+      },
+      "signed": true,
+      "resolver": "correct",
+      "public_keys": {
+        "did:example:agent": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+        "did:example:gateway": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+      },
+      "other_public_key": "a09aa5f47a6759802ff955f8dc2d2a14a5c99d23be97f864127ff9383455a4f0",
+      "expected": {
+        "status": "valid",
+        "signer_authority": "verified",
+        "sdk_errors": []
+      }
+    },
+    {
+      "id": "RC-V02",
+      "kind": "verify",
+      "title": "The resolver returns no key",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L322, L360-369, L1226",
+        "note": "Key resolution is its own outcome and missing live state is indeterminate. An unresolved key is not evidence that a signature is wrong."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          }
+        ]
+      },
+      "signed": true,
+      "resolver": "none",
+      "public_keys": {
+        "did:example:agent": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+        "did:example:gateway": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+      },
+      "other_public_key": "a09aa5f47a6759802ff955f8dc2d2a14a5c99d23be97f864127ff9383455a4f0",
+      "expected": {
+        "status": "indeterminate",
+        "signer_authority": "not_established",
+        "sdk_errors": [
+          "signer_authority_indeterminate"
+        ]
+      }
+    },
+    {
+      "id": "RC-V03",
+      "kind": "verify",
+      "title": "The resolver raises",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L360-369, L1226, L1656-1660",
+        "note": "A failing resolver is a resolution outcome, and a verification interface handles it through a defined result."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          }
+        ]
+      },
+      "signed": true,
+      "resolver": "raises",
+      "public_keys": {
+        "did:example:agent": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+        "did:example:gateway": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+      },
+      "other_public_key": "a09aa5f47a6759802ff955f8dc2d2a14a5c99d23be97f864127ff9383455a4f0",
+      "expected": {
+        "status": "indeterminate",
+        "signer_authority": "not_established",
+        "sdk_errors": [
+          "signer_authority_indeterminate"
+        ]
+      }
+    },
+    {
+      "id": "RC-V04",
+      "kind": "verify",
+      "title": "A resolvable key that did not sign this receipt",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1038-1041, L1225-1226",
+        "note": "A resolved key whose signature does not verify is an invalid cryptographic check."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v1",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "d13db10054691ce3f32199cc3fa1b7ec63b40989f1ecf7b5d6340b2f93845115",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "df31a8f126e5d084a1382e894d4bc36185d9ea995ed0d6837e67718471a0d43db5d5fcbda60d7644256a286ef850cd7669c38484acdd9811bd7553c615386001"
+          }
+        ]
+      },
+      "signed": true,
+      "resolver": "other_key",
+      "public_keys": {
+        "did:example:agent": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+        "did:example:gateway": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+      },
+      "other_public_key": "a09aa5f47a6759802ff955f8dc2d2a14a5c99d23be97f864127ff9383455a4f0",
+      "expected": {
+        "status": "invalid",
+        "signer_authority": "invalid",
+        "sdk_errors": [
+          "signature_invalid"
+        ]
+      }
+    },
+    {
+      "id": "RC-V05",
+      "kind": "verify",
+      "title": "Another envelope profile",
+      "expected_provenance": "draft-derived",
+      "derivation": {
+        "lines": "L1226-1228",
+        "note": "Unsupported is its own answer and is not collapsed into invalid or into valid."
+      },
+      "receipt": {
+        "profile": "aps-receipt-v2",
+        "receipt_type": "aps:action-intent:v1",
+        "issuer": "did:example:agent",
+        "subject_agent": "did:example:agent",
+        "action_ref": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "delegation_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "issued_at": "2026-07-18T12:00:00.000Z",
+        "evidence_refs": [],
+        "result": {
+          "profile": "aps-action-intent-result-v1",
+          "status": "declared"
+        },
+        "receipt_id": "0000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": [
+          {
+            "signer": "did:example:agent",
+            "key_id": "did:example:agent#key-1",
+            "alg": "Ed25519",
+            "value": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "signed": false,
+      "resolver": "correct",
+      "public_keys": {
+        "did:example:agent": "3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29",
+        "did:example:gateway": "d04ab232742bb4ab3a1368bd4615e4e6d0224ab71a016baf8520a332c9778737"
+      },
+      "other_public_key": "a09aa5f47a6759802ff955f8dc2d2a14a5c99d23be97f864127ff9383455a4f0",
+      "expected": {
+        "status": "unsupported",
+        "signer_authority": "not_checked",
+        "sdk_errors": [
+          "unsupported_profile"
+        ]
+      }
+    }
+  ]
+}
