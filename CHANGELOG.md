@@ -1,5 +1,38 @@
 # Changelog
 
+## Unreleased
+
+### New
+
+- **`verify_receipt_with_decision_v1`** (`src/agent_passport/receipt_core/composite.py`): the
+  section 5.6 composite check of a receipt together with the decision it references. Parity
+  with the TypeScript reference `verifyReceiptWithDecisionV1`: same stage order and
+  short-circuit, same per-axis result members, same error code strings, same status
+  dominance. Until now the Python SDK had no counterpart to it, so a Python consumer holding
+  a receipt and a decision had no way to establish that the two belonged together.
+- **`verify_receipt_predecessor_v1`** (`src/agent_passport/receipt_core/predecessor.py`): the
+  section 5.3.3 prev binding for an action-result record, against the policy-decision record
+  it names. The predecessor's `receipt_id` is RECOMPUTED from its body, never read from the
+  claimed field, which sits outside its own preimage (lines 1003-1009). The predecessor's own
+  signatures are not verified here; callers verify the predecessor separately.
+- The predecessor axis of the composite is **opt-in verifier hardening, off by default**.
+  draft-pidlisnyi-aps-03 section 5.3.3 lines 1104-1105 STATES the prev relation and section
+  5.6 line 1219 lists prev validation among a verifier's checks, neither with a BCP 14
+  keyword, so neither statement requires a verifier to make the comparison. With the
+  `predecessor` argument not passed, `predecessor_bound` is `not_checked` and every other
+  field of the composite result is what it would be without the axis. Passed as `None`, the
+  caller asked for a binding it could not supply the record for: the axis is
+  `not_established`, the composite is `indeterminate`, and `predecessor_not_supplied` is in
+  the errors.
+- `tests/cross_impl/receipt-decision-composite-vectors.json` and its generator: 126 cases
+  built from the pinned action-result-binding conformance chain, each carrying the TypeScript
+  reference's own result object, replayed field for field against this implementation.
+
+Both entry points are reachable under `agent_passport.receipt_core`, alongside the existing
+ReceiptV1 surface, and not from the package root. The 4.0.0 reachability note below says
+"there is no composite verifier here, so the decision-binding check exists in TypeScript
+alone". That was true of 4.0.0 and is superseded by this section.
+
 ## 4.0.0 (2026-09-20)
 
 Reconciles three surfaces against draft-pidlisnyi-aps-03: action references,

@@ -5,12 +5,20 @@ domain separation.  Legacy formats are classified, never guessed by trying
 multiple canonicalizers.
 """
 
+from .composite import (
+    verify_receipt_with_decision_v1,
+)
 from .decision_ref import (
     build_decision_ref_v1,
     compute_decision_component_ref_v1,
     compute_decision_ref_v1,
     normalize_core_decision_output_v1,
     validate_core_decision_output_v1,
+)
+from .predecessor import (
+    RECEIPT_PREDECESSOR_FAILURES_V1,
+    RECEIPT_PREDECESSOR_STATUSES_V1,
+    verify_receipt_predecessor_v1,
 )
 from .receipt import (
     compute_receipt_id_v1,
