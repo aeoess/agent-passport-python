@@ -26,6 +26,8 @@ Thanks for showing up here. This is the Python SDK for the Agent Passport System
 4. **API tracks TypeScript SDK** where feasible. If you're porting a TS module, keep the public surface close. Diverge only where Python idioms demand it (async/await, dataclasses, type hints) and note the divergence in the PR.
 5. **Changes to the public API include a CHANGELOG entry** and a version bump rationale in the PR description.
 
+Protocol changes follow the TypeScript SDK's [Protocol Contributions](https://github.com/aeoess/agent-passport-system/blob/main/CONTRIBUTING.md#protocol-contributions) section, since both SDKs implement the same draft. For anything beyond a typo, the [Contribution Brief](https://github.com/aeoess/.github/blob/main/CONTRIBUTION-BRIEF.md) lists what a reviewer needs.
+
 ## Stability expectations
 
 The Python SDK follows semantic versioning. API changes that would break downstream consumers require a major version bump with migration notes. Internal refactors can land in patch releases.
