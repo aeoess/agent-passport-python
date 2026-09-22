@@ -147,6 +147,38 @@ from .v2.authority_delegation import (
     verify_authority_delegation_signature,
 )
 
+# aps:authority-revocation:v1, the draft-pidlisnyi-aps-03 section 3.5.1 direct
+# revocation of an AuthorityDelegationV1. DISTINCT from the pre-draft revocation
+# surface above, which carries a raw public key and a free-text reason and is
+# not the draft-03 record. One direct revocation of one delegation: no
+# cascade-derived record for a descendant and no cascade-completion record.
+from .v2.authority_revocation import (
+    AUTHORITY_REVOCATION_RECORD_TYPE,
+    AUTHORITY_REVOCATION_VERSION,
+    AUTHORITY_REVOCATION_ID_DOMAIN,
+    AUTHORITY_REVOCATION_SIGNATURE_DOMAIN,
+    AUTHORITY_REVOCATION_CASCADE_TRANSACTION_DOMAIN,
+    AuthorityRevocationError,
+    AuthorityRevocationFailure,
+    AuthorityRevocationInsertion,
+    AuthorityRevocationRecordResult,
+    AuthorityRevocationStore,
+    AuthorityRevocationVerificationResult,
+    InMemoryAuthorityRevocationStore,
+    authority_revocation_body,
+    authority_revocation_cascade_origin,
+    compute_authority_revocation_cascade_transaction_id,
+    compute_authority_revocation_id,
+    create_authority_revocation_resolver,
+    is_authority_revocation_v1,
+    issue_authority_revocation,
+    record_authority_revocation,
+    sign_authority_revocation,
+    validate_authority_revocation_shape,
+    verify_authority_revocation,
+    verify_authority_revocation_signature,
+)
+
 # Agora (Layer 4 — Communication)
 from .agora import (
     create_agora_message,
