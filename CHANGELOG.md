@@ -4,6 +4,30 @@
 
 ### New
 
+- **`agent_passport.v2.authority_revocation`**: Python parity of the draft-03 section 3.5.1
+  DIRECT revocation of an `AuthorityDelegationV1` (`aps:authority-revocation:v1`), ported
+  from the TypeScript SDK's `src/v2/authority-revocation/`. The closed schema; the three
+  frozen domain tags, each byte exact with its trailing NUL; issuance under a
+  caller-supplied `now` and `nonce`, with no clock and no random source anywhere in it;
+  verification with issuer-bound historical key resolution at the record's own `revoked_at`;
+  the first-wins store; `record_authority_revocation()`, the verifying mutation path that is
+  the one supported way a record enters a store; and the fail-closed
+  active / revoked / unknown resolver the Python authority delegation chain verifier already
+  takes. Until now a Python consumer could verify a delegation chain but had no way to
+  produce or check the record that revokes one.
+- The wire format is checked against the TypeScript SDK's own committed vector, vendored byte
+  for byte as `tests/cross_impl/authority-revocation-v1-vectors.json` with its provenance and
+  SHA-256 recorded beside it. From the vector's seeds and inputs alone, Python issuance
+  reproduces the valid record byte for byte under JCS, all three preimages hex for hex, and
+  `revocation_id`, `cascade_transaction_id` and `signature`; Python verification returns the
+  recorded state and first failure code for each of the nine negative cases. No Node runs and
+  nothing calls into the TypeScript SDK.
+- **Scope**: the direct revocation path only. No cascade-derived record for a descendant of a
+  revoked delegation (0B) and no cascade-completion evidence (0C). Enforcement against
+  descendants comes from chain verification, which already rejects a chain carrying a revoked
+  ancestor, not from a derived record. Section 3.5.1 makes completion depend on a
+  descendant's revocation being persistent, and no store interface here establishes
+  persistence.
 - **`verify_receipt_with_decision_v1`** (`src/agent_passport/receipt_core/composite.py`): the
   section 5.6 composite check of a receipt together with the decision it references. Parity
   with the TypeScript reference `verifyReceiptWithDecisionV1`: same stage order and
