@@ -151,6 +151,86 @@
   the side that was edited. Every verdict, reason code and refusal code in it is hand
   specified, and the signature and identifier byte values are there so the two ports can be
   shown to emit the same characters. Tests live at `tests/test_bounds.py`.
+- **`agent_passport.v2.capability_binding`, capability pins and identifier binding.
+  PROPOSED and OPT-IN.** Python parity of the TypeScript SDK's
+  `src/v2/capability-binding/`, name for name with snake_case adapted to Python
+  convention. Whether an action through a named tool is established under a grant that pins
+  that tool, and whether an authority path that depends on an off-chain identifier still
+  depends on the same party. Nothing here is required by draft-pidlisnyi-aps-03, which
+  defines no pin syntax and states no rule pinning a tool to an implementation digest or a
+  schema. Its nearest text is the section 4.1 action reference, verbatim: "target is the
+  exact resource, tool, or endpoint against which the action will be dispatched; a profile
+  MUST define its target string construction." A target carries no digest, so it cannot
+  tell two revisions of one tool behind one endpoint apart. Proposed -04 excludes
+  capability binding by name.
+
+  `AuthorityValidationResult` is unchanged, `verify_authority_delegation_chain` returns
+  exactly what it returned, and the authority vector gains no eighth facet (section 3.2
+  closes it at seven and makes a missing facet invalid). Every result here is a boundary
+  outcome from the lifecycle state vocabulary, reported alongside a chain result and never
+  merged into it. Nothing in this module makes any delegation invalid. A caller that does
+  not import it sees exactly today's behaviour.
+
+  The concept source is the aeoess/agent-authority-lifecycle concept document, invariant
+  candidate CAND-07 as rewritten, whose statement is a verdict rule: where nothing pins a
+  referent, the verdict records that referent continuity was not established rather than
+  admitting silently, and where something pins it and the pin does not match, the action is
+  denied with a mismatch reason rather than reported as not established. Also the
+  `AUTHORITY-LIFECYCLE.md` concepts "Action or capability binding", "Target binding" and
+  "Authority path and dependency". All proposed, with no published specification text
+  behind them, and every exported symbol says so in its doc comment.
+
+  New public surface: `evaluate_capability_binding`, `evaluate_identifier_continuity`,
+  `observe_tool_attestation`, `capability_implementation_digest`,
+  `capability_metadata_digest`, `parse_capability_pin_from_scope_grants`,
+  `capability_pin_scope_grants`, `capability_pin_is_empty`, `tool_scope_grant`,
+  `implementation_pin_prefix`, `metadata_pin_prefix`, `identifier_record_signed_bytes`,
+  `identifier_dependency_scope_grant`, `identifier_controller_pin_scope_grant`,
+  `parse_identifier_controller_pins`, `referent_binding_result`,
+  `identifier_continuity_result`, `project_boundary_outcome_to_candidate_v0`, the
+  `CapabilityPin`, `ReferentBindingResult`, `IdentifierContinuityResult` and
+  `ToolAttestationObservation` dataclasses, `CapabilityBindingError`, and the two
+  reason-code tuples.
+
+  `ReferentBindingResult` carries no `valid` property, on the same reasoning as
+  `LifecycleStateResult`: `not_established` is not a boolean's false branch.
+
+  `capability_metadata_digest` is over `domain || 0x00 || JCS(metadata)` with a REQUIRED
+  domain and no default. It uses `canonicalize_jcs`, which keeps `None` members, not the
+  legacy `canonicalize`, which strips them. The two are not interchangeable for this
+  preimage.
+
+  `conformance/capability-binding/v0/vectors.json` is a byte-for-byte copy of the
+  TypeScript SDK's file, which is where it is authored, with its SHA-256 pinned in both
+  repositories' own tests. 18 capability cases, 15 identifier cases and the digest,
+  scope-grant and canonical-byte known answers. The identifier records are stored unsigned
+  and signed by each runner over its own canonical bytes, so a canonical-byte divergence
+  shows up as a failed signature check rather than as two runners agreeing on a blob
+  neither produced. Tests live at `tests/test_capability_binding.py`.
+
+- **`agent_passport.tool_integrity`, the tool registry-entry layer. EXPERIMENTAL.** An
+  attestor signs that a named tool's implementation bytes are the ones it approved, and a
+  verifier later checks that the tool reachable now still hashes to the same value. Ported
+  from the TypeScript SDK's `src/core/tool-integrity.ts` at byte parity, including the
+  optional `verified_at` override for deterministic fixtures. The Python SDK had no
+  tool-integrity surface at all before this, and the capability-binding module above needs
+  an attested implementation digest to compare a pin against.
+
+  `create_tool_registry_entry` and `verify_tool_integrity`, with the `ToolRegistryEntry`,
+  `ToolRequirements`, `AgentCapabilities` and `ToolIntegrityResult` dataclasses.
+  `ToolRegistryEntry` keeps the TypeScript SDK's camelCase field names verbatim, because
+  those names are signed: the attestor signature is taken over the canonical JSON of
+  `{toolName, implementationHash, attestorId, verifiedAt}`, and renaming any of them would
+  produce bytes neither SDK could check.
+
+  draft-pidlisnyi-aps-03 defines no tool registry entry and no tool-integrity check, so
+  treat these names as subject to change. NOT PORTED, and stated so no caller assumes
+  parity: the TypeScript SDK's file also carries a signed tool manifest layer
+  (`createToolManifest`, `verifyToolManifest`, `reviseToolManifest`,
+  `reapproveToolManifest`) and a namespace-claim layer (`createNamespaceClaim`,
+  `verifyNamespaceClaim`), with publisher identity, `did:web` trust-root resolution and
+  metadata-change re-approval. Those are a larger job with their own resolution behaviour,
+  and a partial port would be the behavioural drift `AGENTS.md` calls a bug.
 
 - **`agent_passport.v2.lifecycle_state`, the lifecycle state vocabulary. PROPOSED and
   OPT-IN.** Python parity of the TypeScript SDK's `src/v2/lifecycle-state/`, name for name

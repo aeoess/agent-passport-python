@@ -767,3 +767,83 @@ from .v2.bounds import (
     verify_authority_exhaustion,
     verify_authority_exhaustion_signature,
 )
+
+# Tool registry integrity: the legacy registry-entry layer. EXPERIMENTAL.
+#
+# An attestor signs that a named tool's implementation bytes are the ones it approved, and
+# a verifier later checks that the tool reachable now still hashes to the same value.
+# Ported from the TypeScript SDK's src/core/tool-integrity.ts at byte parity, because the
+# proposed capability-binding module below needs an attested implementation digest to
+# compare a pin against and inventing a second, Python-only attestation shape for that
+# would be behavioural drift.
+#
+# draft-pidlisnyi-aps-03 defines no tool registry entry and no tool-integrity check, so
+# treat these names as subject to change. The TypeScript SDK's file also carries a signed
+# tool MANIFEST layer and a namespace-claim layer with publisher identity and did:web
+# trust-root resolution; none of that is ported, and a caller needing it should say so
+# rather than assume parity.
+from .tool_integrity import (
+    AgentCapabilities,
+    ToolIntegrityResult,
+    ToolRegistryEntry,
+    ToolRequirements,
+    create_tool_registry_entry,
+    verify_tool_integrity,
+)
+
+# Capability pins and identifier binding (v2): PROPOSED, OPT-IN.
+#
+# Whether an action through a named tool is established under a grant that pins that tool,
+# and whether an authority path that depends on an off-chain identifier still depends on
+# the same party.
+#
+# NOT REQUIRED BY draft-pidlisnyi-aps-03. That document defines no pin syntax and states no
+# rule pinning a tool to an implementation digest or a schema. Its nearest text is the
+# section 4.1 action reference, verbatim: "target is the exact resource, tool, or endpoint
+# against which the action will be dispatched; a profile MUST define its target string
+# construction." A target carries no digest, so it cannot tell two revisions of one tool
+# behind one endpoint apart. Proposed -04 excludes capability binding by name.
+#
+# AuthorityValidationResult is unchanged, verify_authority_delegation_chain returns exactly
+# what it returned, and the authority vector gains no eighth facet (draft-03 section 3.2
+# closes it at seven). Every result here is a boundary outcome from the lifecycle state
+# vocabulary, reported ALONGSIDE a chain result and never merged into it. A caller that
+# does not import this module sees exactly today's behaviour.
+#
+# Concept source: the aeoess/agent-authority-lifecycle concept document, invariant
+# candidate CAND-07 as rewritten, and the AUTHORITY-LIFECYCLE.md concepts "Action or
+# capability binding", "Target binding" and "Authority path and dependency". All PROPOSED,
+# with no published specification text behind them. Nothing downstream should treat these
+# names as specified.
+from .v2.capability_binding import (
+    CAPABILITY_BINDING_REASON_CODES,
+    CAPABILITY_METADATA_DOMAIN_CBD_V0,
+    IDENTIFIER_BINDING_UNSIGNED_FIELDS,
+    IDENTIFIER_CONTINUITY_REASON_CODES,
+    IDENTIFIER_RETENTION_UNSIGNED_FIELDS,
+    PIN_ENCODINGS,
+    REFERENT_CONTINUITY,
+    CapabilityBindingError,
+    CapabilityPin,
+    IdentifierContinuityResult,
+    ReferentBindingResult,
+    ToolAttestationObservation,
+    capability_implementation_digest,
+    capability_metadata_digest,
+    capability_pin_is_empty,
+    capability_pin_scope_grants,
+    evaluate_capability_binding,
+    evaluate_identifier_continuity,
+    identifier_continuity_result,
+    identifier_controller_pin_scope_grant,
+    identifier_dependency_scope_grant,
+    identifier_record_signed_bytes,
+    implementation_pin_prefix,
+    metadata_pin_prefix,
+    observe_tool_attestation,
+    parse_capability_pin_from_scope_grants,
+    parse_identifier_controller_pins,
+    project_boundary_outcome_to_candidate_v0,
+    referent_binding_result,
+    tool_scope_grant,
+)
