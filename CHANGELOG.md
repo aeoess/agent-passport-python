@@ -53,6 +53,53 @@
   own test, so a one-sided edit fails on the side that was edited. Tests live at
   `tests/test_lifecycle_state.py`, and both ports run the same 47 assertions.
 
+- **`agent_passport.v2.status_coverage`, multiple trusted status sources with freshness
+  bounds. PROPOSED, EXPERIMENTAL and OPT-IN.** Python parity of the TypeScript SDK's
+  `src/v2/status-coverage/`, name for name with snake_case adapted to Python convention.
+  Decides what one authorization boundary can establish about one `authority_ref` from a SET
+  of status answers, each measured against the freshness bound declared for its own source.
+  Conflict between accepted sources, or staleness past a declared bound, gives not
+  established. An offline verifier holding a snapshot inside a bound it declared in advance
+  may admit, and the record names the snapshot and the age it admitted at.
+
+  Nothing here is required by draft-pidlisnyi-aps-03. Section 3.3 rules one revocation
+  result per chain member and closes verification at, verbatim: "Verification returns one of
+  valid, invalid, indeterminate, or unsupported with a stable failure code." It says nothing
+  about two sources answering about the same member, nothing about a per-source freshness
+  bound, nothing about coverage over a declared source set, and nothing about an offline
+  admission on a snapshot. `AuthorityValidationResult` and everything
+  `verify_authority_delegation_chain` returns are exactly what they were. This decision is
+  reported alongside a chain result, never merged into it, and a caller that does not import
+  the new module sees no change at all.
+
+  Concept source: the aeoess/agent-authority-lifecycle concept document, invariant L7
+  (unknown revocation state is not active), which is the published-text half, and invariant
+  candidate BROAD-L7, all three limbs, which broadens L7 to any current lifecycle state
+  claim. BROAD-L7 is proposed, and every exported symbol says so in its docstring.
+
+  New public surface: `decide_multi_source_status`, `StatusTrustPolicy`,
+  `RequiredSourceSet`, `DeclaredStatusSource`, `SnapshotSource`, `StaleAnswerPolicy`,
+  `StatusAnswerInput`, `StatusSourceLine`, `StatusConflict`, `StatusCoverage`,
+  `AdmittedSnapshot`, `MultiSourceStatusBasis`, `MultiSourceStatusDecision`,
+  `StatusCoverageError`, and the vocabulary tuples `STATUS_ANSWERS`,
+  `DETERMINATE_STATUS_ANSWERS`, `STATUS_USE_BASES`, `STATUS_COVERAGE_REASON_CODES`,
+  `SILENCE_POLICIES`, `CONFLICT_POLICIES`, `VERIFIER_MODES` and `COVERAGE_DENOMINATORS`.
+
+  `conflict_policy`, `stale_policy` and `RequiredSourceSet.silence_is` are required with no
+  defaults. That is unusual for an SDK and it is deliberate: each has two defensible
+  readings of the proposed text, the readings give opposite verdicts on the
+  deployment-relevant case, and a default would be this SDK making a specification decision
+  in code.
+
+  `StatusCoverage` reports coverage over a DECLARED required-source set. It is NOT a
+  completeness claim. Invariant L12 is open, and a `complete=True` block must not be read as
+  a statement that the declared set was every source that mattered.
+
+  Cross-language parity: `conformance/status-coverage/v0/vectors.json`, 24 hand-specified
+  decision cases and 16 refusal cases, is a byte-identical copy of the TypeScript SDK's
+  authoring file. Both repositories pin its SHA-256 inside their own test, so a one-sided
+  edit fails on the side that was edited. Tests live at `tests/test_status_coverage.py`.
+
 ## 4.1.0 (2026-09-22)
 
 ### New

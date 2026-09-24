@@ -611,3 +611,58 @@ from .v2.lifecycle_state import (
     not_established,
     resolve_established_negative,
 )
+
+
+# Multi-source status observation (v2): PROPOSED, EXPERIMENTAL, OPT-IN.
+#
+# Decides what ONE authorization boundary can establish about one authority_ref from a SET
+# of status answers, each measured against the freshness bound declared for its own
+# source. Conflict between accepted sources, or staleness past a declared bound, gives
+# not_established. An offline verifier with a snapshot inside a bound it declared in
+# advance may admit, and the record names the snapshot and the age it admitted at.
+#
+# NOT REQUIRED BY draft-pidlisnyi-aps-03. Section 3.3 rules one revocation result per
+# chain member and closes verification at "valid, invalid, indeterminate, or unsupported
+# with a stable failure code". It says nothing about two sources answering about the same
+# member, nothing about a per-source freshness bound, nothing about coverage over a
+# declared source set, and nothing about an offline admission on a snapshot.
+# AuthorityValidationResult and everything verify_authority_delegation_chain returns are
+# unchanged. This decision is reported ALONGSIDE a chain result, never merged into it, and
+# a caller that does not import this module sees exactly today's behaviour.
+#
+# conflict_policy and stale_policy are required parameters with no defaults. That is
+# deliberate: the proposed text has two defensible readings on each, they give opposite
+# verdicts on the deployment-relevant case, and a default would be this SDK making a
+# specification decision in code.
+#
+# The coverage block is NOT a completeness claim. It reports whether a DECLARED
+# required-source set was covered. Invariant L12 is open and nothing here answers it.
+#
+# Concept source: the aeoess/agent-authority-lifecycle concept document, invariant L7 and
+# invariant candidate BROAD-L7, all three limbs. Both are PROPOSED, with no published
+# specification text behind the broadening. Nothing downstream should treat these names as
+# specified.
+from .v2.status_coverage import (
+    CONFLICT_POLICIES,
+    COVERAGE_DENOMINATORS,
+    DETERMINATE_STATUS_ANSWERS,
+    SILENCE_POLICIES,
+    STATUS_ANSWERS,
+    STATUS_COVERAGE_REASON_CODES,
+    STATUS_USE_BASES,
+    VERIFIER_MODES,
+    AdmittedSnapshot,
+    DeclaredStatusSource,
+    MultiSourceStatusBasis,
+    MultiSourceStatusDecision,
+    RequiredSourceSet,
+    SnapshotSource,
+    StaleAnswerPolicy,
+    StatusAnswerInput,
+    StatusConflict,
+    StatusCoverage,
+    StatusCoverageError,
+    StatusSourceLine,
+    StatusTrustPolicy,
+    decide_multi_source_status,
+)
