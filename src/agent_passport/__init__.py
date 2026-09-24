@@ -28,7 +28,7 @@ Remote MCP: https://mcp.aeoess.com/sse
 Docs: https://agent-passport.org/llms-full.txt
 """
 
-__version__ = "4.1.0"
+__version__ = "4.2.0"
 
 # Crypto
 from .crypto import generate_key_pair, sign, verify, public_key_from_private
@@ -147,14 +147,19 @@ from .v2.authority_delegation import (
     verify_authority_delegation_signature,
 )
 
-# Chain selection over the set of chains an agent holds. draft-03 section 3.3:
-# "Each action selects one root-to-leaf authority chain.  A verifier MUST NOT
-# union scopes or budgets from multiple chains.  Cross-principal composition
-# requires a separate profile." Additive and opt-in: nothing here changes what
-# verify_authority_delegation_chain returns for a draft-03 record. The fallback
-# members of select_with_fallback are PROPOSED against invariant candidate L11 of
-# the aeoess/agent-authority-lifecycle concept document, not draft-03, and say so
-# at every symbol that carries them.
+# Chain selection over the set of chains an agent holds. STABLE, not
+# experimental and not opt-in: draft-pidlisnyi-aps-03 section 3.3 ("Chain
+# Verification") requires this behaviour of a verifier, in these words: "Each
+# action selects one root-to-leaf authority chain.  A verifier MUST NOT union
+# scopes or budgets from multiple chains.  Cross-principal composition requires
+# a separate profile." Additive: nothing here changes what
+# verify_authority_delegation_chain returns for a draft-03 record.
+#
+# One part of this surface is NOT specified and says so at every symbol that
+# carries it: the fallback members of select_with_fallback. draft-03 says
+# nothing about what an implementation does after the chain it selected turns
+# out to be unusable. Those members are PROPOSED, and implemented does not mean
+# specified.
 from .v2.chain_selection import (
     CHAIN_SELECTION_EVALUATION_CODES,
     CHAIN_SELECTION_FAILURE_CODES,

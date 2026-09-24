@@ -164,14 +164,13 @@ class FallbackAuthorizationV0:
     PROPOSED, not draft-03. draft-03 says nothing about what an implementation
     does after the chain it selected turns out to be unusable: ``fallback``,
     ``fall back``, ``resurrect`` and ``reselect`` occur zero times in the
-    published text. The invariant candidate this shape serves is L11, "No silent
-    authority resurrection", in ``AUTHORITY-LIFECYCLE.md`` of the
-    aeoess/agent-authority-lifecycle concept document, whose own status there is
-    ``proposed``: when the authority path an implementation selected becomes
-    invalid, it should not quietly fall back to another stored grant unless that
-    fallback was itself explicitly authorized.
+    published text. The proposed rule this shape serves is that when the authority
+    path an implementation selected becomes invalid, it should not quietly fall
+    back to another stored grant unless that fallback was itself explicitly
+    authorized. Nothing specified states that rule, and implemented does not mean
+    specified.
 
-    That document does not define what makes a fallback "explicitly authorized",
+    Nothing specified defines what makes a fallback "explicitly authorized",
     and this SDK does not invent a definition. ``authorization_ref`` is an OPAQUE
     reference the caller supplies and this module records and never interprets:
     it is not resolved, not verified, not required to name any record type, and
@@ -194,8 +193,8 @@ class SelectionOutcome:
     ``code`` is ``None``. When it is False, ``code`` is set and ``chain_id`` and
     ``result`` are both ``None``.
 
-    ``switched_from``, ``fallback_ref`` and ``fallback_considered`` are PROPOSED
-    (L11) and are set only by :func:`select_with_fallback`.
+    ``switched_from``, ``fallback_ref`` and ``fallback_considered`` are PROPOSED,
+    not draft-03, and are set only by :func:`select_with_fallback`.
     """
 
     selected: bool
@@ -205,11 +204,11 @@ class SelectionOutcome:
     #: The selected chain's own verification result, unchanged from the chain verifier.
     result: Optional[AuthorityValidationResult] = None
     code: Optional[str] = None
-    #: PROPOSED (L11). The chain the action had selected, when this call switched away.
+    #: PROPOSED, not draft-03. The chain the action had selected, when this call switched away.
     switched_from: Optional[str] = None
-    #: PROPOSED (L11). The opaque reference given for that switch, recorded, not interpreted.
+    #: PROPOSED, not draft-03. The opaque reference given for that switch, recorded, not interpreted.
     fallback_ref: Optional[str] = None
-    #: PROPOSED (L11). True when the call was allowed to look past the chain the action
+    #: PROPOSED, not draft-03. True when the call was allowed to look past the chain the action
     #: selected. False means no other held chain was read at all, which is the observable
     #: difference between a refusal and a silent switch.
     fallback_considered: Optional[bool] = None

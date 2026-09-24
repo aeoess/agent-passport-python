@@ -1,8 +1,164 @@
 # Changelog
 
-## Unreleased
+## 4.2.0 (2026-09-24)
 
-### New
+One conformance fix and seven opt-in experimental modules for the authority lifecycle,
+Python parity for the TypeScript SDK's 7.2.0.
+
+**Existing behaviour is byte identical.** `verify_authority_delegation_chain` returns what
+it returned in 4.1.0 for every record, the four-valued chain result is unchanged, the
+authority vector is unchanged, and a caller that imports none of the new modules sees
+exactly 4.1.0 behaviour. **The conformance suite output is unchanged**: the Agent
+Authority Conformance suite produces byte-identical output under the published SDKs and
+under this build, and all 86 of its family runners and probes exit 0 under both.
+
+What did move is how much of that suite the two reference SDKs can decide by themselves.
+Across the 29 lifecycle families, 633 vectors and 635 decision units, an SDK call
+reproduced the expected result for **50 of 635 units under the published SDKs and 161 of
+635 under this build**: 111 units across 12 families, with **0 fail and 0 regressions**.
+The remaining 474 units are `not_supported`, meaning no SDK API decides them and a
+family's own harness supplies the deciding step. `not_supported` is not a failure and not
+a claim the expected answer is wrong.
+
+### Fixed
+
+- **`agent_passport.v2.chain_selection`**: Python parity of the TypeScript SDK's
+  `src/v2/chain-selection`, the draft-03 section 3.3 rule that every other authority entry
+  point in this SDK had no surface for. Section 3.3 states it: "Each action selects one
+  root-to-leaf authority chain.  A verifier MUST NOT union scopes or budgets from multiple
+  chains.  Cross-principal composition requires a separate profile."
+  `verify_authority_delegation_chain` and `InMemoryAuthorityBudgetLedger.reserve` each take
+  exactly one chain, so an implementation that evaluated an action against three chains and
+  pooled the answers, and one that selected a single chain, were indistinguishable through
+  this SDK. `select_chain_for_action()` and `select_with_fallback()` take the whole set of
+  chains an agent holds and return the name of the ONE chain the action was decided against.
+
+  New public surface, importable from `agent_passport` and from
+  `agent_passport.v2.chain_selection`: `select_chain_for_action`, `select_with_fallback`,
+  the dataclasses `HeldChain`, `RequiredSpendV1`, `ChainEvaluation`,
+  `FallbackAuthorizationV0` and `SelectionOutcome`, the `AuthorityBudgetReserver` protocol,
+  and the constants `CHAIN_SELECTION_EVALUATION_CODES`, `CHAIN_SELECTION_FAILURE_CODES` and
+  `HELD_SET_CEILING`.
+
+  **Additive. Nothing existing changed.** The four-valued chain result is
+  unchanged, the authority vector is unchanged, `verify_authority_delegation_chain` returns
+  exactly what it returned before for every draft-03 record, and a consumer that never
+  imports the module sees today's behaviour. There is no wall clock anywhere in it. `now`
+  and the three resolvers are the caller's keyword arguments, the budget reserver is
+  injected, and neither entry point raises.
+
+  **No union, held by construction rather than by a check.** One private function judges one
+  chain and is the only place a chain is judged, so no code path lets two chains' scope
+  grants or spend ceilings meet in one comparison. A result names one `chain_id`, never a
+  set. A held entry that is two or more chains concatenated into one list, the shape a
+  caller reaches for to have two chains evaluated together, is refused by name as
+  `chain_set_presented_as_one` before verification rather than being reported as the broken
+  parent link chain verification would otherwise call it.
+
+  **Selection rule, this implementation's own, identical to the TypeScript SDK's.** draft-03
+  states that an action selects one chain and does not state how. Candidates are evaluated
+  in held order, the first that verifies `valid` and covers every needed scope grant is
+  selected, the action's spend is then reserved against that chain and no other, and a spend
+  refusal is that chain's refusal and ends the call. Continuing past a spend refusal to a
+  chain with a larger ceiling would be a fallback in everything but name.
+
+  **Not established is kept apart from refused.** A candidate whose revocation answer is
+  unknown, whose facet profile is unsupported, or whose spend could not be checked because
+  no ledger was supplied, is `undecided`, never `refuses`, and one undecided candidate makes
+  the whole outcome `selection_undecided` rather than "no chain covers the action". Section
+  3.3 forbids collapsing indeterminate or unsupported into valid, and collapsing them into a
+  denial reason would be the opposite error.
+
+- **PROPOSED, not draft-03: the fallback surface.** `select_with_fallback`'s `fallback`
+  argument and the `switched_from`, `fallback_ref` and `fallback_considered` members of
+  `SelectionOutcome` are the one part of this module that is not
+  specified. draft-03 says nothing about what an implementation does
+  after the chain it selected turns out to be unusable. `fallback=None` reads no held chain
+  other than the preferred one, so a refusal cannot hide a switch. An authorization object
+  permits the switch and the result then names the chain switched away from. Nothing
+  specified defines what makes a fallback explicitly authorized, so `authorization_ref` is an
+  opaque reference this SDK records and never interprets, and its presence is not a claim
+  that anything authorized anything. Every symbol carrying this half says so in its
+  docstring.
+
+- **Cross-language parity.** `tests/cross_impl/chain-selection-v0-vectors.json` is the
+  TypeScript SDK's own vector file, vendored byte for byte with its provenance and SHA-256
+  recorded beside it. 19 cases over three single-hop chains from three roots to one leaf.
+  From the file's inputs alone, Python reproduces every recorded outcome member for member:
+  which chain was selected, the chain's own verification state, every candidate's outcome
+  and code, and the fallback members. No Node runs and nothing calls into the TypeScript SDK.
+
+### Naming
+
+- **`AttestorRoleResolver` is exported from the package root under two qualified names.**
+  `agent_passport.v2.activation` and `agent_passport.v2.bounds` each define a resolver
+  protocol that was called `AttestorRoleResolver`, and the two have incompatible
+  signatures: the activation one takes one `role: str` and answers `holds` /
+  `does_not_hold` / `unknown`, the bounds one takes a sequence of roles and answers
+  `holds_role` / `does_not_hold_role` / `unknown`. Imported into the package root under one
+  name, the second would have shadowed the first silently and nothing would have
+  complained. Both are exported from the root as `ActivationAttestorRoleResolver` and
+  `BoundAttestorRoleResolver`, matching the TypeScript root. Inside
+  `agent_passport.v2.activation` and `agent_passport.v2.bounds` the bare name is
+  unchanged.
+
+### Experimental (proposed, not specified)
+
+Seven opt-in modules and one new module port, none of which is required by
+draft-pidlisnyi-aps-03. **Implemented does not mean specified.** Each module says so in its
+own docstring, every new record type carries a `proposed:` namespace rather than `aps:`,
+and every reason code is module-local. These names are a proposal for the schema owner to
+rule on or replace, not minted vocabulary. Nothing here is a conformance claim about
+draft-03, and nothing here claims that any legal doctrine applies to AI agents.
+
+- **`agent_passport.v2.lifecycle_state`, the lifecycle state vocabulary. PROPOSED and
+  OPT-IN.** Python parity of the TypeScript SDK's `src/v2/lifecycle-state/`, name for name
+  with snake_case adapted to Python convention. A second verdict vocabulary, reported
+  alongside chain verification and never merged into it. Nothing here is required by
+  draft-pidlisnyi-aps-03, whose section 3.3 says verbatim: "Verification returns one of
+  valid, invalid, indeterminate, or unsupported with a stable failure code." That
+  enumeration is closed and this change does not touch it. `AuthorityValidationResult` and
+  everything `verify_authority_delegation_chain` and `verify_authority_delegation` return
+  are exactly what they were, and a caller that does not import the new module sees no
+  change at all.
+
+  Concept source: the aeoess/agent-authority-lifecycle concept document, invariant L8
+  (suspension is not revocation) and invariant candidates BROAD-L7, CAND-04 and CAND-05.
+  Each is proposed, with no published specification text behind it, and every exported
+  symbol says so in its docstring.
+
+  New public surface, all re-exported from the package root: `LIFECYCLE_VERDICTS` (the six
+  artifact verdicts `valid`, `invalid`, `not_established`, `not_yet_effective`,
+  `suspended`, `restricted`), `BOUNDARY_OUTCOMES` (the separate subject: what an
+  enforcement point decides about one action at one authorization boundary),
+  `ESTABLISHMENT_GAPS` (`source`, `freshness`, `coverage`, at least one of which a
+  `not_established` verdict must name), `ESTABLISHED_NEGATIVE_SHAPES` with
+  `resolve_established_negative()` (the split between the two uses of "not established":
+  the evidential sense keeps the name, an established negative resolves to
+  `not_yet_effective` or to a denial at a boundary and never to `not_established`),
+  `LifecycleStateResult`, `OutstandingCause`, `EstablishedNegativeResolution`,
+  `CompositeAuthorityResult`, `LifecycleStateError`, `lifecycle_state()`,
+  `not_established()`, the four vocabulary predicates, and
+  `map_authority_validation_to_lifecycle()`, the opt-in read-only view of an existing
+  `AuthorityValidationResult` in the new vocabulary.
+
+  `LifecycleStateResult` deliberately carries no `valid` property.
+  `AuthorityValidationResult` has one and it is correct there, but here `not_established`
+  is not a boolean's false branch and a truthiness shortcut invites exactly the collapse
+  the vocabulary exists to prevent.
+
+  One reading in the mapping is worth naming: a result whose only failure is
+  `NOT_YET_VALID` stays `invalid` by default, because the concept document has not decided
+  whether a waiting grant is invalid or not yet effective, and a base module several other
+  surfaces build on should not embed a contested reading as a default.
+  `not_yet_valid_as_not_yet_effective=True` takes CAND-04's reading, under which such a
+  grant is `not_yet_effective`.
+
+  Cross-language parity: `conformance/lifecycle-state/v0/vectors.json`, 38 hand-specified
+  cases, is vendored byte for byte from the TypeScript SDK where it is authored, with its
+  provenance and SHA-256 recorded beside it. Both repositories pin that digest inside their
+  own test, so a one-sided edit fails on the side that was edited. Tests live at
+  `tests/test_lifecycle_state.py`, and both ports run the same 47 assertions.
 
 - **`agent_passport.v2.activation`, activation conditions and condition attestation.
   PROPOSED and OPT-IN.** Python parity of the TypeScript SDK's `src/v2/activation/`, name for
@@ -54,7 +210,8 @@
     always a known negative. A `recorded_event` condition names `required_attestor_roles`,
     which are ROLES and never principals.
   - `AttestorRoleResolver`, a caller-supplied callable returning `holds`, `does_not_hold` or
-    `unknown`. Three values, not a boolean: "this registry does not know" is a distinct answer
+    `unknown`. Exported from the package root as `ActivationAttestorRoleResolver`; see
+    Naming above. Three values, not a boolean: "this registry does not know" is a distinct answer
     from "this party does not hold that role", and collapsing the first into the second turns
     ignorance into a denial. Role standing is resolved OUTSIDE the record, always. An
     attestation's `attestor_role` is the attestor's claim about itself, and the module checks
@@ -78,6 +235,7 @@
   cases. Byte parity is checked directly as well: every attestation in the shared vectors was
   signed by the TypeScript module over its own domain-tagged RFC 8785 preimage, and this
   port's tests verify each of those signatures and recompute each content-bound identifier.
+
 - **`agent_passport.v2.bounds`, non-time bounds on a grant. PROPOSED and OPT-IN.**
   Python parity of the TypeScript SDK's `src/v2/bounds/`, name for name with snake_case
   adapted to Python convention. Purpose, use-count and budget bounds, and the state "this
@@ -151,6 +309,7 @@
   the side that was edited. Every verdict, reason code and refusal code in it is hand
   specified, and the signature and identifier byte values are there so the two ports can be
   shown to emit the same characters. Tests live at `tests/test_bounds.py`.
+
 - **`agent_passport.v2.capability_binding`, capability pins and identifier binding.
   PROPOSED and OPT-IN.** Python parity of the TypeScript SDK's
   `src/v2/capability-binding/`, name for name with snake_case adapted to Python
@@ -208,29 +367,53 @@
   shows up as a failed signature check rather than as two runners agreeing on a blob
   neither produced. Tests live at `tests/test_capability_binding.py`.
 
-- **`agent_passport.tool_integrity`, the tool registry-entry layer. EXPERIMENTAL.** An
-  attestor signs that a named tool's implementation bytes are the ones it approved, and a
-  verifier later checks that the tool reachable now still hashes to the same value. Ported
-  from the TypeScript SDK's `src/core/tool-integrity.ts` at byte parity, including the
-  optional `verified_at` override for deterministic fixtures. The Python SDK had no
-  tool-integrity surface at all before this, and the capability-binding module above needs
-  an attested implementation digest to compare a pin against.
+- **`agent_passport.v2.status_coverage`, multiple trusted status sources with freshness
+  bounds. PROPOSED, EXPERIMENTAL and OPT-IN.** Python parity of the TypeScript SDK's
+  `src/v2/status-coverage/`, name for name with snake_case adapted to Python convention.
+  Decides what one authorization boundary can establish about one `authority_ref` from a SET
+  of status answers, each measured against the freshness bound declared for its own source.
+  Conflict between accepted sources, or staleness past a declared bound, gives not
+  established. An offline verifier holding a snapshot inside a bound it declared in advance
+  may admit, and the record names the snapshot and the age it admitted at.
 
-  `create_tool_registry_entry` and `verify_tool_integrity`, with the `ToolRegistryEntry`,
-  `ToolRequirements`, `AgentCapabilities` and `ToolIntegrityResult` dataclasses.
-  `ToolRegistryEntry` keeps the TypeScript SDK's camelCase field names verbatim, because
-  those names are signed: the attestor signature is taken over the canonical JSON of
-  `{toolName, implementationHash, attestorId, verifiedAt}`, and renaming any of them would
-  produce bytes neither SDK could check.
+  Nothing here is required by draft-pidlisnyi-aps-03. Section 3.3 rules one revocation
+  result per chain member and closes verification at, verbatim: "Verification returns one of
+  valid, invalid, indeterminate, or unsupported with a stable failure code." It says nothing
+  about two sources answering about the same member, nothing about a per-source freshness
+  bound, nothing about coverage over a declared source set, and nothing about an offline
+  admission on a snapshot. `AuthorityValidationResult` and everything
+  `verify_authority_delegation_chain` returns are exactly what they were. This decision is
+  reported alongside a chain result, never merged into it, and a caller that does not import
+  the new module sees no change at all.
 
-  draft-pidlisnyi-aps-03 defines no tool registry entry and no tool-integrity check, so
-  treat these names as subject to change. NOT PORTED, and stated so no caller assumes
-  parity: the TypeScript SDK's file also carries a signed tool manifest layer
-  (`createToolManifest`, `verifyToolManifest`, `reviseToolManifest`,
-  `reapproveToolManifest`) and a namespace-claim layer (`createNamespaceClaim`,
-  `verifyNamespaceClaim`), with publisher identity, `did:web` trust-root resolution and
-  metadata-change re-approval. Those are a larger job with their own resolution behaviour,
-  and a partial port would be the behavioural drift `AGENTS.md` calls a bug.
+  Concept source: the aeoess/agent-authority-lifecycle concept document, invariant L7
+  (unknown revocation state is not active), which is the published-text half, and invariant
+  candidate BROAD-L7, all three limbs, which broadens L7 to any current lifecycle state
+  claim. BROAD-L7 is proposed, and every exported symbol says so in its docstring.
+
+  New public surface: `decide_multi_source_status`, `StatusTrustPolicy`,
+  `RequiredSourceSet`, `DeclaredStatusSource`, `SnapshotSource`, `StaleAnswerPolicy`,
+  `StatusAnswerInput`, `StatusSourceLine`, `StatusConflict`, `StatusCoverage`,
+  `AdmittedSnapshot`, `MultiSourceStatusBasis`, `MultiSourceStatusDecision`,
+  `StatusCoverageError`, and the vocabulary tuples `STATUS_ANSWERS`,
+  `DETERMINATE_STATUS_ANSWERS`, `STATUS_USE_BASES`, `STATUS_COVERAGE_REASON_CODES`,
+  `SILENCE_POLICIES`, `CONFLICT_POLICIES`, `VERIFIER_MODES` and `COVERAGE_DENOMINATORS`.
+
+  `conflict_policy`, `stale_policy` and `RequiredSourceSet.silence_is` are required with no
+  defaults. That is unusual for an SDK and it is deliberate: each has two defensible
+  readings of the proposed text, the readings give opposite verdicts on the
+  deployment-relevant case, and a default would be this SDK making a specification decision
+  in code.
+
+  `StatusCoverage` reports coverage over a DECLARED required-source set. It is NOT a
+  completeness claim. Invariant L12 is open, and a `complete=True` block must not be read as
+  a statement that the declared set was every source that mattered.
+
+  Cross-language parity: `conformance/status-coverage/v0/vectors.json`, 24 hand-specified
+  decision cases and 16 refusal cases, is a byte-identical copy of the TypeScript SDK's
+  authoring file. Both repositories pin its SHA-256 inside their own test, so a one-sided
+  edit fails on the side that was edited. Tests live at `tests/test_status_coverage.py`.
+
 - **`agent_passport.v2.authority_state`, authority state markers, write fencing, and
   revocation withdrawal. PROPOSED and OPT-IN.** Python parity of the TypeScript SDK's
   `src/v2/authority-state/`, name for name with snake_case adapted to Python convention.
@@ -285,6 +468,7 @@
   the file's SHA-256 inside their own test, so the two copies can be shown identical without
   either importing the other. `conformance/authority-state/v0/PROVENANCE.md` records the
   pin.
+
 - **`agent_passport.v2.suspension`, suspension and restriction as a SET OF CAUSES.
   PROPOSED and OPT-IN.** Python parity of the TypeScript SDK's `src/v2/suspension/`, name
   for name with snake_case adapted to Python convention. Nothing here is required by
@@ -372,167 +556,52 @@
   the side that was edited. Tests live at `tests/test_suspension.py`, and both ports run
   the same 41 vectors under the same 56 test cases.
 
-- **`agent_passport.v2.lifecycle_state`, the lifecycle state vocabulary. PROPOSED and
-  OPT-IN.** Python parity of the TypeScript SDK's `src/v2/lifecycle-state/`, name for name
-  with snake_case adapted to Python convention. A second verdict vocabulary, reported
-  alongside chain verification and never merged into it. Nothing here is required by
-  draft-pidlisnyi-aps-03, whose section 3.3 says verbatim: "Verification returns one of
-  valid, invalid, indeterminate, or unsupported with a stable failure code." That
-  enumeration is closed and this change does not touch it. `AuthorityValidationResult` and
-  everything `verify_authority_delegation_chain` and `verify_authority_delegation` return
-  are exactly what they were, and a caller that does not import the new module sees no
-  change at all.
+- **`agent_passport.tool_integrity`, the tool registry-entry layer. EXPERIMENTAL.** An
+  attestor signs that a named tool's implementation bytes are the ones it approved, and a
+  verifier later checks that the tool reachable now still hashes to the same value. Ported
+  from the TypeScript SDK's `src/core/tool-integrity.ts` at byte parity, including the
+  optional `verified_at` override for deterministic fixtures. The Python SDK had no
+  tool-integrity surface at all before this, and the capability-binding module above needs
+  an attested implementation digest to compare a pin against.
 
-  Concept source: the aeoess/agent-authority-lifecycle concept document, invariant L8
-  (suspension is not revocation) and invariant candidates BROAD-L7, CAND-04 and CAND-05.
-  Each is proposed, with no published specification text behind it, and every exported
-  symbol says so in its docstring.
+  `create_tool_registry_entry` and `verify_tool_integrity`, with the `ToolRegistryEntry`,
+  `ToolRequirements`, `AgentCapabilities` and `ToolIntegrityResult` dataclasses.
+  `ToolRegistryEntry` keeps the TypeScript SDK's camelCase field names verbatim, because
+  those names are signed: the attestor signature is taken over the canonical JSON of
+  `{toolName, implementationHash, attestorId, verifiedAt}`, and renaming any of them would
+  produce bytes neither SDK could check.
 
-  New public surface, all re-exported from the package root: `LIFECYCLE_VERDICTS` (the six
-  artifact verdicts `valid`, `invalid`, `not_established`, `not_yet_effective`,
-  `suspended`, `restricted`), `BOUNDARY_OUTCOMES` (the separate subject: what an
-  enforcement point decides about one action at one authorization boundary),
-  `ESTABLISHMENT_GAPS` (`source`, `freshness`, `coverage`, at least one of which a
-  `not_established` verdict must name), `ESTABLISHED_NEGATIVE_SHAPES` with
-  `resolve_established_negative()` (the split between the two uses of "not established":
-  the evidential sense keeps the name, an established negative resolves to
-  `not_yet_effective` or to a denial at a boundary and never to `not_established`),
-  `LifecycleStateResult`, `OutstandingCause`, `EstablishedNegativeResolution`,
-  `CompositeAuthorityResult`, `LifecycleStateError`, `lifecycle_state()`,
-  `not_established()`, the four vocabulary predicates, and
-  `map_authority_validation_to_lifecycle()`, the opt-in read-only view of an existing
-  `AuthorityValidationResult` in the new vocabulary.
+  draft-pidlisnyi-aps-03 defines no tool registry entry and no tool-integrity check, so
+  treat these names as subject to change. NOT PORTED, and stated so no caller assumes
+  parity: the TypeScript SDK's file also carries a signed tool manifest layer
+  (`createToolManifest`, `verifyToolManifest`, `reviseToolManifest`,
+  `reapproveToolManifest`) and a namespace-claim layer (`createNamespaceClaim`,
+  `verifyNamespaceClaim`), with publisher identity, `did:web` trust-root resolution and
+  metadata-change re-approval. Those are a larger job with their own resolution behaviour,
+  and a partial port would be the behavioural drift `AGENTS.md` calls a bug.
 
-  `LifecycleStateResult` deliberately carries no `valid` property.
-  `AuthorityValidationResult` has one and it is correct there, but here `not_established`
-  is not a boolean's false branch and a truthiness shortcut invites exactly the collapse
-  the vocabulary exists to prevent.
+### Known gaps in this release
 
-  One reading in the mapping is worth naming: a result whose only failure is
-  `NOT_YET_VALID` stays `invalid` by default, because the concept document has not decided
-  whether a waiting grant is invalid or not yet effective, and a base module several other
-  surfaces build on should not embed a contested reading as a default.
-  `not_yet_valid_as_not_yet_effective=True` takes CAND-04's reading, under which such a
-  grant is `not_yet_effective`.
+- `agent_passport.v2.activation` (17 errors) and `agent_passport.v2.chain_selection` (11)
+  do not pass `mypy --strict`. The other six new modules do. `AGENTS.md` names
+  `mypy --strict` as a standard, `pyproject.toml` does not configure mypy, and the tests
+  workflow runs `pytest` and nothing else, so the standard is documentation rather than a
+  gate. Both counts are identical on the modules' own source branches: the errors are
+  inherited, not introduced by this release.
 
-  Cross-language parity: `conformance/lifecycle-state/v0/vectors.json`, 38 hand-specified
-  cases, is vendored byte for byte from the TypeScript SDK where it is authored, with its
-  provenance and SHA-256 recorded beside it. Both repositories pin that digest inside their
-  own test, so a one-sided edit fails on the side that was edited. Tests live at
-  `tests/test_lifecycle_state.py`, and both ports run the same 47 assertions.
-- **`agent_passport.v2.chain_selection`**: Python parity of the TypeScript SDK's
-  `src/v2/chain-selection`, the draft-03 section 3.3 rule that every other authority entry
-  point in this SDK had no surface for. Section 3.3 states it: "Each action selects one
-  root-to-leaf authority chain.  A verifier MUST NOT union scopes or budgets from multiple
-  chains.  Cross-principal composition requires a separate profile."
-  `verify_authority_delegation_chain` and `InMemoryAuthorityBudgetLedger.reserve` each take
-  exactly one chain, so an implementation that evaluated an action against three chains and
-  pooled the answers, and one that selected a single chain, were indistinguishable through
-  this SDK. `select_chain_for_action()` and `select_with_fallback()` take the whole set of
-  chains an agent holds and return the name of the ONE chain the action was decided against.
+### Where this SDK is deliberately not at parity with the TypeScript SDK
 
-  New public surface, importable from `agent_passport` and from
-  `agent_passport.v2.chain_selection`: `select_chain_for_action`, `select_with_fallback`,
-  the dataclasses `HeldChain`, `RequiredSpendV1`, `ChainEvaluation`,
-  `FallbackAuthorizationV0` and `SelectionOutcome`, the `AuthorityBudgetReserver` protocol,
-  and the constants `CHAIN_SELECTION_EVALUATION_CODES`, `CHAIN_SELECTION_FAILURE_CODES` and
-  `HELD_SET_CEILING`.
-
-  **Additive and opt-in. Nothing existing changed.** The four-valued chain result is
-  unchanged, the authority vector is unchanged, `verify_authority_delegation_chain` returns
-  exactly what it returned before for every draft-03 record, and a consumer that never
-  imports the module sees today's behaviour. There is no wall clock anywhere in it. `now`
-  and the three resolvers are the caller's keyword arguments, the budget reserver is
-  injected, and neither entry point raises.
-
-  **No union, held by construction rather than by a check.** One private function judges one
-  chain and is the only place a chain is judged, so no code path lets two chains' scope
-  grants or spend ceilings meet in one comparison. A result names one `chain_id`, never a
-  set. A held entry that is two or more chains concatenated into one list, the shape a
-  caller reaches for to have two chains evaluated together, is refused by name as
-  `chain_set_presented_as_one` before verification rather than being reported as the broken
-  parent link chain verification would otherwise call it.
-
-  **Selection rule, this implementation's own, identical to the TypeScript SDK's.** draft-03
-  states that an action selects one chain and does not state how. Candidates are evaluated
-  in held order, the first that verifies `valid` and covers every needed scope grant is
-  selected, the action's spend is then reserved against that chain and no other, and a spend
-  refusal is that chain's refusal and ends the call. Continuing past a spend refusal to a
-  chain with a larger ceiling would be a fallback in everything but name.
-
-  **Not established is kept apart from refused.** A candidate whose revocation answer is
-  unknown, whose facet profile is unsupported, or whose spend could not be checked because
-  no ledger was supplied, is `undecided`, never `refuses`, and one undecided candidate makes
-  the whole outcome `selection_undecided` rather than "no chain covers the action". Section
-  3.3 forbids collapsing indeterminate or unsupported into valid, and collapsing them into a
-  denial reason would be the opposite error.
-
-- **PROPOSED, not draft-03: the fallback surface.** `select_with_fallback`'s `fallback`
-  argument and the `switched_from`, `fallback_ref` and `fallback_considered` members of
-  `SelectionOutcome` serve invariant candidate L11, "No silent authority resurrection", in
-  `AUTHORITY-LIFECYCLE.md` of the aeoess/agent-authority-lifecycle concept document, whose
-  own status there is `proposed`. draft-03 says nothing about what an implementation does
-  after the chain it selected turns out to be unusable. `fallback=None` reads no held chain
-  other than the preferred one, so a refusal cannot hide a switch. An authorization object
-  permits the switch and the result then names the chain switched away from. That document
-  does not define what makes a fallback explicitly authorized, so `authorization_ref` is an
-  opaque reference this SDK records and never interprets, and its presence is not a claim
-  that anything authorized anything. Every symbol carrying this half says so in its
-  docstring.
-
-- **Cross-language parity.** `tests/cross_impl/chain-selection-v0-vectors.json` is the
-  TypeScript SDK's own vector file, vendored byte for byte with its provenance and SHA-256
-  recorded beside it. 19 cases over three single-hop chains from three roots to one leaf.
-  From the file's inputs alone, Python reproduces every recorded outcome member for member:
-  which chain was selected, the chain's own verification state, every candidate's outcome
-  and code, and the fallback members. No Node runs and nothing calls into the TypeScript SDK.
-
-- **`agent_passport.v2.status_coverage`, multiple trusted status sources with freshness
-  bounds. PROPOSED, EXPERIMENTAL and OPT-IN.** Python parity of the TypeScript SDK's
-  `src/v2/status-coverage/`, name for name with snake_case adapted to Python convention.
-  Decides what one authorization boundary can establish about one `authority_ref` from a SET
-  of status answers, each measured against the freshness bound declared for its own source.
-  Conflict between accepted sources, or staleness past a declared bound, gives not
-  established. An offline verifier holding a snapshot inside a bound it declared in advance
-  may admit, and the record names the snapshot and the age it admitted at.
-
-  Nothing here is required by draft-pidlisnyi-aps-03. Section 3.3 rules one revocation
-  result per chain member and closes verification at, verbatim: "Verification returns one of
-  valid, invalid, indeterminate, or unsupported with a stable failure code." It says nothing
-  about two sources answering about the same member, nothing about a per-source freshness
-  bound, nothing about coverage over a declared source set, and nothing about an offline
-  admission on a snapshot. `AuthorityValidationResult` and everything
-  `verify_authority_delegation_chain` returns are exactly what they were. This decision is
-  reported alongside a chain result, never merged into it, and a caller that does not import
-  the new module sees no change at all.
-
-  Concept source: the aeoess/agent-authority-lifecycle concept document, invariant L7
-  (unknown revocation state is not active), which is the published-text half, and invariant
-  candidate BROAD-L7, all three limbs, which broadens L7 to any current lifecycle state
-  claim. BROAD-L7 is proposed, and every exported symbol says so in its docstring.
-
-  New public surface: `decide_multi_source_status`, `StatusTrustPolicy`,
-  `RequiredSourceSet`, `DeclaredStatusSource`, `SnapshotSource`, `StaleAnswerPolicy`,
-  `StatusAnswerInput`, `StatusSourceLine`, `StatusConflict`, `StatusCoverage`,
-  `AdmittedSnapshot`, `MultiSourceStatusBasis`, `MultiSourceStatusDecision`,
-  `StatusCoverageError`, and the vocabulary tuples `STATUS_ANSWERS`,
-  `DETERMINATE_STATUS_ANSWERS`, `STATUS_USE_BASES`, `STATUS_COVERAGE_REASON_CODES`,
-  `SILENCE_POLICIES`, `CONFLICT_POLICIES`, `VERIFIER_MODES` and `COVERAGE_DENOMINATORS`.
-
-  `conflict_policy`, `stale_policy` and `RequiredSourceSet.silence_is` are required with no
-  defaults. That is unusual for an SDK and it is deliberate: each has two defensible
-  readings of the proposed text, the readings give opposite verdicts on the
-  deployment-relevant case, and a default would be this SDK making a specification decision
-  in code.
-
-  `StatusCoverage` reports coverage over a DECLARED required-source set. It is NOT a
-  completeness claim. Invariant L12 is open, and a `complete=True` block must not be read as
-  a statement that the declared set was every source that mattered.
-
-  Cross-language parity: `conformance/status-coverage/v0/vectors.json`, 24 hand-specified
-  decision cases and 16 refusal cases, is a byte-identical copy of the TypeScript SDK's
-  authoring file. Both repositories pin its SHA-256 inside their own test, so a one-sided
-  edit fails on the side that was edited. Tests live at `tests/test_status_coverage.py`.
+- The tool **manifest** and **namespace-claim** layer is not ported. It is roughly 500
+  lines including publisher identity, `did:web` trust-root resolution and metadata-change
+  re-approval, and a partial port would be behavioural drift. Stated in
+  `agent_passport/tool_integrity.py`'s module docstring. Nothing in the capability-binding
+  decision surface needs it: all 21 of that cluster's conformance vectors pass in both SDKs
+  without it.
+- The single-answer freshness surface below the multi-source module is still absent. There
+  is no `FreshnessPolicy`, no `decide_freshness` and no signed revocation-observation
+  record in Python. Parity with TypeScript is at the multi-source layer, not the
+  single-answer layer, and anything needing a **signed** observation record still has no
+  Python path.
 
 ## 4.1.0 (2026-09-22)
 

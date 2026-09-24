@@ -30,13 +30,15 @@ from __future__ import annotations
 
 import copy
 import re
-from typing import Any, Optional
+from collections.abc import Callable
+from typing import Any, Optional, cast
 
 from ..authority_delegation.scope import is_valid_scope_grant, scope_grant_covers
 from ..authority_delegation.types import AuthorityValidationResult
 from ..authority_delegation.verify import verify_authority_delegation_chain
 from .types import (
     HELD_SET_CEILING,
+    AuthorityBudgetReserver,
     ChainEvaluation,
     FallbackAuthorizationV0,
     HeldChain,
@@ -51,8 +53,18 @@ _QUANTITY = re.compile(r"^(0|[1-9][0-9]*)$")
 
 _MISSING = object()
 
+# The resolver callables this module accepts and passes straight through to
+# verify_authority_delegation_chain, annotated here so the two stable entry points
+# below carry a checked signature. They are the caller's, exactly as the chain
+# verifier takes them: nothing in this module constructs one.
+_ResolveVerificationKey = Callable[..., Any]
+_TrustRoot = Callable[..., Any]
+_ResolveRevocation = Callable[..., Any]
+_HeldPair = tuple[str, Any]
+_Requirement = tuple[list[str], Optional[RequiredSpendV1]]
 
-def _read_held_set(held: Any):
+
+def _read_held_set(held: Any) -> list[_HeldPair] | str:
     """Read the held set once, into this module's own list.
 
     Every member of every held entry is read exactly here, so a caller object
@@ -93,7 +105,7 @@ def _read_held_set(held: Any):
     return output
 
 
-def _read_requirement(required_grants: Any, required_spend: Any):
+def _read_requirement(required_grants: Any, required_spend: Any) -> Optional[_Requirement]:
     """Read the action's requirement once, the same way and for the same reason.
 
     Returns (grants, spend) or None.
@@ -134,15 +146,15 @@ def _read_requirement(required_grants: Any, required_spend: Any):
 def _evaluate_held_chain(
     chain_id: str,
     chain: Any,
-    needed,
+    needed: list[str],
     spend: Optional[RequiredSpendV1],
-    reserve_budget,
+    reserve_budget: Optional[AuthorityBudgetReserver],
     *,
     now: str,
-    resolve_verification_key,
-    trust_root,
-    resolve_revocation,
-):
+    resolve_verification_key: _ResolveVerificationKey,
+    trust_root: _TrustRoot,
+    resolve_revocation: _ResolveRevocation,
+) -> tuple[ChainEvaluation, Optional[AuthorityValidationResult]]:
     """Decide ONE held chain against the action.
 
     This function never sees another chain, and it is the only place a chain is
@@ -160,10 +172,14 @@ def _evaluate_held_chain(
     Returns (ChainEvaluation, AuthorityValidationResult or None).
     """
 
-    def refuse(code: str, chain_state: Optional[str]):
+    def refuse(
+        code: str, chain_state: Optional[str]
+    ) -> tuple[ChainEvaluation, Optional[AuthorityValidationResult]]:
         return ChainEvaluation(chain_id=chain_id, outcome="refuses", code=code, chain_state=chain_state), None
 
-    def undecided(code: str, chain_state: Optional[str]):
+    def undecided(
+        code: str, chain_state: Optional[str]
+    ) -> tuple[ChainEvaluation, Optional[AuthorityValidationResult]]:
         return ChainEvaluation(chain_id=chain_id, outcome="undecided", code=code, chain_state=chain_state), None
 
     # Presentation. A member after the first with a null parent_delegation_id is
@@ -216,19 +232,21 @@ def _evaluate_held_chain(
         reservation = reserve_budget.reserve(records, spend.action_ref, spend.unit, spend.amount)
     except Exception:
         return undecided("spend_ledger_unavailable", result.state)
-    code = getattr(reservation, "code", None)
+    reservation_code: Any = getattr(reservation, "code", None)
     ok = getattr(reservation, "ok", None)
-    if type(code) is not str:
+    if type(reservation_code) is not str:
         return undecided("spend_ledger_unavailable", result.state)
     if ok is not True:
-        return refuse(code, result.state)
+        return refuse(reservation_code, result.state)
     return (
-        ChainEvaluation(chain_id=chain_id, outcome="authorizes", code=code, chain_state=result.state),
+        ChainEvaluation(
+            chain_id=chain_id, outcome="authorizes", code=reservation_code, chain_state=result.state
+        ),
         result,
     )
 
 
-def _failure_for(evaluations) -> str:
+def _failure_for(evaluations: list[ChainEvaluation]) -> str:
     """One undecided candidate is enough to make the whole answer not established.
 
     Nothing was learned about that chain, so "no chain covers the action" is a
@@ -245,15 +263,15 @@ def _failure_for(evaluations) -> str:
 
 
 def select_chain_for_action(
-    held,
+    held: Any,
     *,
-    required_grants,
-    required_spend=None,
+    required_grants: Any,
+    required_spend: Any = None,
     now: str,
-    resolve_verification_key,
-    trust_root,
-    resolve_revocation,
-    reserve_budget=None,
+    resolve_verification_key: _ResolveVerificationKey,
+    trust_root: _TrustRoot,
+    resolve_revocation: _ResolveRevocation,
+    reserve_budget: Optional[AuthorityBudgetReserver] = None,
 ) -> SelectionOutcome:
     """Select the one chain an action is decided against, out of the set an agent holds.
 
@@ -287,9 +305,13 @@ def select_chain_for_action(
     Nothing here reads a clock, a random source or the network. This function
     never raises.
     """
-    entries = _read_held_set(held)
-    if type(entries) is str:
-        return SelectionOutcome(selected=False, chain_id=None, code=entries, evaluations=())
+    read = _read_held_set(held)
+    if type(read) is str:
+        return SelectionOutcome(selected=False, chain_id=None, code=read, evaluations=())
+    # `type(...) is str` is this module's deliberate identity test: isinstance can run
+    # caller code through __instancecheck__. mypy narrows the str branch from it but not
+    # the list branch, so the cast states what the check established. No runtime effect.
+    entries = cast(list[_HeldPair], read)
     requirement = _read_requirement(required_grants, required_spend)
     if requirement is None:
         return SelectionOutcome(selected=False, chain_id=None, code="invalid_action_requirement", evaluations=())
@@ -341,17 +363,17 @@ def select_chain_for_action(
 
 
 def select_with_fallback(
-    held,
+    held: Any,
     *,
     preferred_chain_id: str,
-    fallback,
-    required_grants,
-    required_spend=None,
+    fallback: Any,
+    required_grants: Any,
+    required_spend: Any = None,
     now: str,
-    resolve_verification_key,
-    trust_root,
-    resolve_revocation,
-    reserve_budget=None,
+    resolve_verification_key: _ResolveVerificationKey,
+    trust_root: _TrustRoot,
+    resolve_revocation: _ResolveRevocation,
+    reserve_budget: Optional[AuthorityBudgetReserver] = None,
 ) -> SelectionOutcome:
     """Decide an action against the chain it already selected, and switch to another
     held chain only when the caller has explicitly authorized a switch.
@@ -359,12 +381,10 @@ def select_with_fallback(
     The preferred-chain half is draft-03 section 3.3: one chain, no union. The
     fallback half is PROPOSED and has no counterpart in draft-03, where
     ``fallback``, ``fall back``, ``resurrect`` and ``reselect`` occur zero times.
-    It serves invariant candidate L11, "No silent authority resurrection", in
-    ``AUTHORITY-LIFECYCLE.md`` of the aeoess/agent-authority-lifecycle concept
-    document, whose own status there is ``proposed``: a switch to another stored
-    grant should be a visible decision, not a retry.
+    It serves a proposed rule this SDK does not claim is specified anywhere: a
+    switch to another stored grant should be a visible decision, not a retry.
 
-    ``fallback=None`` is the whole of L11 in one argument. It reads no held chain
+    ``fallback=None`` is that proposed rule in one argument. It reads no held chain
     other than ``preferred_chain_id``, so ``evaluations`` has exactly one entry
     and ``fallback_considered`` is False. There is no code path on which this
     function reaches another chain without the caller having passed an
@@ -375,7 +395,7 @@ def select_with_fallback(
     carries ``switched_from``, the chain the action had selected, and
     ``fallback_ref``, the caller's opaque reference, so the switch is in the
     result rather than only in the caller's head. That reference is recorded and
-    NEVER interpreted: L11 does not define what makes a fallback explicitly
+    NEVER interpreted: nothing specified defines what makes a fallback explicitly
     authorized, and this SDK does not invent a definition, so a ``fallback_ref``
     is not evidence that anything authorized anything.
 
@@ -386,9 +406,11 @@ def select_with_fallback(
 
     This function never raises.
     """
-    entries = _read_held_set(held)
-    if type(entries) is str:
-        return SelectionOutcome(selected=False, chain_id=None, code=entries, evaluations=())
+    read = _read_held_set(held)
+    if type(read) is str:
+        return SelectionOutcome(selected=False, chain_id=None, code=read, evaluations=())
+    # See the note in select_chain_for_action. No runtime effect.
+    entries = cast(list[_HeldPair], read)
     requirement = _read_requirement(required_grants, required_spend)
     if requirement is None:
         return SelectionOutcome(selected=False, chain_id=None, code="invalid_action_requirement", evaluations=())
@@ -414,15 +436,15 @@ def select_with_fallback(
             ref = _MISSING
         # An authorization object with no usable reference is not an
         # authorization. Refusing to switch is the fail-closed answer: a switch
-        # recorded with no reference would be exactly the invisible switch L11 is
-        # about.
+        # recorded with no reference would be exactly the invisible switch the
+        # proposed rule above is about.
         if type(ref) is not str or len(ref) == 0:
             return SelectionOutcome(selected=False, chain_id=None, code="invalid_action_requirement", evaluations=())
         fallback_ref = ref
 
     evaluations: list[ChainEvaluation] = []
 
-    def decide(chain_id: str, chain: Any):
+    def decide(chain_id: str, chain: Any) -> Optional[AuthorityValidationResult]:
         evaluation, result = _evaluate_held_chain(
             chain_id, chain, needed, None, None,
             now=now,
