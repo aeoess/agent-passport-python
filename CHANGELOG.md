@@ -1,5 +1,58 @@
 # Changelog
 
+## Unreleased
+
+### New
+
+- **`agent_passport.v2.lifecycle_state`, the lifecycle state vocabulary. PROPOSED and
+  OPT-IN.** Python parity of the TypeScript SDK's `src/v2/lifecycle-state/`, name for name
+  with snake_case adapted to Python convention. A second verdict vocabulary, reported
+  alongside chain verification and never merged into it. Nothing here is required by
+  draft-pidlisnyi-aps-03, whose section 3.3 says verbatim: "Verification returns one of
+  valid, invalid, indeterminate, or unsupported with a stable failure code." That
+  enumeration is closed and this change does not touch it. `AuthorityValidationResult` and
+  everything `verify_authority_delegation_chain` and `verify_authority_delegation` return
+  are exactly what they were, and a caller that does not import the new module sees no
+  change at all.
+
+  Concept source: the aeoess/agent-authority-lifecycle concept document, invariant L8
+  (suspension is not revocation) and invariant candidates BROAD-L7, CAND-04 and CAND-05.
+  Each is proposed, with no published specification text behind it, and every exported
+  symbol says so in its docstring.
+
+  New public surface, all re-exported from the package root: `LIFECYCLE_VERDICTS` (the six
+  artifact verdicts `valid`, `invalid`, `not_established`, `not_yet_effective`,
+  `suspended`, `restricted`), `BOUNDARY_OUTCOMES` (the separate subject: what an
+  enforcement point decides about one action at one authorization boundary),
+  `ESTABLISHMENT_GAPS` (`source`, `freshness`, `coverage`, at least one of which a
+  `not_established` verdict must name), `ESTABLISHED_NEGATIVE_SHAPES` with
+  `resolve_established_negative()` (the split between the two uses of "not established":
+  the evidential sense keeps the name, an established negative resolves to
+  `not_yet_effective` or to a denial at a boundary and never to `not_established`),
+  `LifecycleStateResult`, `OutstandingCause`, `EstablishedNegativeResolution`,
+  `CompositeAuthorityResult`, `LifecycleStateError`, `lifecycle_state()`,
+  `not_established()`, the four vocabulary predicates, and
+  `map_authority_validation_to_lifecycle()`, the opt-in read-only view of an existing
+  `AuthorityValidationResult` in the new vocabulary.
+
+  `LifecycleStateResult` deliberately carries no `valid` property.
+  `AuthorityValidationResult` has one and it is correct there, but here `not_established`
+  is not a boolean's false branch and a truthiness shortcut invites exactly the collapse
+  the vocabulary exists to prevent.
+
+  One reading in the mapping is worth naming: a result whose only failure is
+  `NOT_YET_VALID` stays `invalid` by default, because the concept document has not decided
+  whether a waiting grant is invalid or not yet effective, and a base module several other
+  surfaces build on should not embed a contested reading as a default.
+  `not_yet_valid_as_not_yet_effective=True` takes CAND-04's reading, under which such a
+  grant is `not_yet_effective`.
+
+  Cross-language parity: `conformance/lifecycle-state/v0/vectors.json`, 38 hand-specified
+  cases, is vendored byte for byte from the TypeScript SDK where it is authored, with its
+  provenance and SHA-256 recorded beside it. Both repositories pin that digest inside their
+  own test, so a one-sided edit fails on the side that was edited. Tests live at
+  `tests/test_lifecycle_state.py`, and both ports run the same 47 assertions.
+
 ## 4.1.0 (2026-09-22)
 
 ### New
