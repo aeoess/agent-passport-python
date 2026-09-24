@@ -611,3 +611,64 @@ from .v2.lifecycle_state import (
     not_established,
     resolve_established_negative,
 )
+
+# ── Authority state: markers, fencing, withdrawal (v2): PROPOSED, OPT-IN ──
+#
+# Three surfaces the authority-lifecycle work needs and draft-pidlisnyi-aps-03 does not
+# contain: a monotonic marker on authority state, a fencing gate on an authority-state
+# write, and an attributable withdrawal of a recorded revocation that never removes it.
+#
+# NOT REQUIRED BY draft-03, which has no occurrence of `epoch`, `fencing`, `snapshot`,
+# `replica` or `restore` and defines no withdrawal record. What draft-03 does fix stays
+# fixed: section 3.5, "Revocation is irreversible", and section 3.3's four-value result.
+# AuthorityValidationResult, the revocation store, the chain verifier's options and
+# create_authority_revocation_resolver are all unchanged, no store gains a removal method,
+# and a caller that does not import these names sees exactly today's behaviour.
+#
+# The two findings the shapes encode. First, a verifier that retained the epoch-N
+# revocation records and one that retained only the number give different answers about the
+# same restored view, so RetainedAuthorityState takes the record set and the high-water mark
+# as two inputs rather than one "epoch". Second, an accepted withdrawal changes what a
+# verifier can REPORT and changes no verdict at all: a corrected false revocation is a
+# separate record, not a resurrection.
+#
+# Concept source: the aeoess/agent-authority-lifecycle concept document (the `Authority
+# epoch` concept, invariants L3, L7 and L11, and the `Authority rollback` open question) and
+# its invariant candidates CAND-08 and CAND-02. The open question is open and the candidates
+# are proposed. Nothing downstream should treat these names as specified.
+from .v2.authority_state import (
+    FENCED_WRITE_REFUSAL_CODES,
+    MONOTONICITY_OUTCOMES,
+    REVOCATION_WITHDRAWAL_RECORD_TYPE,
+    REVOCATION_WITHDRAWAL_VERSION,
+    STATE_MARKER_SCOPES,
+    UNPLACEABLE_DISPOSITIONS,
+    WITHDRAWAL_OUTCOME_CODES,
+    WITHDRAWAL_STANDINGS,
+    AuthorityStateError,
+    AuthorityStateReport,
+    CorrectedRevocationView,
+    FencedAuthorityStateLog,
+    FencedWriteOutcome,
+    MonotonicRevocationResolver,
+    RetainedAuthorityState,
+    RevocationWithdrawalV0,
+    StateMarker,
+    WithdrawalEvaluation,
+    advance_high_water_mark,
+    authority_state_report,
+    compare_state_marker,
+    corrected_revocation_view,
+    create_monotonic_revocation_resolver,
+    evaluate_revocation_withdrawal,
+    is_monotonicity_outcome,
+    is_state_marker_scope,
+    is_unplaceable_disposition,
+    is_withdrawal_standing,
+    report_authority_state,
+    resolve_under_retained_state,
+    revocation_withdrawal,
+    same_scope,
+    state_marker,
+    withdrawal_signer_is_revoker,
+)
