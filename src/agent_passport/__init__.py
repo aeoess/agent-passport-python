@@ -632,3 +632,57 @@ from .v2.lifecycle_state import (
     not_established,
     resolve_established_negative,
 )
+
+# Activation conditions (v2): PROPOSED, OPT-IN.
+#
+# An activation condition is a SEPARATE artifact that references a delegation_id, and it
+# gates when an already issued grant becomes exercisable. NOT REQUIRED BY
+# draft-pidlisnyi-aps-03: the published text states no activation-condition rule, no
+# attestor role and no attestation-acceptance rule, and its section 3.2 closes authority
+# at seven facets ("A missing facet is invalid rather than an implicit unconstrained
+# value"), so a condition can never be a facet. AuthorityValidationResult and everything
+# verify_authority_delegation_chain returns are unchanged, and a caller that does not
+# import this module sees exactly today's behaviour.
+#
+# verify_activation returns valid, not_yet_effective or not_established in the
+# lifecycle-state vocabulary, and never invalid: an unmet condition does not make a grant
+# invalid. compose_activation reports that alongside a chain result and asks activation
+# only when the chain is valid, which is what keeps invariant L1 intact for a
+# pre-committed replacement grant.
+#
+# Three parameters are deliberately UNDEFAULTED, because the concept text has not decided
+# them and a default in an SDK is a ruling made by whoever wrote the SDK: instant_basis
+# (which instant an occurrence is measured from), threshold (how many acceptable
+# attestations establish a finding), and role standing, which is resolved through a
+# caller-supplied resolver and never read off the attestation asserting it.
+#
+# Concept source: the aeoess/agent-authority-lifecycle concept document, invariant
+# candidates CAND-04, CAND-13 (activation half) and BROAD-L7. All PROPOSED, with no
+# published specification text behind them. Nothing downstream should treat these names
+# as specified.
+from .v2.activation import (
+    ACTIVATION_ASSERTIONS,
+    ACTIVATION_ATTESTATION_ID_DOMAIN,
+    ACTIVATION_ATTESTATION_SIGNATURE_DOMAIN,
+    ACTIVATION_ATTESTATION_TYPE,
+    ACTIVATION_CONDITION_KINDS,
+    ACTIVATION_CONDITION_SIGNATURE_DOMAIN,
+    ACTIVATION_CONDITION_TYPE,
+    ACTIVATION_FINDINGS,
+    ACTIVATION_GAPS_BY_REASON,
+    ACTIVATION_INSTANT_BASES,
+    ACTIVATION_REASON_CODES,
+    ATTESTOR_ROLE_STANDINGS,
+    ActivationError,
+    ActivationFinding,
+    ActivationRejection,
+    ActivationResult,
+    AttestorRoleResolver,
+    activation_attestation_body,
+    activation_attestation_signature_input,
+    activation_condition_signature_input,
+    compose_activation,
+    compute_activation_attestation_id,
+    validate_activation_condition,
+    verify_activation,
+)
