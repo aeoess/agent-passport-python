@@ -1,5 +1,76 @@
 # Changelog
 
+## Unreleased
+
+### New
+
+- **`agent_passport.v2.chain_selection`**: Python parity of the TypeScript SDK's
+  `src/v2/chain-selection`, the draft-03 section 3.3 rule that every other authority entry
+  point in this SDK had no surface for. Section 3.3 states it: "Each action selects one
+  root-to-leaf authority chain.  A verifier MUST NOT union scopes or budgets from multiple
+  chains.  Cross-principal composition requires a separate profile."
+  `verify_authority_delegation_chain` and `InMemoryAuthorityBudgetLedger.reserve` each take
+  exactly one chain, so an implementation that evaluated an action against three chains and
+  pooled the answers, and one that selected a single chain, were indistinguishable through
+  this SDK. `select_chain_for_action()` and `select_with_fallback()` take the whole set of
+  chains an agent holds and return the name of the ONE chain the action was decided against.
+
+  New public surface, importable from `agent_passport` and from
+  `agent_passport.v2.chain_selection`: `select_chain_for_action`, `select_with_fallback`,
+  the dataclasses `HeldChain`, `RequiredSpendV1`, `ChainEvaluation`,
+  `FallbackAuthorizationV0` and `SelectionOutcome`, the `AuthorityBudgetReserver` protocol,
+  and the constants `CHAIN_SELECTION_EVALUATION_CODES`, `CHAIN_SELECTION_FAILURE_CODES` and
+  `HELD_SET_CEILING`.
+
+  **Additive and opt-in. Nothing existing changed.** The four-valued chain result is
+  unchanged, the authority vector is unchanged, `verify_authority_delegation_chain` returns
+  exactly what it returned before for every draft-03 record, and a consumer that never
+  imports the module sees today's behaviour. There is no wall clock anywhere in it. `now`
+  and the three resolvers are the caller's keyword arguments, the budget reserver is
+  injected, and neither entry point raises.
+
+  **No union, held by construction rather than by a check.** One private function judges one
+  chain and is the only place a chain is judged, so no code path lets two chains' scope
+  grants or spend ceilings meet in one comparison. A result names one `chain_id`, never a
+  set. A held entry that is two or more chains concatenated into one list, the shape a
+  caller reaches for to have two chains evaluated together, is refused by name as
+  `chain_set_presented_as_one` before verification rather than being reported as the broken
+  parent link chain verification would otherwise call it.
+
+  **Selection rule, this implementation's own, identical to the TypeScript SDK's.** draft-03
+  states that an action selects one chain and does not state how. Candidates are evaluated
+  in held order, the first that verifies `valid` and covers every needed scope grant is
+  selected, the action's spend is then reserved against that chain and no other, and a spend
+  refusal is that chain's refusal and ends the call. Continuing past a spend refusal to a
+  chain with a larger ceiling would be a fallback in everything but name.
+
+  **Not established is kept apart from refused.** A candidate whose revocation answer is
+  unknown, whose facet profile is unsupported, or whose spend could not be checked because
+  no ledger was supplied, is `undecided`, never `refuses`, and one undecided candidate makes
+  the whole outcome `selection_undecided` rather than "no chain covers the action". Section
+  3.3 forbids collapsing indeterminate or unsupported into valid, and collapsing them into a
+  denial reason would be the opposite error.
+
+- **PROPOSED, not draft-03: the fallback surface.** `select_with_fallback`'s `fallback`
+  argument and the `switched_from`, `fallback_ref` and `fallback_considered` members of
+  `SelectionOutcome` serve invariant candidate L11, "No silent authority resurrection", in
+  `AUTHORITY-LIFECYCLE.md` of the aeoess/agent-authority-lifecycle concept document, whose
+  own status there is `proposed`. draft-03 says nothing about what an implementation does
+  after the chain it selected turns out to be unusable. `fallback=None` reads no held chain
+  other than the preferred one, so a refusal cannot hide a switch. An authorization object
+  permits the switch and the result then names the chain switched away from. That document
+  does not define what makes a fallback explicitly authorized, so `authorization_ref` is an
+  opaque reference this SDK records and never interprets, and its presence is not a claim
+  that anything authorized anything. Every symbol carrying this half says so in its
+  docstring.
+
+- **Cross-language parity.** `tests/cross_impl/chain-selection-v0-vectors.json` is the
+  TypeScript SDK's own vector file, vendored byte for byte with its provenance and SHA-256
+  recorded beside it. 19 cases over three single-hop chains from three roots to one leaf.
+  From the file's inputs alone, Python reproduces every recorded outcome member for member:
+  which chain was selected, the chain's own verification state, every candidate's outcome
+  and code, and the fallback members. No Node runs and nothing calls into the TypeScript SDK.
+
 ## 4.1.0 (2026-09-22)
 
 ### New
