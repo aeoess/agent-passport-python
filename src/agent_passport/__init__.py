@@ -569,3 +569,45 @@ from .v2.read_fidelity_receipt import (
     verify_read_fidelity_receipt,
     verify_responses,
 )
+
+# Lifecycle state vocabulary (v2): PROPOSED, OPT-IN.
+#
+# A SECOND verdict vocabulary, reported alongside chain verification and never merged
+# into it. NOT REQUIRED BY draft-pidlisnyi-aps-03, whose section 3.3 closes chain
+# verification at "valid, invalid, indeterminate, or unsupported with a stable failure
+# code". That enumeration, AuthorityValidationResult and everything
+# verify_authority_delegation_chain returns are unchanged, and a caller that does not
+# import this module sees exactly today's behaviour.
+#
+# What it adds: the six artifact verdicts (valid, invalid, not_established,
+# not_yet_effective, suspended, restricted), the separate boundary-outcome subject, the
+# three establishment limbs a not_established verdict must name, and the split between
+# the two uses of "not established" - the evidential sense, which keeps the name, and the
+# established negative, which resolves to not_yet_effective or to a denial at a boundary.
+# map_authority_validation_to_lifecycle is the opt-in read-only view of an existing
+# result in the new vocabulary.
+#
+# Concept source: the aeoess/agent-authority-lifecycle concept document, invariant L8 and
+# invariant candidates BROAD-L7, CAND-04 and CAND-05. Every one of those is PROPOSED,
+# with no published specification text behind it. Nothing downstream should treat these
+# names as specified.
+from .v2.lifecycle_state import (
+    BOUNDARY_OUTCOMES,
+    ESTABLISHED_NEGATIVE_SHAPES,
+    ESTABLISHMENT_GAPS,
+    LIFECYCLE_BASE_REASON_CODES,
+    LIFECYCLE_VERDICTS,
+    CompositeAuthorityResult,
+    EstablishedNegativeResolution,
+    LifecycleStateError,
+    LifecycleStateResult,
+    OutstandingCause,
+    is_boundary_outcome,
+    is_established_negative_shape,
+    is_establishment_gap,
+    is_lifecycle_verdict,
+    lifecycle_state,
+    map_authority_validation_to_lifecycle,
+    not_established,
+    resolve_established_negative,
+)
