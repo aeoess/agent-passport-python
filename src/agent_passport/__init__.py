@@ -147,6 +147,27 @@ from .v2.authority_delegation import (
     verify_authority_delegation_signature,
 )
 
+# Chain selection over the set of chains an agent holds. draft-03 section 3.3:
+# "Each action selects one root-to-leaf authority chain.  A verifier MUST NOT
+# union scopes or budgets from multiple chains.  Cross-principal composition
+# requires a separate profile." Additive and opt-in: nothing here changes what
+# verify_authority_delegation_chain returns for a draft-03 record. The fallback
+# members of select_with_fallback are PROPOSED against invariant candidate L11 of
+# the aeoess/agent-authority-lifecycle concept document, not draft-03, and say so
+# at every symbol that carries them.
+from .v2.chain_selection import (
+    CHAIN_SELECTION_EVALUATION_CODES,
+    CHAIN_SELECTION_FAILURE_CODES,
+    HELD_SET_CEILING,
+    ChainEvaluation,
+    FallbackAuthorizationV0,
+    HeldChain,
+    RequiredSpendV1,
+    SelectionOutcome,
+    select_chain_for_action,
+    select_with_fallback,
+)
+
 # aps:authority-revocation:v1, the draft-pidlisnyi-aps-03 section 3.5.1 direct
 # revocation of an AuthorityDelegationV1. DISTINCT from the pre-draft revocation
 # surface above, which carries a raw public key and a free-text reason and is
