@@ -963,3 +963,49 @@ from .v2.authority_state import (
     state_marker,
     withdrawal_signer_is_revoker,
 )
+
+# Suspension and restriction cause sets (v2): PROPOSED, OPT-IN.
+#
+# NOT REQUIRED BY draft-pidlisnyi-aps-03. The published draft states no suspension rule,
+# no restriction rule, no release rule and no lifecycle-standing rule: a case-insensitive
+# search of its plain text returns zero occurrences of "suspend" and "suspension", and the
+# only status answer the protocol has is the revocation resolver's closed set "active",
+# "revoked", "unknown". AuthorityValidationResult and everything
+# verify_authority_delegation_chain returns are unchanged, and a caller that does not
+# import this module sees exactly today's behaviour.
+#
+# What it adds: a lifecycle cause as a separate signed artifact referencing a delegation,
+# a release record naming the causes it claims to clear, and an evaluator that decides
+# each named cause independently against a caller-supplied standing resolver. The result's
+# outstanding member is the remaining cause SET, never a count and never a boolean:
+# releasing one cause does not release another, and a verdict has to say which ones
+# remain. compose_chain_and_pause is the rule that a release never clears a revocation
+# that happened meanwhile.
+#
+# Concept source: the aeoess/agent-authority-lifecycle concept document, invariant L8
+# (suspension is not revocation, which says nothing about arity) and invariant candidate
+# CAND-05 (suspension and restriction causes compose), plus its OPEN-QUESTIONS.md entry
+# "Release from suspension", which says causes probably need to compose with each released
+# separately and that none of it is specified. CAND-05 states that composition is forced
+# by the corpus and externally unsourced. Nothing downstream should treat these names as
+# specified.
+from .v2.suspension import (
+    PAUSE_KINDS,
+    RELEASE_STANDINGS,
+    SUSPENSION_CAUSE_TYPE,
+    SUSPENSION_REASON_CODES,
+    SUSPENSION_RELEASE_TYPE,
+    CauseDisposition,
+    PauseStateExplanation,
+    ReleaseCauseDisposition,
+    ReleaseDisposition,
+    SuspensionCause,
+    SuspensionCauseError,
+    SuspensionRelease,
+    compose_chain_and_pause,
+    evaluate_pause_state,
+    explain_pause_state,
+    suspension_cause_from_mapping,
+    suspension_record_preimage,
+    suspension_release_from_mapping,
+)

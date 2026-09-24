@@ -285,6 +285,92 @@
   the file's SHA-256 inside their own test, so the two copies can be shown identical without
   either importing the other. `conformance/authority-state/v0/PROVENANCE.md` records the
   pin.
+- **`agent_passport.v2.suspension`, suspension and restriction as a SET OF CAUSES.
+  PROPOSED and OPT-IN.** Python parity of the TypeScript SDK's `src/v2/suspension/`, name
+  for name with snake_case adapted to Python convention. Nothing here is required by
+  draft-pidlisnyi-aps-03. The published draft states no suspension rule, no restriction
+  rule, no release rule and no lifecycle-standing rule: a case-insensitive search of its
+  plain text returns zero occurrences of `suspend` and `suspension`, and the only status
+  answer the protocol has is the revocation resolver's closed set `active`, `revoked`,
+  `unknown`. There is nowhere in that type to put one cause, let alone three. Section 3.2
+  closes the authority vector at seven facets and calls a missing facet invalid, so no
+  cause can ride inside a signed `AuthorityDelegationV1` either. `AuthorityValidationResult`
+  and everything `verify_authority_delegation_chain` and `verify_authority_delegation`
+  return are exactly what they were, and a caller that does not import the new module sees
+  no change at all.
+
+  The concept source is the aeoess/agent-authority-lifecycle concept document: invariant L8
+  (suspension is not revocation, which says nothing about ARITY, so an implementation
+  holding exactly one suspension at a time conforms to every word of it and is still wrong)
+  and invariant candidate CAND-05 (suspension and restriction causes compose), with the
+  `OPEN-QUESTIONS.md` entry "Release from suspension" as the paragraph that names the gap:
+  lifting one suspension should not clear another or bypass a revocation that happened
+  while the agent was suspended, causes probably need to compose with each released
+  separately, and none of it is specified. CAND-05 states that composition is forced by the
+  corpus and externally unsourced. Every exported symbol says so in its docstring.
+
+  New public surface, all re-exported from the package root:
+
+  - `SuspensionCause`, a lifecycle cause as a SEPARATE SIGNED ARTIFACT referencing a
+    `delegation_id`, carrying its `kind` (`suspension` or `restriction`, the two invariant
+    L8 separates), who imposed it, when, and a stable reason code.
+  - `SuspensionRelease`, a record naming every cause it claims to clear. One release may
+    clear several causes, which CAND-05 explicitly does not forbid. What is forbidden is
+    releasing cause A having the side effect of clearing cause B, so each named cause is
+    decided independently and a record with standing over two of three clears exactly those
+    two. A release record is not a list of assertions a verifier accepts wholesale.
+  - `evaluate_pause_state(...)`, returning a `LifecycleStateResult` whose `outstanding`
+    member is the remaining cause set. NEVER A COUNT AND NEVER A BOOLEAN: that member being
+    a tuple is the whole of CAND-05 in one field.
+  - `explain_pause_state(...)`, the same computation with the per-record and per-cause
+    audit trail, for a caller that has to record why each record did or did not move the
+    answer.
+  - `compose_chain_and_pause(chain, pause)`, the rule that A RELEASE NEVER CLEARS A
+    REVOCATION THAT HAPPENED MEANWHILE. When the chain result is anything other than
+    `valid` it is returned unchanged and the pause state is not reported; draft-03 section
+    3.5 says verbatim "Revocation is irreversible" and a release record is a later record
+    about the causes, not about the chain.
+  - `SUSPENSION_CAUSE_TYPE`, `SUSPENSION_RELEASE_TYPE`, `PAUSE_KINDS`, `RELEASE_STANDINGS`,
+    `SUSPENSION_REASON_CODES`, `suspension_record_preimage`, `SuspensionCauseError` and the
+    disposition types.
+  - `suspension_cause_from_mapping()` and `suspension_release_from_mapping()`, the one
+    shape difference from the TypeScript port. The TypeScript records are plain objects
+    with an index signature and the Python ones are frozen dataclasses carrying an `extra`
+    mapping, so Python needs an explicit step from a parsed record to a typed one. The
+    signed preimage is identical either way, which the shared vectors check.
+
+  Three design positions worth naming, each of them a reading rather than a rule:
+
+  - **Standing is resolved outside the record, always.** `resolve_release_standing` is a
+    caller-supplied callable and the module never reads standing from the artifact
+    asserting it. A cause may carry an advisory `release_authority`, and the evaluator does
+    not consult it; a negative-control test sets that member to the releasing party and
+    asserts the release is still ineffective when the resolver says `no_standing`. Standing
+    is also not authorship: CAND-05 says a source may hold standing over a cause it did not
+    impose, and an implementer who reads "standing over that cause" as "the source that
+    imposed it" gets the superior-authority case wrong.
+  - **An unverified claim does not become a lifecycle state.** A cause record whose
+    signature does not verify, or whose verification method is not bound to the imposer it
+    names, holds nothing. Reporting `suspended` on it would convert an unauthenticated
+    assertion into a pause the artifact never carried.
+  - **A standing answer of `unknown` gives `not_established`, not `suspended`.** Failing to
+    establish that a cause was released is not establishing that it still holds. The other
+    reading is available and the proposed text settles neither.
+
+  Three things this module deliberately does not decide, all recorded rather than papered
+  over: no precedence order among causes, because CAND-05 defines none and says so; what
+  wins in the reverse ordering, a revoked chain with causes still outstanding, where
+  `compose_chain_and_pause` reports the chain as a choice of what to report first rather
+  than a claim that the causes stopped mattering; and where standing comes from, which no
+  published or proposed text answers and which the parity fixture supplies as a fixture
+  object.
+
+  Cross-language parity: `conformance/suspension-causes/v0/vectors.json`, 29 evaluation
+  cases, 6 composition cases and 6 malformed-input cases, is vendored byte for byte from
+  the TypeScript SDK where it is authored, with its provenance and SHA-256 recorded beside
+  it. Both repositories pin that digest inside their own test, so a one-sided edit fails on
+  the side that was edited. Tests live at `tests/test_suspension.py`, and both ports run
+  the same 41 vectors under the same 56 test cases.
 
 - **`agent_passport.v2.lifecycle_state`, the lifecycle state vocabulary. PROPOSED and
   OPT-IN.** Python parity of the TypeScript SDK's `src/v2/lifecycle-state/`, name for name
