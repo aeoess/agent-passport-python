@@ -611,3 +611,76 @@ from .v2.lifecycle_state import (
     not_established,
     resolve_established_negative,
 )
+
+# Non-time bounds on a grant (v2/bounds): PROPOSED, OPT-IN.
+#
+# Purpose, use-count and budget bounds, and the state "this bound has been reached".
+#
+# NOT REQUIRED BY draft-pidlisnyi-aps-03. Two of its sentences constrain the whole module.
+# Section 3.2: "authority contains exactly seven required facets: scope, spend, depth,
+# time, reputation, values, and reversibility." That set is closed, so a purpose or
+# use-count bound cannot live inside a signed authority delegation at all, and this module
+# declares a SEPARATE artifact referencing a delegation by content address. Section 3.3:
+# "Verification returns one of valid, invalid, indeterminate, or unsupported with a stable
+# failure code." That set is closed too, and nothing here touches it. A bound evaluation is
+# reported ALONGSIDE a chain result, and a caller that does not import this module sees
+# exactly today's behaviour.
+#
+# draft-03 has zero occurrences of "exhaust" and of "use_count", and uses "single-use" only
+# of an approval in section 4.3, never of a grant.
+#
+# What it adds: a bound declaration, a signed fulfilment attestation, evaluate_bound() which
+# answers not_reached, exhausted or not_established at an instant, and an optional signed
+# exhaustion record shaped like the section 3.5.1 revocation record. The exhaustion record
+# attests the enforcement boundary's own finding and not the state of the world, on the same
+# model draft-03 section 5.3.3 uses for an action result. is_purpose_permitted and
+# purpose_category are the Python port of the TypeScript SDK's long-standing functions of
+# the same name, so both reference SDKs expose purpose membership from the same place;
+# membership is not exhaustion.
+#
+# Concept source: the aeoess/agent-authority-lifecycle concept document, invariant L10
+# (expiry is not revocation) and invariant candidates CAND-01 (an external event is
+# authority-changing only when established) and CAND-02 (later evidence does not rewrite
+# earlier evidence). All PROPOSED, with no published specification text behind them.
+from .v2.bounds import (
+    ATTESTOR_ROLE_ANSWERS,
+    AUTHORITY_BOUND_FULFILMENT_SIGNATURE_DOMAIN,
+    AUTHORITY_BOUND_FULFILMENT_TYPE,
+    AUTHORITY_BOUND_TYPE,
+    AUTHORITY_EXHAUSTION_FAILURE_CODES,
+    AUTHORITY_EXHAUSTION_ID_DOMAIN,
+    AUTHORITY_EXHAUSTION_SIGNATURE_DOMAIN,
+    AUTHORITY_EXHAUSTION_TYPE,
+    BOUND_KINDS,
+    BOUND_REASON_CODES,
+    BOUND_STATES,
+    FULFILMENT_REASON_CODES,
+    AttestorRoleResolver,
+    AuthorityBound,
+    AuthorityBoundError,
+    AuthorityExhaustionVerification,
+    BoundEvaluation,
+    BoundVerificationKeyResolver,
+    FulfilmentAssessment,
+    assert_authority_bound,
+    assess_fulfilment,
+    authority_bound_fulfilment_signature_input,
+    authority_bound_fulfilment_signature_input_for_write,
+    authority_exhaustion_id_input,
+    authority_exhaustion_signature_input,
+    authority_exhaustion_signature_input_for_write,
+    compute_authority_exhaustion_id,
+    compute_authority_exhaustion_id_for_write,
+    evaluate_bound,
+    is_attestor_role_answer,
+    is_bound_kind,
+    is_purpose_permitted,
+    issue_authority_bound_fulfilment,
+    issue_authority_exhaustion,
+    purpose_category,
+    sign_authority_bound_fulfilment,
+    sign_authority_exhaustion,
+    verify_authority_bound_fulfilment_signature,
+    verify_authority_exhaustion,
+    verify_authority_exhaustion_signature,
+)
