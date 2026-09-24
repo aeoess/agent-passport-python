@@ -45,7 +45,7 @@ _VECTORS = json.loads(_VECTORS_BYTES.decode("utf-8"))
 
 # Pinned so the TypeScript SDK's authoring copy can be shown byte identical. If this
 # moves, the TypeScript repo's copy and its own pin move with it, in the same change.
-_VECTORS_SHA256 = "e2efab4001ee7593cdd38a3f6bfb9d35e9946e865f93ae62c71c8587d1cccf6f"
+_VECTORS_SHA256 = "32bc491378494e0336a9a1b3b56eae897c8a0f13591d136cec08831cf5b7ab91"
 
 
 def _as_plain(result: LifecycleStateResult) -> dict:
@@ -131,7 +131,7 @@ def test_mapping_case(vec):
     result = map_authority_validation_to_lifecycle(
         _chain_result(vec["chain_result"]),
         not_yet_valid_as_not_yet_effective=options.get(
-            "not_yet_valid_as_not_yet_effective", True
+            "not_yet_valid_as_not_yet_effective", False
         ),
     )
     expected = vec["expected"]

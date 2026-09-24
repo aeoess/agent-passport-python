@@ -6,14 +6,14 @@ This is a READ-ONLY view. It takes an ``AuthorityValidationResult`` that
 ``verify_authority_delegation_chain`` already produced and says what that result looks
 like in the six-value vocabulary. It never mutates the input, it is never called from
 the verification path, and a caller that does not import it sees no change whatever. The
-draft-03 four-value result stays a four-value result; this is reported ALONGSIDE it. See
+draft-03 four-value result stays a four-value result, and this is reported ALONGSIDE it. See
 ``types.CompositeAuthorityResult``.
 
 What this mapping CANNOT produce, and why: ``suspended`` and ``restricted`` never appear,
 because draft-03 chain verification has no concept of a suspension or restriction cause
 and the module that owns cause sets is a separate proposed surface. The ``freshness``
 limb never appears either, because chain verification takes a revocation resolver that
-answers active, revoked or unknown with no declared bound attached; the module that owns
+answers active, revoked or unknown with no declared bound attached, and the module that owns
 multi-source status observation owns freshness. A mapping that invented either would be
 claiming a finding the verifier never made.
 
@@ -62,7 +62,7 @@ def _codes(result: Any) -> list[str]:
 def map_authority_validation_to_lifecycle(
     result: Any,
     *,
-    not_yet_valid_as_not_yet_effective: bool = True,
+    not_yet_valid_as_not_yet_effective: bool = False,
 ) -> LifecycleStateResult:
     """Express an ``AuthorityValidationResult`` in the six-value lifecycle vocabulary.
 
@@ -70,25 +70,35 @@ def map_authority_validation_to_lifecycle(
     chain state     lifecycle verdict
     =============== ==================================================================
     ``valid``       ``valid``, reason ``CHAIN_VALID``
-    ``invalid``     ``invalid``, reason = the first failure code (see the keyword
-                    argument for the one exception, ``NOT_YET_VALID``)
+    ``invalid``     ``invalid``, reason = the first failure code. ``NOT_YET_VALID``
+                    included, unless the caller opts into the CAND-04 reading
     ``indeterminate`` ``not_established``, reason = the first failure code, ``missing``
                     from that code
     ``unsupported`` ``not_established``, reason = the first failure code, ``missing``
                     ``("source",)``
     =============== ==================================================================
 
-    ``not_yet_valid_as_not_yet_effective`` (default ``True``): draft-03 chain
+    ``not_yet_valid_as_not_yet_effective`` (default ``False``): draft-03 chain
     verification reports a delegation whose ``time.not_before`` has not been reached as
-    ``invalid`` with failure code ``NOT_YET_VALID``. Under the six-value vocabulary that
-    is a positive finding about a validly issued grant whose enabling date has not
-    arrived, whose remedy is to wait, which is ``not_yet_effective``, not ``invalid``.
-    It applies ONLY when ``NOT_YET_VALID`` is the sole failure code in the result; a
-    result carrying it alongside any other failure maps to ``invalid`` on that other
-    failure, because something more than the date is wrong. Pass ``False`` to keep the
-    chain's own reading. The reading is contested: the ``activation-not-established``
-    fixture records the present SDK behaviour as its family's central vagueness finding
-    rather than asserting either answer is correct, so the switch exists. Concept source:
+    ``invalid`` with failure code ``NOT_YET_VALID``. One reading of the six-value
+    vocabulary calls that a validly issued grant whose enabling date has not arrived,
+    whose remedy is to wait, which would be ``not_yet_effective`` rather than
+    ``invalid``.
+
+    The default keeps the chain's own reading. The concept document has not decided this
+    one. The ``activation-not-established`` fixture puts a grant time facet and an
+    activation-condition date at the same instant and records the split as a finding
+    about the proposed text rather than asserting either answer: "the text does not say
+    whether a waiting grant should be invalid, not yet effective, or something else."
+    This module is the shared base several other proposed lifecycle surfaces build on, so
+    it does not embed a contested reading as a default. Settling it belongs to the
+    activation-condition surface, which is where a condition distinct from the time facet
+    gets a representation at all.
+
+    Pass ``True`` to take the CAND-04 reading. It then applies ONLY when
+    ``NOT_YET_VALID`` is the sole failure code in the result. A result carrying it
+    alongside any other failure still maps to ``invalid`` on that other failure, because
+    something more than the date is wrong. Concept source:
     aeoess/agent-authority-lifecycle, invariant candidate CAND-04. Proposed.
 
     ``unsupported`` mapping to ``not_established`` is a judgment call worth naming.

@@ -76,7 +76,7 @@ BOUNDARY_OUTCOMES: tuple[str, ...] = ("authorized", "denied", "not_established")
 #:                  answer, or the answer came from a source the model does not accept for
 #:                  it, or two accepted sources are in unresolved conflict.
 #: - ``freshness``  an answer existed but was older than the bound the model declares for
-#:                  its source. Bounds are model declared; this module declares none.
+#:                  its source. Bounds are model declared, and this module declares none.
 #: - ``coverage``   the claim does not state that it covers what the verdict needed. A
 #:                  verifier must not read a state claim as covering more than it states.
 #:
@@ -116,7 +116,7 @@ ESTABLISHED_NEGATIVE_SHAPES: tuple[str, ...] = (
 )
 
 #: The reason codes this module's own mapping emits. Other lifecycle modules mint their
-#: own; ``reason_code`` is typed as ``str`` so they can, and this tuple is not a closed
+#: own. ``reason_code`` is typed as ``str`` so they can, and this tuple is not a closed
 #: universe. Named here so the mapping's codes do not drift silently.
 LIFECYCLE_BASE_REASON_CODES: tuple[str, ...] = (
     "CHAIN_VALID",
@@ -134,7 +134,7 @@ class OutstandingCause:
     Never a count and never a boolean. Causes compose: an artifact can be subject to
     more than one concurrent suspension or restriction cause, releasing one does not
     release another, and a verdict has to say which ones remain. ``id`` names the cause,
-    ``kind`` says what sort of thing it is (this module does not enumerate kinds; the
+    ``kind`` says what sort of thing it is (this module does not enumerate kinds, the
     module that owns the cause does), ``reason_code`` is that module's stable code.
 
     Concept source: aeoess/agent-authority-lifecycle, invariant candidate CAND-05.
@@ -185,7 +185,7 @@ class EstablishedNegativeResolution:
     """Resolution of one established-negative shape to its correct subject and output.
 
     ``subject`` is ``"artifact"`` or ``"boundary"``. An artifact resolution carries
-    ``verdict`` and leaves ``outcome`` ``None``; a boundary resolution carries
+    ``verdict`` and leaves ``outcome`` ``None``. A boundary resolution carries
     ``outcome`` and leaves ``verdict`` ``None``. Neither ever carries
     ``not_established``.
     """

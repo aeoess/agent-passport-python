@@ -40,11 +40,12 @@
   is not a boolean's false branch and a truthiness shortcut invites exactly the collapse
   the vocabulary exists to prevent.
 
-  One reading in the mapping is worth naming: by default a result whose only failure is
-  `NOT_YET_VALID` maps to `not_yet_effective` rather than `invalid`, because a validly
-  issued grant whose enabling date has not arrived is a positive finding whose remedy is
-  to wait. The reading is contested, so `not_yet_valid_as_not_yet_effective=False` keeps
-  the chain's own answer.
+  One reading in the mapping is worth naming: a result whose only failure is
+  `NOT_YET_VALID` stays `invalid` by default, because the concept document has not decided
+  whether a waiting grant is invalid or not yet effective, and a base module several other
+  surfaces build on should not embed a contested reading as a default.
+  `not_yet_valid_as_not_yet_effective=True` takes CAND-04's reading, under which such a
+  grant is `not_yet_effective`.
 
   Cross-language parity: `conformance/lifecycle-state/v0/vectors.json`, 38 hand-specified
   cases, is vendored byte for byte from the TypeScript SDK where it is authored, with its

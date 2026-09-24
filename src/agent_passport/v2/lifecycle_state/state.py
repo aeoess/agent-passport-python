@@ -97,7 +97,7 @@ def lifecycle_state(
        verdict name must be told apart by their codes.
     3. ``missing`` is present with at least one member exactly when the verdict is
        ``not_established``, and absent otherwise. A denial on an unestablished state has
-       to record which of source, freshness or coverage was missing; and a verdict the
+       to record which of source, freshness or coverage was missing, and a verdict the
        verifier DID reach has no gap to report.
     4. ``outstanding`` is present with at least one member exactly when the verdict is
        ``suspended`` or ``restricted``, and absent otherwise. Causes compose, so the

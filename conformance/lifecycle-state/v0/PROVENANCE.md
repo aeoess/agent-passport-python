@@ -4,7 +4,7 @@
 `conformance/lifecycle-state/v0/vectors.json` in the TypeScript SDK
 (`aeoess/agent-passport-system`), which is where it is authored.
 
-    SHA-256  e2efab4001ee7593cdd38a3f6bfb9d35e9946e865f93ae62c71c8587d1cccf6f
+    SHA-256  32bc491378494e0336a9a1b3b56eae897c8a0f13591d136cec08831cf5b7ab91
 
 Both repositories pin that digest inside their own parity test
 (`tests/v2/lifecycle-state.test.ts` and `tests/test_lifecycle_state.py`), so the two
